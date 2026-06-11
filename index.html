@@ -64,7 +64,25 @@
   .toprow{display:flex;align-items:center;gap:8px;padding:8px 18px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .toprow .grow{flex:1;}
   .scaleNote{font-size:11px;color:#6a7361;}
+  .coach-hl{outline:4px solid #00a357!important;outline-offset:3px;box-shadow:0 0 0 8px rgba(0,163,87,.22)!important;border-radius:8px;}
+  #coach{position:fixed;inset:0;z-index:9999;display:none;pointer-events:none;}
+  #coach.on{display:block;}
+  #coach .backdrop{position:absolute;inset:0;background:rgba(20,25,18,.45);display:none;pointer-events:auto;}
+  #coach.welcome-on .backdrop{display:block;}
+  #coach .card{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);width:540px;max-width:92vw;background:#fff;border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.32);padding:20px 24px;pointer-events:auto;}
+  #coach.welcome-on .card{top:50%;bottom:auto;transform:translate(-50%,-50%);width:580px;}
+  #coach .step-no{font-size:12px;font-weight:800;color:#00a357;text-transform:uppercase;letter-spacing:.6px;}
+  #coach h4{margin:4px 0 8px;font-size:19px;color:#2f3a2a;}
+  #coach p{margin:0 0 16px;font-size:14.5px;line-height:1.55;color:#3a3f33;}
+  #coach ol{margin:8px 0 18px;padding-left:22px;font-size:14px;line-height:1.8;color:#3a3f33;}
+  #coach .nav{display:flex;gap:8px;align-items:center;}
+  #coach .nav .sp{flex:1;}
+  #coach button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;}
+  #coach .skip{background:transparent;color:#6a7361;padding-left:0;}
+  #coach .back{background:#e7ece1;color:#3a3f33;}
+  #coach .next{background:#00a357;color:#fff;}
   @media print{
+    #coach,#btnGuide{display:none!important;}
     header.bar,aside,.toprow,.hint,.tabs,#view3d{display:none!important;}
     .layout{height:auto;display:block;}
     main{overflow:visible;background:#fff;}
@@ -92,6 +110,7 @@
 </header>
 
 <div class="toprow">
+  <button class="toolbtn" id="btnGuide" style="background:#00a357;">❔ Guide</button>
   <button class="toolbtn" id="btnPng">Download PNG</button>
   <button class="toolbtn alt" id="btnPrint">Print / Save PDF</button>
   <button class="toolbtn alt" id="btnClear">Clear all</button>
@@ -164,6 +183,8 @@
   </main>
 </div>
 
+<div id="coach"><div class="backdrop"></div><div class="card" id="coachCard"></div></div>
+
 <script>
 /* ---------- cabinet types ---------- */
 const TYPES = {
@@ -223,7 +244,7 @@ let scheme = {door:{...DOORS[1]}, bench:{...BENCH[0]}, profile:'Shaker', finishT
 let cabs = [];
 let selId = null, nextId = 1, dropN = 0;
 const SNAP = 10, MAGNET = 60;
-const TITLE_H = 520;
+const TITLE_H = 860;
 const BOARD = {x0:30,y0:TITLE_H+60,x1:11970,y1:6560};
 
 const svg = document.getElementById('planSvg');
@@ -319,20 +340,20 @@ function finishesUsed(){
   return [...m.entries()].map(([color,name])=>({color,name}));
 }
 function drawSchedule(rfn,tfn,x,y,fill,swStroke){
+  const SW=96, FS=88, NS=82, baseY=y+SW*0.74, L2=y+130, L3=y+260;
   let cx=x;
-  tfn(cx,y+50,'Doors:',fill,62,700,'start'); cx+=210;
+  tfn(cx,baseY,'Doors:',fill,FS,700,'start'); cx+=320;
   const fu=finishesUsed();
   for(let i=0;i<fu.length;i++){ const f=fu[i];
-    if(cx>8000){ tfn(cx,y+50,'+'+(fu.length-i)+' more',fill,56,500,'start'); break; }
-    rfn(cx,y,62,62,f.color,swStroke,3,8);
-    tfn(cx+76,y+50,f.name,fill,58,500,'start');
-    cx+=76+f.name.length*32+55;
+    if(cx>8800){ tfn(cx,baseY,'+'+(fu.length-i)+' more',fill,NS,500,'start'); break; }
+    rfn(cx,y,SW,SW,f.color,swStroke,3,12);
+    tfn(cx+SW+22,baseY,f.name,fill,NS,500,'start');
+    cx+=SW+22+f.name.length*46+80;
   }
-  const by=y+92;
-  tfn(x,by+50,'Benchtop:',fill,62,700,'start');
-  rfn(x+300,by,62,62,scheme.bench.color,swStroke,3,8);
-  tfn(x+384,by+50,scheme.bench.name,fill,58,500,'start');
-  tfn(x+1500,by+50,'Finish: '+scheme.finishType+'  ·  '+scheme.profile+' profile',fill,56,500,'start');
+  tfn(x,L2+SW*0.74,'Benchtop:',fill,FS,700,'start');
+  rfn(x+440,L2,SW,SW,scheme.bench.color,swStroke,3,12);
+  tfn(x+440+SW+22,L2+SW*0.74,scheme.bench.name,fill,NS,500,'start');
+  tfn(x,L3+SW*0.74,'Finish:  '+scheme.finishType+'   ·   '+scheme.profile+' profile',fill,NS,600,'start');
 }
 
 /* ---------- render 2D ---------- */
@@ -341,20 +362,20 @@ function render(){
   // title band
   rect(0,0,12000,TITLE_H,'#2f3a2a',null,0);
   if(LOGO){
-    const lh=140, lw=lh*LOGO_RATIO;
-    rect(40,45,lw+60,lh+50,'#ffffff',null,0,16);
+    const lh=210, lw=lh*LOGO_RATIO;
+    rect(40,55,lw+80,lh+60,'#ffffff',null,0,18);
     const im=document.createElementNS(SVGNS,'image');
     im.setAttributeNS('http://www.w3.org/1999/xlink','href',LOGO); im.setAttribute('href',LOGO);
-    im.setAttribute('x',70); im.setAttribute('y',70); im.setAttribute('height',lh); im.setAttribute('width',lw);
+    im.setAttribute('x',80); im.setAttribute('y',85); im.setAttribute('height',lh); im.setAttribute('width',lw);
     svg.appendChild(im);
-  } else { text(45,170,"HAMBO'S",'#cdd9c1',140,800,'start'); }
-  text(45,300,'Kitchen Cabinet Layout','#ffffff',88,600,'start');
-  drawSchedule(rect,text,45,348,'#ffffff','#cdd9c1');
+  } else { text(45,210,"HAMBO'S",'#cdd9c1',180,800,'start'); }
+  text(45,440,'Kitchen Cabinet Layout','#ffffff',112,700,'start');
+  drawSchedule(rect,text,45,500,'#ffffff','#cdd9c1');
   const job=val('tbJob'),cust=val('tbCust'),date=val('tbDate'),by=val('tbBy');
-  text(11940,150,job?('Job: '+job):'','#ffffff',90,700,'end');
-  text(11940,255,cust?('Customer: '+cust):'','#e3e9dc',76,400,'end');
-  text(11940,350,by?('Designed by: '+by):'','#e3e9dc',76,400,'end');
-  text(11940,445,date?('Date: '+date):'','#e3e9dc',76,400,'end');
+  text(11940,200,job?('Job: '+job):'','#ffffff',118,700,'end');
+  text(11940,360,cust?('Customer: '+cust):'','#e3e9dc',98,400,'end');
+  text(11940,510,by?('Designed by: '+by):'','#e3e9dc',98,400,'end');
+  text(11940,660,date?('Date: '+date):'','#e3e9dc',98,400,'end');
   // quote total chip (bottom-right)
   const total=val('tbTotal').trim();
   if(total){
@@ -604,19 +625,19 @@ function drawElevCab(c,xLeft,floorYp){
 function renderElev(){
   while(E.firstChild)E.removeChild(E.firstChild);
   eR(0,0,12000,TITLE_H,'#2f3a2a');
-  if(LOGO){const lh=140,lw=lh*LOGO_RATIO; eR(40,45,lw+60,lh+50,'#ffffff',null,0,16);
+  if(LOGO){const lh=210,lw=lh*LOGO_RATIO; eR(40,55,lw+80,lh+60,'#ffffff',null,0,18);
     const im=document.createElementNS(SVGNS,'image'); im.setAttributeNS('http://www.w3.org/1999/xlink','href',LOGO); im.setAttribute('href',LOGO);
-    im.setAttribute('x',70);im.setAttribute('y',70);im.setAttribute('height',lh);im.setAttribute('width',lw);E.appendChild(im);
-  } else eT(45,170,"HAMBO'S",'#cdd9c1',140,800,'start');
-  eT(45,300,'Kitchen Elevations','#ffffff',88,600,'start');
-  drawSchedule(eR,eT,45,348,'#ffffff','#cdd9c1');
+    im.setAttribute('x',80);im.setAttribute('y',85);im.setAttribute('height',lh);im.setAttribute('width',lw);E.appendChild(im);
+  } else eT(45,210,"HAMBO'S",'#cdd9c1',180,800,'start');
+  eT(45,440,'Kitchen Elevations','#ffffff',112,700,'start');
+  drawSchedule(eR,eT,45,500,'#ffffff','#cdd9c1');
   const job=val('tbJob'),cust=val('tbCust'),date=val('tbDate'),by=val('tbBy');
-  eT(11940,150,job?('Job: '+job):'','#ffffff',90,700,'end');
-  eT(11940,255,cust?('Customer: '+cust):'','#e3e9dc',76,400,'end');
-  eT(11940,350,by?('Designed by: '+by):'','#e3e9dc',76,400,'end');
-  eT(11940,445,date?('Date: '+date):'','#e3e9dc',76,400,'end');
+  eT(11940,200,job?('Job: '+job):'','#ffffff',118,700,'end');
+  eT(11940,360,cust?('Customer: '+cust):'','#e3e9dc',98,400,'end');
+  eT(11940,510,by?('Designed by: '+by):'','#e3e9dc',98,400,'end');
+  eT(11940,660,date?('Date: '+date):'','#e3e9dc',98,400,'end');
   const walls=elevWalls();
-  const PADX=320, panelGap=2750; let panelTop=640;
+  const PADX=320, panelGap=2750; let panelTop=TITLE_H+140;
   if(!walls.length) eT(320,1300,'Add cabinets on the Plan tab to see the elevations.','#9aa392',80,500,'start');
   const rotSeen={};
   walls.forEach((wll,wi)=>{
@@ -824,7 +845,7 @@ document.getElementById('btnPng').onclick=()=>{
   else { svgToPng(svg,''); }
 };
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
-function export3D(){
+function composite3D(cb){
   renderer.render(scene,camera);
   const canvas=document.getElementById('c3d');
   const outW=2400, tbH=Math.round(outW*TITLE_H/12000);
@@ -844,11 +865,25 @@ function export3D(){
       ctx.fillStyle='#00a357'; roundRect(ctx,bx,by,bw,bh,14); ctx.fill();
       ctx.fillStyle='#eafff4'; ctx.textAlign='left'; ctx.font='bold 26px Helvetica,Arial'; ctx.fillText('QUOTE TOTAL',bx+24,by+38);
       ctx.fillStyle='#fff'; ctx.textAlign='right'; ctx.font='bold 48px Helvetica,Arial'; ctx.fillText(total,bx+bw-24,by+74); }
-    const a=document.createElement('a');a.download=(val('tbJob')||'hambos-kitchen')+'-3d.png';a.href=cv.toDataURL('image/png');a.click();
+    cb(cv);
   };
   tbImg.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml)));
 }
-document.getElementById('btnPrint').onclick=()=>{ setTab('plan'); setTimeout(()=>window.print(),120); };
+function export3D(){ composite3D(cv=>{ const a=document.createElement('a');a.download=(val('tbJob')||'hambos-kitchen')+'-3d.png';a.href=cv.toDataURL('image/png');a.click(); }); }
+function printImage(url,title){ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print/save the PDF.');return;}
+  win.document.write('<html><head><title>'+title+'</title><style>@page{margin:8mm}body{margin:0}img{width:100%;display:block}</style></head><body><img src="'+url+'" onload="setTimeout(function(){window.focus();window.print();},250)"></body></html>'); win.document.close(); }
+function printSvg(node,title){ const vb=node.getAttribute('viewBox').split(/\s+/).map(Number);
+  const clone=node.cloneNode(true); clone.setAttribute('width',3000); clone.setAttribute('height',Math.round(3000*vb[3]/vb[2]));
+  const bg=document.createElementNS(SVGNS,'rect');bg.setAttribute('width',vb[2]);bg.setAttribute('height',vb[3]);bg.setAttribute('fill','#fff');clone.insertBefore(bg,clone.firstChild);
+  const xml=new XMLSerializer().serializeToString(clone);
+  printImage('data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml))),title);
+}
+document.getElementById('btnPrint').onclick=()=>{
+  const title=(val('tbJob')||'Hambos kitchen');
+  if(currentView==='3d'){ composite3D(cv=>printImage(cv.toDataURL('image/png'),title+' — 3D')); }
+  else if(currentView==='elev'){ renderElev(); printSvg(E,title+' — elevations'); }
+  else { printSvg(svg,title+' — plan'); }
+};
 document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear the whole layout?')){cabs=[];selId=null;dropN=0;render();buildPanel();} };
 
 /* ---------- tabs ---------- */
@@ -985,11 +1020,50 @@ function loop(){
 }
 window.addEventListener('resize',()=>{ if(document.getElementById('view3d').style.display!=='none') start3D(); });
 
+/* ---------- walkthrough wizard ---------- */
+const STEPS=[
+  {tab:'plan', sel:'.titleblock', title:'1. Add the job details', body:'Up the top, type the job/reference, customer, who designed it, the date and (once known) the quote total. These print on every drawing.'},
+  {tab:'plan', sel:'#doorSw', title:'2. Pick your finishes', body:'Choose the door/drawer colour and benchtop, set the door profile (e.g. Shaker), the finish (2-pac etc.) and your benchtop height. These become the defaults for new cabinets.'},
+  {tab:'plan', sel:'#newWidth', title:'3. Set the size first', body:'Type the width — tap a standard size or enter any custom mm — and the depth. Base cabinets default to 600 deep, overheads 350.'},
+  {tab:'plan', sel:'#typeGrid', title:'4. Add cabinets', body:'Click a cabinet type to drop it on the plan: base, sink, corner, tall, island or overhead.'},
+  {tab:'plan', sel:'#applGrid', title:'5. Add appliances', body:'Drop in the cooktop, oven, fridge, dishwasher, microwave or rangehood — they show as proper symbols.'},
+  {tab:'plan', sel:'#structGrid', title:'6. Shelves, panels & windows', body:'Add open or floating shelves, end panels, fillers, and windows to work around.'},
+  {tab:'plan', sel:'#planSvg', title:'7. Arrange the run', body:'Drag pieces into place — they snap together and the running dimensions tally each wall so you can work to a wall size. Click any piece to edit its size, height, off-floor, doors vs drawers, hinge, colour and price.'},
+  {tab:'plan', sel:'.tabs', title:'8. Elevation, 3D & printing', body:'Switch to Elevation or 3D View to see it front-on and in 3D. Then hit Download PNG or Print / Save PDF — it works on whichever view you’re on and carries all the job details.'}
+];
+const coach=document.getElementById('coach'), coachCard=document.getElementById('coachCard');
+let stepIdx=0;
+function clearHL(){document.querySelectorAll('.coach-hl').forEach(e=>e.classList.remove('coach-hl'));}
+function showWelcome(){
+  clearHL(); coach.classList.add('on','welcome-on');
+  coachCard.innerHTML=`<div class="step-no">Welcome</div><h4>Hambo's Kitchen Layout Tool</h4>
+    <p>New here? Here's the run of play:</p>
+    <ol><li>Fill in the job details</li><li>Pick your finishes (colours, profile, benchtop)</li><li>Set a size, then add cabinets</li><li>Add appliances, shelves & windows</li><li>Drag to arrange — it tallies the wall length</li><li>Click a piece to fine-tune it</li><li>Check the Elevation & 3D views</li><li>Print or save a PDF</li></ol>
+    <div class="nav"><button class="skip" id="cSkip">Skip</button><span class="sp"></span><button class="next" id="cStart">Start walkthrough →</button></div>`;
+  document.getElementById('cStart').onclick=()=>{coach.classList.remove('welcome-on');stepIdx=0;showStep();};
+  document.getElementById('cSkip').onclick=endGuide;
+}
+function showStep(){
+  clearHL(); const s=STEPS[stepIdx]; if(s.tab) setTab(s.tab);
+  const el=document.querySelector(s.sel);
+  if(el){ el.classList.add('coach-hl'); try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){} }
+  coachCard.innerHTML=`<div class="step-no">Step ${stepIdx+1} of ${STEPS.length}</div><h4>${s.title}</h4><p>${s.body}</p>
+    <div class="nav"><button class="skip" id="cSkip">Skip</button><span class="sp"></span>
+    ${stepIdx>0?'<button class="back" id="cBack">Back</button>':''}
+    <button class="next" id="cNext">${stepIdx===STEPS.length-1?'Finish':'Next →'}</button></div>`;
+  document.getElementById('cSkip').onclick=endGuide;
+  if(document.getElementById('cBack'))document.getElementById('cBack').onclick=()=>{stepIdx--;showStep();};
+  document.getElementById('cNext').onclick=()=>{ if(stepIdx===STEPS.length-1)endGuide(); else {stepIdx++;showStep();} };
+}
+function endGuide(){ clearHL(); coach.classList.remove('on','welcome-on'); try{localStorage.setItem('hambosGuideSeen','1');}catch(e){} }
+document.getElementById('btnGuide').onclick=showWelcome;
+
 /* ---------- init ---------- */
 document.getElementById('tbDate').value=new Date().toISOString().slice(0,10);
 buildFinishUI();
 render();
 loadLogo();
+try{ if(!localStorage.getItem('hambosGuideSeen')) showWelcome(); }catch(e){}
 </script>
 </body>
 </html>
