@@ -79,23 +79,6 @@
   .zoomctl button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:4px;padding:4px 9px;font-size:13px;font-weight:700;color:var(--ink);}
   .zoomctl button:hover{background:var(--sage-lt);}
   .zoomctl #zPct{min-width:38px;text-align:center;}
-  .coach-hl{outline:4px solid #00a357!important;outline-offset:3px;box-shadow:0 0 0 8px rgba(0,163,87,.22)!important;border-radius:8px;}
-  #coach{position:fixed;inset:0;z-index:9999;display:none;pointer-events:none;}
-  #coach.on{display:block;}
-  #coach .backdrop{position:absolute;inset:0;background:rgba(20,25,18,.45);display:none;pointer-events:auto;}
-  #coach.welcome-on .backdrop{display:block;}
-  #coach .card{position:absolute;left:50%;bottom:30px;transform:translateX(-50%);width:540px;max-width:92vw;background:#fff;border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.32);padding:20px 24px;pointer-events:auto;}
-  #coach.welcome-on .card{top:50%;bottom:auto;transform:translate(-50%,-50%);width:580px;}
-  #coach .step-no{font-size:12px;font-weight:800;color:#00a357;text-transform:uppercase;letter-spacing:.6px;}
-  #coach h4{margin:4px 0 8px;font-size:19px;color:#2f3a2a;}
-  #coach p{margin:0 0 16px;font-size:14.5px;line-height:1.55;color:#3a3f33;}
-  #coach ol{margin:8px 0 18px;padding-left:22px;font-size:14px;line-height:1.8;color:#3a3f33;}
-  #coach .nav{display:flex;gap:8px;align-items:center;}
-  #coach .nav .sp{flex:1;}
-  #coach button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;}
-  #coach .skip{background:transparent;color:#6a7361;padding-left:0;}
-  #coach .back{background:#e7ece1;color:#3a3f33;}
-  #coach .next{background:#00a357;color:#fff;}
   .modal{position:fixed;inset:0;z-index:9998;background:rgba(20,25,18,.45);display:flex;align-items:center;justify-content:center;padding:12px;}
   .modal[hidden]{display:none;}
   .mcard{background:#fff;border-radius:14px;width:520px;max-width:100%;max-height:100%;overflow:auto;padding:20px 24px;box-shadow:0 14px 44px rgba(0,0,0,.32);}
@@ -135,12 +118,9 @@
     main{flex:1;min-height:0;}
     .hint{display:none;}
     #planWrap,#viewElev{padding:8px;}
-    #coach .card{bottom:12px;padding:14px 16px;}
-    #coach.welcome-on .card{width:92vw;}
   }
   @media print{
     body{display:block;height:auto;}
-    #coach,#btnGuide{display:none!important;}
     header.bar,aside,.toprow,.hint,.tabs,#view3d{display:none!important;}
     .layout{height:auto;display:block;}
     main{overflow:visible;background:#fff;}
@@ -169,7 +149,6 @@
 </header>
 
 <div class="toprow">
-  <button class="toolbtn" id="btnGuide" style="background:#00a357;">❔ Guide</button>
   <button class="toolbtn" id="btnSend" style="background:#00a357;" title="Email your design to Hambo's for a free quote">&#9993; Send to Hambo's</button>
   <button class="toolbtn" id="btnPng">Download PNG</button>
   <button class="toolbtn alt" id="btnPrint">Print / Save PDF</button>
@@ -250,8 +229,6 @@
     <div class="hint" id="hint">Tip: press <b>R</b> to rotate 90°, <b>Delete</b> to remove the selected cabinet.</div>
   </main>
 </div>
-
-<div id="coach"><div class="backdrop"></div><div class="card" id="coachCard"></div></div>
 
 <div id="sendBox" class="modal" hidden><div class="mcard">
   <h4>Send this design to Hambo's</h4>
@@ -1278,44 +1255,6 @@ async function sendDesign(){
 }
 document.getElementById('sdGo').onclick=sendDesign;
 
-/* ---------- walkthrough wizard ---------- */
-const STEPS=[
-  {tab:'plan', sel:'.titleblock', title:'1. Add the job details', body:'Up the top, type the job/reference, customer, who designed it, the date and (once known) the quote total. These print on every drawing.'},
-  {tab:'plan', sel:'#doorSw', title:'2. Pick your finishes', body:'Choose the door/drawer colour and benchtop, set the door profile (e.g. Shaker), the finish (2-pac etc.) and your benchtop height. These become the defaults for new cabinets.'},
-  {tab:'plan', sel:'#newWidth', title:'3. Set the size first', body:'Type the width — tap a standard size or enter any custom mm — and the depth. Base cabinets default to 600 deep, overheads 350.'},
-  {tab:'plan', sel:'#typeGrid', title:'4. Add cabinets', body:'Click a cabinet type to drop it on the plan: base, sink, corner, tall, island or overhead.'},
-  {tab:'plan', sel:'#applGrid', title:'5. Add appliances', body:'Drop in the cooktop, oven, fridge, dishwasher, microwave or rangehood — they show as proper symbols.'},
-  {tab:'plan', sel:'#structGrid', title:'6. Shelves, panels & windows', body:'Add open or floating shelves, end panels, fillers, and windows to work around.'},
-  {tab:'plan', sel:'#planSvg', title:'7. Arrange the run', body:'Drag pieces into place — they snap together and the running dimensions tally each wall so you can work to a wall size. Click any piece to edit its size, height, off-floor, doors vs drawers, hinge, colour and price.'},
-  {tab:'plan', sel:'.tabs', title:'8. Check it, then send it', body:'Switch to Elevation or 3D View to see it front-on and in 3D. Then hit Send to Hambo\'s to get a quote on your design, or Download PNG / Print / Save PDF to keep a copy.'}
-];
-const coach=document.getElementById('coach'), coachCard=document.getElementById('coachCard');
-let stepIdx=0;
-function clearHL(){document.querySelectorAll('.coach-hl').forEach(e=>e.classList.remove('coach-hl'));}
-function showWelcome(){
-  clearHL(); coach.classList.add('on','welcome-on');
-  coachCard.innerHTML=`<div class="step-no">Welcome</div><h4>Hambo's Kitchen Layout Tool</h4>
-    <p>New here? Here's the run of play:</p>
-    <ol><li>Fill in the job details</li><li>Pick your finishes (colours, profile, benchtop)</li><li>Set a size, then add cabinets</li><li>Add appliances, shelves & windows</li><li>Drag to arrange — it tallies the wall length</li><li>Click a piece to fine-tune it</li><li>Check the Elevation & 3D views</li><li>Send it to Hambo's for a quote (or print / save a PDF)</li></ol>
-    <div class="nav"><button class="skip" id="cSkip">Skip</button><span class="sp"></span><button class="next" id="cStart">Start walkthrough →</button></div>`;
-  document.getElementById('cStart').onclick=()=>{coach.classList.remove('welcome-on');stepIdx=0;showStep();};
-  document.getElementById('cSkip').onclick=endGuide;
-}
-function showStep(){
-  clearHL(); const s=STEPS[stepIdx]; if(s.tab) setTab(s.tab);
-  const el=document.querySelector(s.sel);
-  if(el){ el.classList.add('coach-hl'); try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){} }
-  coachCard.innerHTML=`<div class="step-no">Step ${stepIdx+1} of ${STEPS.length}</div><h4>${s.title}</h4><p>${s.body}</p>
-    <div class="nav"><button class="skip" id="cSkip">Skip</button><span class="sp"></span>
-    ${stepIdx>0?'<button class="back" id="cBack">Back</button>':''}
-    <button class="next" id="cNext">${stepIdx===STEPS.length-1?'Finish':'Next →'}</button></div>`;
-  document.getElementById('cSkip').onclick=endGuide;
-  if(document.getElementById('cBack'))document.getElementById('cBack').onclick=()=>{stepIdx--;showStep();};
-  document.getElementById('cNext').onclick=()=>{ if(stepIdx===STEPS.length-1)endGuide(); else {stepIdx++;showStep();} };
-}
-function endGuide(){ clearHL(); coach.classList.remove('on','welcome-on'); try{localStorage.setItem('hambosGuideSeen','1');}catch(e){} }
-document.getElementById('btnGuide').onclick=showWelcome;
-
 /* ---------- save / restore (browser storage + file) ---------- */
 const STORE_KEY='hambosLayout';
 const TB_IDS=['tbJob','tbCust','tbBy','tbDate','tbTotal'];
@@ -1363,7 +1302,6 @@ applyZoom();
 undoButtons();
 if(restored&&cabs.length) document.getElementById('hint').innerHTML='Restored your last design from this browser. <b>Clear all</b> starts fresh.';
 loadLogo();
-try{ if(!localStorage.getItem('hambosGuideSeen')) showWelcome(); }catch(e){}
 </script>
 </body>
 </html>
