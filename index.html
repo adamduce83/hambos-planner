@@ -384,7 +384,7 @@ function render(){
   text(11940,200,job?('Job: '+job):'','#ffffff',118,700,'end');
   text(11940,360,cust?('Customer: '+cust):'','#e3e9dc',98,400,'end');
   text(11940,510,by?('Designed by: '+by):'','#e3e9dc',98,400,'end');
-  text(11940,660,date?('Date: '+date):'','#e3e9dc',98,400,'end');
+  text(11940,660,date?('Date: '+fmtDate(date)):'','#e3e9dc',98,400,'end');
   // quote total chip (bottom-right)
   const total=val('tbTotal').trim();
   if(total){
@@ -644,7 +644,7 @@ function renderElev(){
   eT(11940,200,job?('Job: '+job):'','#ffffff',118,700,'end');
   eT(11940,360,cust?('Customer: '+cust):'','#e3e9dc',98,400,'end');
   eT(11940,510,by?('Designed by: '+by):'','#e3e9dc',98,400,'end');
-  eT(11940,660,date?('Date: '+date):'','#e3e9dc',98,400,'end');
+  eT(11940,660,date?('Date: '+fmtDate(date)):'','#e3e9dc',98,400,'end');
   const walls=elevWalls();
   const PADX=320, panelGap=2750; let panelTop=TITLE_H+140;
   if(!walls.length) eT(320,1300,'Add cabinets on the Plan tab to see the elevations.','#9aa392',80,500,'start');
@@ -719,6 +719,9 @@ function mkText(x,y,str,fill,size,weight,anchor,op){const t=document.createEleme
   t.setAttribute('font-family','Helvetica,Arial,sans-serif');t.textContent=str;return t;}
 function text(x,y,str,fill,size,weight,anchor){svg.appendChild(mkText(x,y,str,fill,size,weight,anchor));}
 function val(id){return document.getElementById(id).value;}
+/* dates: the picker stores yyyy-mm-dd; the sheets print dd/mm/yyyy; "today" is local time, not UTC */
+function fmtDate(iso){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); return m?(m[3]+'/'+m[2]+'/'+m[1]):(iso||''); }
+function localISO(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
 
 /* ---------- drag ---------- */
 let drag=null;
@@ -1121,7 +1124,7 @@ document.getElementById('fileOpen').onchange=e=>{
 };
 
 /* ---------- init ---------- */
-document.getElementById('tbDate').value=new Date().toISOString().slice(0,10);
+document.getElementById('tbDate').value=localISO(new Date());
 const restored=loadState();
 buildFinishUI();
 render();
