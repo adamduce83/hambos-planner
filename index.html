@@ -182,6 +182,7 @@
     <label><input type="checkbox" id="bandToggle"> Show title band on screen</label>
     <label><input type="checkbox" id="guideToggle" checked> Add the customer guide page to prints and emails</label>
     <button id="btnPngView">Download just this view (PNG)</button>
+    <button id="btnChecklist">Print check-measure checklist</button>
     <button id="btnClear" class="danger">Clear all</button>
   </div>
 </div>
@@ -1560,6 +1561,44 @@ function allSheets(){
 function printImages(urls,title){ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print/save the PDF.');return;}
   const imgs=urls.map((u,i)=>'<img src="'+u+'" style="page-break-after:'+(i<urls.length-1||withGuide?'always':'auto')+'">').join('');
   win.document.write('<html><head><title>'+title.replace(/[<>]/g,'')+'</title><style>@page{margin:8mm}body{margin:0}img{width:100%;display:block}</style></head><body>'+imgs+(withGuide?guidePageHTML():'')+'<script>var n=document.images.length,d=0;for(var i=0;i<n;i++){document.images[i].onload=function(){if(++d===n)setTimeout(function(){window.focus();window.print();},250);};}<\/script></body></html>'); win.document.close(); }
+
+/* ---------- check-measure checklist (printable, per job, for the installer) ---------- */
+function checklistHTML(){
+  const esc=t=>String(t||'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const box='<span class="bx"></span>', line=(w)=>'<span class="ln" style="width:'+(w||120)+'px"></span>';
+  const row=(label,body)=>'<tr><th>'+label+'</th><td>'+body+'</td></tr>';
+  syncRoom();
+  let runsHTML='', winHTML='';
+  rooms.forEach((rm,ri)=>{
+    const keep=cabs; cabs=rm.cabs;
+    const runs=computeRuns('floor'); const along=c=>{const r=((c.rot||0)%360+360)%360; return (r===0||r===180)?c.x:c.y;};
+    runs.forEach((r,i)=>{ const h=r.axis==='h', it=r.items; const start=h?it[0].x:it[0].y, end=Math.max(...it.map(c=>h?c.x+footprint(c).w:c.y+footprint(c).h));
+      runsHTML+='<tr><td>'+esc(roomName(ri))+' &middot; run '+(i+1)+'</td><td class="num">'+mm(end-start)+'</td><td>'+line(110)+'</td><td>'+box+' wall &nbsp; '+box+' panel</td><td>'+box+' wall &nbsp; '+box+' panel</td><td>'+line(150)+'</td></tr>'; });
+    rm.cabs.filter(c=>c.type==='window').forEach((c,i)=>{ winHTML+='<tr><td>'+esc(roomName(ri))+' &middot; window '+(i+1)+' ('+mm(c.width)+' wide on plan)</td><td>'+line(90)+'</td><td>'+line(90)+'</td><td>'+line(90)+'</td><td>'+line(80)+'</td><td>'+line(80)+'</td><td>'+line(80)+'</td></tr>'; });
+    cabs=keep;
+  });
+  if(!runsHTML) runsHTML='<tr><td colspan="6" class="muted">No runs on the plan yet. Add the cabinets first, then print this.</td></tr>';
+  for(let i=0;i<2;i++) winHTML+='<tr><td>'+line(200)+'</td><td>'+line(90)+'</td><td>'+line(90)+'</td><td>'+line(90)+'</td><td>'+line(80)+'</td><td>'+line(80)+'</td><td>'+line(80)+'</td></tr>';
+  const ap=applianceLines(); const apHTML=(ap.length?ap.map(([n,v])=>'<tr><td>'+esc(n)+'</td><td>'+esc(v)+'</td><td>'+box+' model no. &nbsp; '+box+' size &nbsp; '+box+' on site</td></tr>').join(''):'')+'<tr><td>Fridge allowance</td><td>'+APPL.fridgeAllow+' mm</td><td>'+box+' confirmed</td></tr><tr><td>Dishwasher</td><td>'+esc((APPL.items.dishwasher||{}).notes||'600')+'</td><td>'+box+' confirmed</td></tr>';
+  return '<style>@page{margin:10mm}body{font-family:Helvetica,Arial,sans-serif;color:#2a2f28;margin:0;padding:18px 22px;font-size:13px;}h1{font-size:24px;margin:0 0 2px;}h2{font-size:13px;letter-spacing:.6px;text-transform:uppercase;color:#566b4b;margin:18px 0 6px;border-bottom:2px solid #566b4b;padding-bottom:3px;}table{border-collapse:collapse;width:100%;margin-bottom:6px;}th,td{text-align:left;vertical-align:top;padding:5px 6px;border-bottom:1px solid #d6ddcd;font-size:13px;}th{width:190px;color:#566b4b;font-weight:700;}td.num{font-weight:800;font-size:15px;}.bx{display:inline-block;width:13px;height:13px;border:1.5px solid #2f3a2a;border-radius:2px;vertical-align:-2px;margin-right:2px;}.ln{display:inline-block;border-bottom:1px solid #2f3a2a;height:14px;vertical-align:bottom;}.muted{color:#8a917f;}.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2f3a2a;padding-bottom:8px;margin-bottom:8px;}.hdr img{height:54px;}.small{color:#6a7361;font-size:12px;}.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;}.rule{margin-top:14px;padding:10px 12px;border:2px solid #2f3a2a;border-radius:6px;font-size:13px;}</style>'
+   +'<div class="hdr"><div><img src="'+LOGO+'"><div class="small">WE DESIGN IT &middot; WE QUOTE IT &middot; WE SUPPLY IT</div></div><div style="text-align:right"><h1>Check-measure checklist</h1><div class="small">Take this and the plan to site. Tick when done, not when meant. Anything out by more than 5 mm: mark it on the plan in pen and photograph it.</div></div></div>'
+   +'<div class="grid"><table>'+row('Order / Ref',esc(tbv('tbJob'))||line(160))+row('Customer',esc(tbv('tbCust'))||line(160))+row('Site address',esc(tbv('tbAddr'))||line(160))+row('Mobile',esc(tbv('tbMobile'))||line(160))+'</table>'
+   +'<table>'+row('Rooms',esc(rooms.map((r,i)=>roomName(i)).join(', ')))+row('Measured by',line(160))+row('Date',line(120))+row('Photos of every wall',box+' done')+'</table></div>'
+   +'<h2>1. The room</h2><table><tr><th>Wall / run</th><th>Plan says (mm)</th><th>Measured</th><th>Left end finishes to</th><th>Right end finishes to</th><th>Notes</th></tr>'+runsHTML+'</table>'
+   +'<table>'+row('Ceiling height','Plan: <b>'+(esc(tbv('tbCeiling'))||'\u2014')+' mm</b> &nbsp; Measured '+line(90)+' &nbsp; Cabinet height on plan: <b>'+(esc(tbv('tbCabH'))||'\u2014')+'</b>')
+   +row('Bulkhead',box+' cabinetry to ceiling &nbsp; '+box+' bulkhead '+esc(STD.bulkhead)+' mm: '+box+' square set &nbsp; '+box+' shadow line 20 &nbsp; '+box+' shadow line 40')
+   +row('Picture rails / skirtings',box+' none &nbsp; '+box+' noted: '+line(260))+'</table>'
+   +'<h2>2. Windows (architrave to architrave)</h2><table><tr><th>Window</th><th>Corner &rarr; arch.</th><th>Arch. &rarr; arch.</th><th>Arch. &rarr; corner</th><th>Sill height</th><th>Head height</th><th>Sill depth*</th></tr>'+winHTML+'</table><div class="small">* Sill depth is the one that drops the stone below the bench height.</div>'
+   +'<h2>3. Floor</h2><table>'+row('Flooring',box+' staying &nbsp; '+box+' coming out &rarr; new floor thickness '+line(70)+' mm (sets the kick, plan says '+esc(STD.kick)+' mm)')+row('Level / rake',box+' level enough for adjustable legs &nbsp; '+box+' out by '+line(60)+' mm at '+line(160))+'</table>'
+   +'<h2>4. Services</h2><table>'+row('Plumbing',box+' like-for-like swap &nbsp; Sink at '+line(120)+' &nbsp; Dishwasher at '+line(120))+row('Power',box+' cooktop &nbsp; '+box+' oven &nbsp; '+box+' rangehood &nbsp; '+box+' LED &nbsp; '+box+' dishwasher &nbsp; '+box+' fridge')
+   +row('Cooktop','Plan says <b>'+(STD.cooktop==='gas'?'GAS (700 mm clearance)':'ELECTRIC (600 mm clearance)')+'</b> &nbsp; Confirmed: '+box+' gas &nbsp; '+box+' electric')
+   +row('Corner',box+' blind corner (needs &ge; '+esc(STD.blindMin)+' mm depth) &nbsp; '+box+' hinged corner cupboard &nbsp; '+box+' no corner')+'</table>'
+   +'<h2>5. Appliances</h2><table><tr><th>Appliance</th><th>On the form</th><th>Captured</th></tr>'+apHTML+'</table>'
+   +'<h2>6. Anything else</h2><table>'+row('Out by &gt; 5 mm',box+' marked on the plan &nbsp; '+box+' photographed &nbsp; '+box+' nothing out')+row('Notes',line(560)+'<br>'+line(560)+'<br>'+line(560))+'</table>'
+   +'<div class="rule"><b>Sign-off.</b> Measured by '+line(160)+' &nbsp; Signature '+line(160)+' &nbsp; Date '+line(100)+'<br><span class="small">Questions on site: Jess 0411 330 905. No appliance form, no final plan.</span></div>';
+}
+document.getElementById('btnChecklist').onclick=()=>{ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print the checklist.');return;}
+  win.document.write('<html><head><title>'+(val('tbJob')||'Hambos').replace(/[<>]/g,'')+' \u2014 check-measure checklist</title></head><body>'+checklistHTML()+'<script>setTimeout(function(){window.focus();window.print();},300);<\/script></body></html>'); win.document.close(); };
 
 /* ---------- customer guide (K-CG1) appended to prints and emails ---------- */
 const GUIDE_URL='https://hambos.goask.com.au/customer-guide-K-CG1.pdf';
