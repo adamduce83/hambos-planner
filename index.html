@@ -124,6 +124,7 @@
   <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
   <label style="font-size:13px;display:flex;align-items:center;gap:6px;margin-left:6px;cursor:pointer;"><input type="checkbox" id="dimToggle" checked> Running dimensions</label>
   <span class="zoomctl"><button id="zOut" title="Zoom out">&minus;</button><span id="zPct">100%</span><button id="zIn" title="Zoom in">+</button><button id="zFit" title="Fit the sheet to the screen">Fit</button></span>
+  <span id="warn" style="color:#c0392b;font-size:12px;font-weight:600;margin-left:8px;"></span>
   <span class="grow"></span>
   <span class="scaleNote">Board 12&nbsp;m × 6&nbsp;m &nbsp;·&nbsp; grid = 0.5&nbsp;m &nbsp;·&nbsp; drag to move &nbsp;·&nbsp; click a cabinet to edit</span>
 </div>
@@ -395,10 +396,13 @@ function render(){
   // grid
   for(let x=0;x<=12000;x+=500){line(x,TITLE_H+20,x,6580,x%1000?'#eef1ea':'#e0e6d8',x%1000?2:4);}
   for(let y=TITLE_H+20;y<=6580;y+=500){line(0,y,12000,y,(y-TITLE_H-20)%1000?'#eef1ea':'#e0e6d8',(y-TITLE_H-20)%1000?2:4);}
-  // cabinets
+  // cabinets (overlapping pieces are outlined red)
+  OVERLAP=overlapIds();
   cabs.forEach(drawCab);
-  // running dimension strings
-  if(document.getElementById('dimToggle').checked) computeRuns().forEach(drawRunDim);
+  const warn=document.getElementById('warn');
+  if(warn) warn.textContent=OVERLAP.size?('\u26a0 '+OVERLAP.size+' pieces overlap (outlined red) \u2014 move them apart'):'';
+  // running dimension strings: floor-standing units below the run, overheads above it
+  if(document.getElementById('dimToggle').checked){ computeRuns('floor').forEach(drawRunDim); computeRuns('wall').forEach(drawRunDim); }
   // scale bar (1 m)
   line(60,6500,1060,6500,'#566b4b',8);
   line(60,6475,60,6525,'#566b4b',8); line(1060,6475,1060,6525,'#566b4b',8);
@@ -417,8 +421,9 @@ function drawCab(c){
   const r=document.createElementNS(SVGNS,'rect');
   r.setAttribute('width',f.w); r.setAttribute('height',f.h); r.setAttribute('rx',t.thin?2:8);
   r.setAttribute('fill',fill);
-  r.setAttribute('stroke',c.id===selId?'#c9614b':'#33372e');
-  r.setAttribute('stroke-width',c.id===selId?3:1.5);
+  const ov=OVERLAP.has(c.id);
+  r.setAttribute('stroke',ov?'#d0342c':(c.id===selId?'#c9614b':'#33372e'));
+  r.setAttribute('stroke-width',ov||c.id===selId?3:1.5);
   if(t.dashed) r.setAttribute('stroke-dasharray','18 12');
   r.setAttribute('vector-effect','non-scaling-stroke');
   g.appendChild(r);
@@ -439,6 +444,7 @@ function drawCab(c){
     g.appendChild(mkText(f.w/2,28+58,(c.label||t.code),tc,66,600,'middle',0.85));
     g.appendChild(mkText(f.w/2,f.h-24,'d'+c.depth,tc,54,400,'middle',0.7));
   }
+  if(OVERLAP.has(c.id)) g.appendChild(mkText(f.w/2,-14,'OVERLAP','#d0342c',44,800,'middle'));
   g.addEventListener('pointerdown',startDrag);
   svg.appendChild(g);
 }
@@ -527,9 +533,12 @@ function drawFront(g,fw,fh,c,col){
 }
 
 /* ---------- running dimensions ---------- */
-function computeRuns(){
-  const tol=45;
-  const boxes=cabs.map(c=>{const f=footprint(c);return{c,l:c.x,r:c.x+f.w,t:c.y,b:c.y+f.h,w:f.w,h:f.h};});
+// Wall lengths only count what stands on the floor. Overheads (wall-mounted) get their own
+// string drawn above the run, so a wall unit sitting over a base unit is never added twice.
+function levelOf(c){ const m=TYPES[c.type].mount||'floor'; return m==='wall'?'wall':m==='sill'?'window':'floor'; }
+function computeRuns(level){
+  const tol=45; level=level||'floor';
+  const boxes=cabs.filter(c=>levelOf(c)===level).map(c=>{const f=footprint(c);return{c,l:c.x,r:c.x+f.w,t:c.y,b:c.y+f.h,w:f.w,h:f.h};});
   const claimed=new Set(), runs=[];
   const vov=(a,b)=>Math.min(a.b,b.b)-Math.max(a.t,b.t);
   const hov=(a,b)=>Math.min(a.r,b.r)-Math.max(a.l,b.l);
@@ -539,7 +548,7 @@ function computeRuns(){
     let row=rows.find(r=>vov(r[0],bx)>0.6*Math.min(r[0].h,bx.h)); if(row)row.push(bx); else rows.push([bx]);
   });
   rows.forEach(row=>{ row.sort((a,b)=>a.l-b.l); let chain=[row[0]];
-    for(let i=1;i<row.length;i++){ if(row[i].l<=chain[chain.length-1].r+tol)chain.push(row[i]);
+    for(let i=1;i<row.length;i++){ if(row[i].l<=Math.max(...chain.map(b=>b.r))+tol)chain.push(row[i]);
       else{ if(chain.length>=2)addRun('h',chain); chain=[row[i]]; } }
     if(chain.length>=2)addRun('h',chain);
   });
@@ -549,34 +558,48 @@ function computeRuns(){
     let col=cols.find(c=>hov(c[0],bx)>0.6*Math.min(c[0].w,bx.w)); if(col)col.push(bx); else cols.push([bx]);
   });
   cols.forEach(col=>{ col.sort((a,b)=>a.t-b.t); let chain=[col[0]];
-    for(let i=1;i<col.length;i++){ if(col[i].t<=chain[chain.length-1].b+tol)chain.push(col[i]);
+    for(let i=1;i<col.length;i++){ if(col[i].t<=Math.max(...chain.map(b=>b.b))+tol)chain.push(col[i]);
       else{ if(chain.length>=2)addRun('v',chain); chain=[col[i]]; } }
     if(chain.length>=2)addRun('v',chain);
   });
-  function addRun(axis,chain){ chain.forEach(b=>claimed.add(b.c.id)); runs.push({axis,items:chain.map(b=>b.c)}); }
+  function addRun(axis,chain){ chain.forEach(b=>claimed.add(b.c.id)); runs.push({axis,level,items:chain.map(b=>b.c)}); }
   return runs;
 }
+// pieces on the same level whose footprints overlap (more than 20 mm both ways)
+let OVERLAP=new Set();
+function overlapIds(){
+  const ids=new Set(), lv=cabs.map(levelOf);
+  for(let i=0;i<cabs.length;i++)for(let j=i+1;j<cabs.length;j++){
+    if(lv[i]!==lv[j]||lv[i]==='window')continue;
+    const a=cabs[i],b=cabs[j],fa=footprint(a),fb=footprint(b);
+    const ox=Math.min(a.x+fa.w,b.x+fb.w)-Math.max(a.x,b.x), oy=Math.min(a.y+fa.h,b.y+fb.h)-Math.max(a.y,b.y);
+    if(ox>20&&oy>20){ids.add(a.id);ids.add(b.id);}
+  }
+  return ids;
+}
 function drawRunDim(run){
-  const col='#4a5a40', items=run.items, h=run.axis==='h';
-  const seg=c=>h?footprint(c).w:footprint(c).h;
+  const wallRun=run.level==='wall';
+  const col=wallRun?'#8a6d3b':'#4a5a40', items=run.items, h=run.axis==='h';
+  // cumulative figures come from real positions (edge minus run start), so an overlap cannot inflate them
   if(h){
-    const dimY=Math.max(...items.map(c=>c.y+footprint(c).h))+90;
-    line(items[0].x,dimY,items[items.length-1].x+footprint(items[items.length-1]).w,dimY,col,3);
-    line(items[0].x,dimY-28,items[0].x,dimY+28,col,3);
-    let cx=items[0].x,cum=0;
-    items.forEach(c=>{const w=seg(c);cum+=w;const xr=cx+w;
+    const x0=items[0].x, xEnd=Math.max(...items.map(c=>c.x+footprint(c).w));
+    const dimY=wallRun?Math.min(...items.map(c=>c.y))-90:Math.max(...items.map(c=>c.y+footprint(c).h))+90;
+    line(x0,dimY,xEnd,dimY,col,3); line(x0,dimY-28,x0,dimY+28,col,3);
+    items.forEach(c=>{const w=footprint(c).w, xl=c.x, xr=xl+w;
       line(xr,dimY-28,xr,dimY+28,col,3);
-      text(cx+w/2,dimY-42,String(w),col,56,500,'middle');
-      text(xr,dimY+112,String(cum),col,72,700,'middle'); cx=xr;});
+      text(xl+w/2,wallRun?dimY+70:dimY-42,String(w),col,56,500,'middle');
+      text(xr,wallRun?dimY-60:dimY+112,String(xr-x0),col,72,700,'middle');});
+    if(wallRun) text(x0-30,dimY-60,'overheads',col,48,500,'end');
   } else {
-    const dimX=Math.max(...items.map(c=>c.x+footprint(c).w))+90;
-    line(dimX,items[0].y,dimX,items[items.length-1].y+footprint(items[items.length-1]).h,col,3);
-    line(dimX-28,items[0].y,dimX+28,items[0].y,col,3);
-    let cy=items[0].y,cum=0;
-    items.forEach(c=>{const w=seg(c);cum+=w;const yb=cy+w;
+    const y0=items[0].y, yEnd=Math.max(...items.map(c=>c.y+footprint(c).h));
+    const dimX=wallRun?Math.min(...items.map(c=>c.x))-90:Math.max(...items.map(c=>c.x+footprint(c).w))+90;
+    line(dimX,y0,dimX,yEnd,col,3); line(dimX-28,y0,dimX+28,y0,col,3);
+    items.forEach(c=>{const w=footprint(c).h, yt=c.y, yb=yt+w;
       line(dimX-28,yb,dimX+28,yb,col,3);
-      text(dimX-44,cy+w/2+20,String(w),col,56,500,'end');
-      text(dimX+118,yb+22,String(cum),col,72,700,'start'); cy=yb;});
+      if(wallRun){ text(dimX+44,yt+w/2+20,String(w),col,56,500,'start'); text(dimX-118,yb+22,String(yb-y0),col,72,700,'end'); }
+      else { text(dimX-44,yt+w/2+20,String(w),col,56,500,'end'); text(dimX+118,yb+22,String(yb-y0),col,72,700,'start'); }
+    });
+    if(wallRun) text(dimX-118,y0-30,'overheads',col,48,500,'end');
   }
 }
 
