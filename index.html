@@ -68,7 +68,7 @@
   .rowbtns button{flex:1;cursor:pointer;border:none;border-radius:5px;padding:7px;font-size:12px;font-weight:600;}
   .rowbtns .del{background:#c9614b;color:#fff;}
   .rowbtns .dup{background:#46553c;color:#fff;}
-  main{flex:1;position:relative;overflow:auto;background:#eef1ea;}
+  main{flex:1;position:relative;overflow:auto;background:#eef1ea;touch-action:pan-x pan-y;}
   #planWrap{padding:18px;}
   #planSvg{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.12);width:100%;height:auto;}
   #viewElev{display:none;padding:18px;}
@@ -117,6 +117,7 @@
     .toprow>*{flex:0 0 auto;}
     .menu{position:fixed;top:auto;right:10px;left:10px;bottom:10px;}
     #sideTabs{top:-10px;padding-top:10px;margin-top:-10px;}
+    .zoomctl button{min-width:44px;min-height:44px;}
     .scaleNote{display:none;}
     .layout{flex-direction:column;}
     aside{width:100%;order:2;border-right:none;border-top:2px solid var(--line);height:42vh;flex:0 0 auto;padding:10px 12px;}
@@ -258,7 +259,7 @@
       <svg id="elevSvg" viewBox="0 0 12000 3200" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
     <div id="view3d"><canvas id="c3d"></canvas></div>
-    <div class="hint" id="hint">Tip: press <b>R</b> to rotate 90°, <b>Delete</b> to remove the selected cabinet.</div>
+    <div class="hint" id="hint">Tip: arrow keys nudge the selected piece (Shift = 100 mm), <b>R</b> rotates, <b>Delete</b> removes it. Ctrl + scroll zooms.</div>
   </main>
 </div>
 
@@ -461,7 +462,7 @@ function addCab(type){
   const t=TYPES[type];
   const width=clampMM(document.getElementById('newWidth').value,50,4000,600);
   const depth=clampMM(document.getElementById('newDepth').value,50,1500,t.depth);
-  const ox=BOARD.x0+300+(dropN%8)*150, oy=BOARD.y0+150+(dropN%8)*150;
+  const dp=dropPoint(); const ox=dp.x+(dropN%6)*120, oy=dp.y+(dropN%6)*120;
   dropN++;
   const noDoor=t.appliance||t.thin||t.window||t.sym;
   cabs.push({id:nextId++,type,width,depth,height:t.eh,bottom:(t.bottom||0),x:snap(ox),y:snap(oy),rot:0,front:(noDoor?'none':'doors'),hinge:(width>600?'D':'L'),drawers:3,label:'',door:null,price:null});
@@ -550,6 +551,9 @@ function drawCab(c){
   const g=document.createElementNS(SVGNS,'g');
   g.setAttribute('transform',`translate(${c.x},${c.y})`);
   g.style.cursor='move'; g.style.touchAction='none'; g.dataset.id=c.id; // touch-action:none so a finger drag moves the cabinet instead of scrolling
+  // invisible grab pad so even a 50 mm filler is at least a 44 px target
+  const padMM=Math.max(0,(44/scale-Math.min(f.w,f.h))/2);
+  if(padMM>0){ const hit=document.createElementNS(SVGNS,'rect'); hit.setAttribute('x',-padMM); hit.setAttribute('y',-padMM); hit.setAttribute('width',f.w+2*padMM); hit.setAttribute('height',f.h+2*padMM); hit.setAttribute('fill','none'); hit.style.pointerEvents='all'; g.appendChild(hit); }
   const r=document.createElementNS(SVGNS,'rect');
   r.setAttribute('width',f.w); r.setAttribute('height',f.h); r.setAttribute('rx',t.thin?2:8);
   r.setAttribute('fill',fill);
@@ -579,6 +583,23 @@ function drawCab(c){
   if(OVERLAP.has(c.id)) g.appendChild(mkText(f.w/2,-14,'OVERLAP','#d0342c',44,800,'middle'));
   g.addEventListener('pointerdown',startDrag);
   svg.appendChild(g);
+  if(c.id===selId) drawHandles(c,f);
+}
+/* rotate / delete handles drawn above the selected piece (sized in screen pixels) */
+function drawHandles(c,f){
+  const R=20/scale, gap=8/scale, y=-R-gap, xs=[f.w/2-R*1.3,f.w/2+R*1.3];
+  const specs=[['\u21bb','Rotate 90\u00b0',()=>{pushUndo();c.rot=((c.rot||0)+90)%360;render();}],['\u2715','Delete',()=>{pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel(); if(sideTab==='selected') setSideTab(prevSideTab);}]];
+  const hg=document.createElementNS(SVGNS,'g'); hg.setAttribute('transform',`translate(${c.x},${c.y})`); hg.style.cursor='pointer';
+  specs.forEach(([glyph,title,fn],i)=>{
+    const b=document.createElementNS(SVGNS,'g'); b.style.touchAction='none';
+    const ci=document.createElementNS(SVGNS,'circle'); ci.setAttribute('cx',xs[i]); ci.setAttribute('cy',y); ci.setAttribute('r',R); ci.setAttribute('fill',i?'#c9614b':'#2f3a2a'); ci.setAttribute('stroke','#fff'); ci.setAttribute('stroke-width',2); ci.setAttribute('vector-effect','non-scaling-stroke');
+    const tt=document.createElementNS(SVGNS,'title'); tt.textContent=title; b.appendChild(tt); b.appendChild(ci);
+    b.appendChild(mkText(xs[i],y+R*0.38,glyph,'#fff',R*1.1,700,'middle'));
+    b.addEventListener('pointerdown',e=>{ e.stopPropagation(); e.preventDefault(); });
+    b.addEventListener('pointerup',e=>{ e.stopPropagation(); fn(); });
+    hg.appendChild(b);
+  });
+  svg.appendChild(hg);
 }
 /* plan-view appliance / sink symbols */
 function drawApplianceSym(g,fw,fh,sym,col){
@@ -987,7 +1008,9 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); return; }
   const c=cabs.find(x=>x.id===selId); if(!c)return;
   if(typing)return;
-  if(e.key==='Delete'||e.key==='Backspace'){pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();}
+  if(e.key==='Delete'||e.key==='Backspace'){pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel(); if(sideTab==='selected') setSideTab(prevSideTab);}
+  const nud={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+  if(nud){ e.preventDefault(); pushUndo('nudge'); const st=e.shiftKey?100:SNAP; c.x+=nud[0]*st; c.y+=nud[1]*st; keepOnBoard(c); render(); }
   if(e.key.toLowerCase()==='r'){pushUndo();c.rot=((c.rot||0)+90)%360;render();}
 });
 
@@ -1113,22 +1136,63 @@ document.getElementById('asideHandle').onclick=()=>{
   applyZoom();
 };
 
-/* ---------- zoom / fit to screen ---------- */
-let zoom=1; // 1 = the whole sheet fits the work area
+/* ---------- zoom: a working scale by default, fit to what is placed ---------- */
+const WORK_SCALE=0.2;            // px per mm: a 600 mm cabinet is 120 px wide on screen
+const SHEET_PAD=18;              // #planWrap / #viewElev padding
+const mainEl=document.querySelector('main');
+let scale=WORK_SCALE; const viewScales={plan:WORK_SCALE,elev:null};
 function applyZoom(){
-  const m=document.querySelector('main'); const w=Math.max(240,m.clientWidth-36);
-  document.getElementById('planSvg').style.width=Math.round(w*zoom)+'px';
-  document.getElementById('elevSvg').style.width=Math.round(w*zoom)+'px';
-  document.getElementById('zPct').textContent=Math.round(zoom*100)+'%';
+  document.getElementById('planSvg').style.width=Math.round(12000*scale)+'px';
+  document.getElementById('elevSvg').style.width=Math.round(12000*scale)+'px';
+  document.getElementById('zPct').textContent=Math.round(scale/WORK_SCALE*100)+'%';
 }
-document.getElementById('zIn').onclick=()=>{ zoom=Math.min(4,zoom*1.25); applyZoom(); };
-document.getElementById('zOut').onclick=()=>{ zoom=Math.max(0.5,zoom/1.25); applyZoom(); };
-document.getElementById('zFit').onclick=()=>{ zoom=1; applyZoom(); };
+function sheetY0(){ return +document.getElementById(currentView==='elev'?'elevSvg':'planSvg').getAttribute('viewBox').split(' ')[1]; }
+// change scale keeping one screen point (default: centre of the work area) over the same spot on the sheet
+function setScale(ns,anchor){
+  ns=Math.max(0.05,Math.min(0.8,ns)); const old=scale; if(Math.abs(ns-old)<1e-6) return;
+  const rect=mainEl.getBoundingClientRect();
+  const ax=(anchor?anchor.cx:rect.left+rect.width/2)-rect.left, ay=(anchor?anchor.cy:rect.top+rect.height/2)-rect.top;
+  const mmX=(mainEl.scrollLeft+ax-SHEET_PAD)/old, mmY=(mainEl.scrollTop+ay-SHEET_PAD)/old;
+  scale=ns; applyZoom();
+  mainEl.scrollLeft=SHEET_PAD+mmX*ns-ax; mainEl.scrollTop=SHEET_PAD+mmY*ns-ay;
+}
+// fit the placed pieces (with room for their dimension strings) into the work area; empty board = whole sheet
+function fitToCabinets(keepScale){
+  const rect=mainEl.getBoundingClientRect(), vw=Math.max(100,rect.width-2*SHEET_PAD), vh=Math.max(100,rect.height-2*SHEET_PAD);
+  const y0=sheetY0(); let bx0,by0,bx1,by1;
+  if(cabs.length&&currentView==='plan'){
+    bx0=Math.min(...cabs.map(c=>c.x))-450; by0=Math.max(y0,Math.min(...cabs.map(c=>c.y))-450);
+    bx1=Math.max(...cabs.map(c=>c.x+footprint(c).w))+450; by1=Math.max(...cabs.map(c=>c.y+footprint(c).h))+500;
+  } else { bx0=0; by0=y0; bx1=12000; by1=currentView==='elev'?(+E.getAttribute('viewBox').split(' ')[3]+y0):6950; }
+  if(!keepScale){ scale=Math.max(0.05,Math.min(0.8,Math.min(vw/(bx1-bx0),vh/(by1-by0)))); applyZoom(); }
+  mainEl.scrollLeft=SHEET_PAD+bx0*scale-(vw-(bx1-bx0)*scale)/2;
+  mainEl.scrollTop=SHEET_PAD+(by0-y0)*scale-(vh-(by1-by0)*scale)/2;
+}
+document.getElementById('zIn').onclick=()=>setScale(scale*1.25);
+document.getElementById('zOut').onclick=()=>setScale(scale/1.25);
+document.getElementById('zFit').onclick=()=>fitToCabinets(false);
 window.addEventListener('resize',applyZoom);
+// Ctrl/Cmd + mouse wheel (or trackpad pinch) zooms around the pointer
+mainEl.addEventListener('wheel',e=>{ if(!(e.ctrlKey||e.metaKey)||currentView==='3d') return; e.preventDefault(); setScale(scale*(e.deltaY<0?1.1:1/1.1),{cx:e.clientX,cy:e.clientY}); },{passive:false});
+// touch: two fingers pinch to zoom and pan; one finger still scrolls the sheet natively
+const touchPts=new Map(); let pinch=null;
+mainEl.addEventListener('pointerdown',e=>{ if(e.pointerType!=='touch') return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(touchPts.size===2){ endDrag(); const [a,b]=[...touchPts.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,s:scale}; } });
+mainEl.addEventListener('pointermove',e=>{ if(!touchPts.has(e.pointerId)) return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinch&&touchPts.size===2){ const [a,b]=[...touchPts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+    setScale(pinch.s*d/pinch.d,{cx,cy}); mainEl.scrollLeft-=(cx-pinch.cx); mainEl.scrollTop-=(cy-pinch.cy); pinch.cx=cx; pinch.cy=cy; e.preventDefault(); } },{passive:false});
+['pointerup','pointercancel'].forEach(t=>mainEl.addEventListener(t,e=>{ touchPts.delete(e.pointerId); if(touchPts.size<2) pinch=null; }));
+// where a newly added piece lands: in the visible part of the sheet, cascading
+function dropPoint(){
+  if(currentView!=='plan') return {x:BOARD.x0+300,y:BOARD.y0+150};
+  const rect=mainEl.getBoundingClientRect(); const p=svg.createSVGPoint(); p.x=rect.left+rect.width*0.3; p.y=rect.top+rect.height*0.3;
+  const m=p.matrixTransform(svg.getScreenCTM().inverse()); return {x:m.x,y:m.y};
+}
 
 /* ---------- tabs ---------- */
 let currentView='plan';
 function setTab(t){
+  const prevView=currentView;
   if(t==='3d'&&typeof THREE==='undefined'){ alert('The 3D view could not load (is the internet connected?). The Plan and Elevation views still work.'); t='plan'; }
   if(t!=='3d'&&raf){ cancelAnimationFrame(raf); raf=null; } // don't keep rendering 3D in the background
   currentView=t;
@@ -1139,10 +1203,12 @@ function setTab(t){
   document.getElementById('viewElev').style.display=t==='elev'?'block':'none';
   document.getElementById('view3d').style.display=t==='3d'?'block':'none';
   document.getElementById('palette').style.display=t==='plan'?'block':'none';
-  const hints={plan:'Tip: press R to rotate 90°, Delete to remove the selected cabinet.',
+  const hints={plan:'Tip: arrow keys nudge the selected piece (Shift = 100 mm), R rotates, Delete removes it. Ctrl + scroll zooms.',
     elev:'Front-on elevation, projected by position. Edit on the Plan tab.',
     '3d':'Drag to orbit · scroll to zoom · doors & drawers shown on the fronts.'};
   document.getElementById('hint').textContent=hints[t];
+  if(t==='elev'&&prevView!=='elev'){ viewScales.plan=scale; scale=viewScales.elev||Math.min(WORK_SCALE,(mainEl.clientWidth-2*SHEET_PAD)/12000); }
+  if(t==='plan'&&prevView==='elev'){ viewScales.elev=scale; scale=viewScales.plan||WORK_SCALE; }
   if(t==='3d') start3D();
   if(t==='elev') renderElev();
   applyZoom();
@@ -1360,6 +1426,7 @@ const restored=loadState();
 buildFinishUI();
 render();
 applySheetView();
+fitToCabinets(true);
 undoButtons();
 if(restored&&cabs.length) document.getElementById('hint').innerHTML='Restored your last design from this browser. <b>Clear all</b> starts fresh.';
 loadLogo();
