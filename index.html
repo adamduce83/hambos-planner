@@ -241,7 +241,14 @@
   footer.strip .rule{flex:1;height:1px;background:var(--line);}
   footer.strip .script{font-size:22px;letter-spacing:0;text-transform:none;color:var(--ink);}
   @media (max-width:1180px){ header.bar .tag{display:none;} header.bar nav.steps{display:none;} }
+  #mobEdit{display:none;}
   @media (max-width:820px){
+    #mobEdit{display:none;position:absolute;left:50%;bottom:66px;transform:translateX(-50%);align-items:center;gap:8px;background:var(--forest);color:#fff;border:none;border-radius:24px;padding:9px 14px;font-size:13px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:21;white-space:nowrap;max-width:calc(100% - 24px);}
+    #mobEdit:not([hidden]){display:inline-flex;}
+    #mobEdit b{background:#fff;color:var(--forest);border-radius:14px;padding:3px 10px;font-size:12px;}
+    aside{height:46vh;}
+    aside.collapsed{height:auto;}
+    #asideHandle{font-size:12px;}
     header.bar{padding:6px 10px;gap:8px;min-height:0;flex-wrap:wrap;}
     header.bar .title{font-size:26px;} header.bar .hbtn span{display:none;} header.bar .hbtn{padding:9px 11px;}
     header.bar .cta{padding:9px 12px;font-size:13px;margin-left:auto;}
@@ -448,6 +455,7 @@
     <div id="view3d"><canvas id="c3d"></canvas></div>
     </div>
     <div class="hint" id="hint">Arrow keys nudge (Shift = 100 mm) · R rotates · Delete removes · Esc = select tool</div>
+    <button id="mobEdit" hidden><svg class="ic" aria-hidden="true"><use href="#i-piece"/></svg><span id="mobEditTxt"></span><b>Edit</b></button>
     <div id="viewPill" role="tablist">
       <button id="tabPlan" class="active"><svg class="ic" aria-hidden="true"><use href="#i-plan"/></svg>2D Plan</button>
       <button id="tabElev"><svg class="ic" aria-hidden="true"><use href="#i-elev"/></svg>Elevation</button>
@@ -658,7 +666,8 @@ function buildPaletteGrid(gridId){
       const chip=document.querySelector('.sizes button.on');
       if(t.dw) document.getElementById('newWidth').value=(k==='fridge'?APPL.fridgeAllow:t.dw);
       if(chip&&!t.thin&&!t.window&&!t.appliance) document.getElementById('newWidth').value=chip.dataset.w;
-      setTool('select'); addCab(typeKey); if(k==='drawers'){ const c=cabs[cabs.length-1]; c.front='drawers'; c.drawers=3; render(); buildPanel(); } };
+      setTool('select'); addCab(typeKey); if(k==='drawers'){ const c=cabs[cabs.length-1]; c.front='drawers'; c.drawers=3; render(); buildPanel(); }
+      if(isMobile()){ collapseDrawer(); mobileFit(); } };
     grid.appendChild(b);
   });
 }
@@ -842,7 +851,7 @@ function render(){
   line(60,6475,60,6525,'#566b4b',8); line(1060,6475,1060,6525,'#566b4b',8);
   text(560,6470,'1 metre','#566b4b',76,600,'middle');
   updateSubtotal();
-  updateEmptyState(); renderRightPanel();
+  updateEmptyState(); renderRightPanel(); updateMobileChip();
 }
 function swatchLegend(x,y,color,labelTxt){
   rect(x,y,70,70,color,'#cdd9c1',3,8);
@@ -1331,7 +1340,6 @@ function buildPanel(){
   document.getElementById('edP').oninput=e=>{pushUndo('edP');c.price=e.target.value===''?null:(parseFloat(e.target.value)||0);updateSubtotal();};
   document.getElementById('bRot').onclick=()=>{pushUndo();c.rot=((c.rot||0)+90)%360;render();};
   document.getElementById('bDup').onclick=()=>{pushUndo();const n={...c,id:nextId++,x:c.x+150,y:c.y+150};cabs.push(n);selId=n.id;render();buildPanel();};
-  if(isMobile()) openDrawer(); // on a phone the panel lives in the bottom drawer
   renderRightPanel();
   document.getElementById('bDel').onclick=()=>{pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();};
 }
@@ -1495,7 +1503,7 @@ function buildRoomUI(){
 function loadRoom(i,quiet){
   curRoom=i; const r=rooms[i]; cabs=r.cabs||[]; walls=r.walls||(r.walls=[]); dims=r.dims||(r.dims=[]); nextId=r.nextId||1; dropN=r.dropN||0; selId=null; selWall=null; selDim=null; draft=null;
   UNDO.length=0; REDO.length=0; undoButtons(); buildRoomUI();
-  if(!quiet){ render(); buildPanel(); if(currentView==='elev') renderElev(); if(currentView==='3d') rebuild3D(); fitToCabinets(true); }
+  if(!quiet){ render(); buildPanel(); if(currentView==='elev') renderElev(); if(currentView==='3d') rebuild3D(); fitToCabinets(true); mobileFit(); }
 }
 function switchRoom(i,quiet){
   if(i===curRoom||!rooms[i]) return;
@@ -1557,7 +1565,7 @@ function placePanels(){
   const rp=document.getElementById('rightPanel'), host=mobile?document.getElementById('mobileRoomHost'):document.querySelector('main');
   if(rp.parentNode!==host){ host.appendChild(rp); rp.classList.toggle('mobileRoom',mobile); rp.style.cssText=mobile?'display:block;position:static;width:auto;box-shadow:none;max-height:none;':''; }
 }
-function showPiece(){ if(isMobile()) setSideTab('selected',false); else renderRightPanel(); }
+function showPiece(){ if(isMobile()) setSideTab('selected',false); else renderRightPanel(); updateMobileChip(); }
 function renderRightPanel(){
   const rp=document.getElementById('rightPanel'); if(!rp) return;
   const title=document.getElementById('rpTitle'), room=document.getElementById('rpRoom'), piece=document.getElementById('rpPiece'), wallB=document.getElementById('rpWall');
@@ -1597,7 +1605,16 @@ function setSideTab(t,remember){
   asideEl.scrollTop=0;
 }
 document.querySelectorAll('#sideTabs button').forEach(b=>b.onclick=()=>setSideTab(b.dataset.tab));
-function openDrawer(){ asideEl.classList.remove('collapsed'); document.getElementById('asideArrow').innerHTML='&#9660;'; }
+function openDrawer(){ asideEl.classList.remove('collapsed'); document.getElementById('asideArrow').innerHTML='&#9660;'; setHandleText(); if(typeof applyZoom==='function') applyZoom(); }
+function collapseDrawer(){ if(asideEl.classList.contains('collapsed')) return; asideEl.classList.add('collapsed'); document.getElementById('asideArrow').innerHTML='&#9650;'; setHandleText(); if(typeof applyZoom==='function') applyZoom(); }
+function setHandleText(){ const h=document.querySelector('#asideHandle span'); if(h) h.textContent=asideEl.classList.contains('collapsed')?'Add cabinets & tools':'Design tools'; }
+/* phones: open the plan zoomed out to fit what is on it, within a readable range */
+const MOB_MIN=0.08, MOB_MAX=0.14;
+function mobileFit(){ if(!isMobile()||currentView!=='plan') return; fitToCabinets(false); if(scale>MOB_MAX||scale<MOB_MIN){ scale=Math.max(MOB_MIN,Math.min(MOB_MAX,scale)); applyZoom(); fitToCabinets(true); } }
+function updateMobileChip(){ const ch=document.getElementById('mobEdit'); if(!ch) return; const c=cabs.find(x=>x.id===selId); const w=walls.find(x=>x.id===selWall); const d=dims.find(x=>x.id===selDim);
+  if(!isMobile()||currentView!=='plan'||!(c||w||d)){ ch.hidden=true; return; }
+  document.getElementById('mobEditTxt').textContent=c?((c.label||mfrCode(c))+' \u00b7 '+mm(c.width)+' mm'):(w?('Wall \u00b7 '+mm(wallLen(w))+' mm'):('Dimension \u00b7 '+mm(Math.hypot(d.x2-d.x1,d.y2-d.y1))+' mm')); ch.hidden=false; }
+document.getElementById('mobEdit').onclick=()=>{ if(cabs.some(x=>x.id===selId)){ setSideTab('selected',false); openDrawer(); } else { setSideTab('job'); openDrawer(); const rp=document.getElementById('rightPanel'); if(rp) rp.scrollIntoView({block:'start'}); } };
 
 
 /* ---------- toolbar overflow menu ---------- */
@@ -1619,11 +1636,7 @@ function applySheetView(){
 
 /* ---------- phone layout helpers ---------- */
 const isMobile=()=>window.matchMedia('(max-width:820px)').matches;
-document.getElementById('asideHandle').onclick=()=>{
-  asideEl.classList.toggle('collapsed');
-  document.getElementById('asideArrow').innerHTML=asideEl.classList.contains('collapsed')?'&#9650;':'&#9660;';
-  applyZoom();
-};
+document.getElementById('asideHandle').onclick=()=>{ if(asideEl.classList.contains('collapsed')) openDrawer(); else collapseDrawer(); };
 
 /* ---------- zoom: a working scale by default, fit to what is placed ---------- */
 const WORK_SCALE=0.2;            // px per mm: a 600 mm cabinet is 120 px wide on screen
@@ -1665,7 +1678,7 @@ window.addEventListener('resize',applyZoom);
 mainEl.addEventListener('wheel',e=>{ if(!(e.ctrlKey||e.metaKey)||currentView==='3d') return; e.preventDefault(); setScale(scale*(e.deltaY<0?1.1:1/1.1),{cx:e.clientX,cy:e.clientY}); },{passive:false});
 // touch: two fingers pinch to zoom and pan; one finger still scrolls the sheet natively
 const touchPts=new Map(); let pinch=null;
-mainEl.addEventListener('pointerdown',e=>{ if(e.pointerType!=='touch') return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+mainEl.addEventListener('pointerdown',e=>{ if(isMobile()) collapseDrawer(); if(e.pointerType!=='touch') return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(touchPts.size===2){ endDrag(); const [a,b]=[...touchPts.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,s:scale}; } });
 mainEl.addEventListener('pointermove',e=>{ if(!touchPts.has(e.pointerId)) return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pinch&&touchPts.size===2){ const [a,b]=[...touchPts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
@@ -1694,6 +1707,7 @@ function setTab(t){
   document.getElementById('palette').style.display=t==='plan'?'block':'none';
   ['floatTools','rightPanel','canvasOpts'].forEach(id=>{ const el=document.getElementById(id); if(el&&el.parentNode.tagName==='MAIN') el.style.display=t==='plan'?'':'none'; });
   if(t!=='plan'){ const es=document.getElementById('emptyState'); if(es) es.hidden=true; }
+  if(typeof updateMobileChip==='function') updateMobileChip();
   const hints={plan:'Arrow keys nudge (Shift = 100 mm) \u00b7 R rotates \u00b7 Delete removes \u00b7 Esc = select tool',
     elev:'Front-on elevation, projected by position. Edit on the Plan tab.',
     '3d':'Drag to orbit · scroll to zoom · doors & drawers shown on the fronts.'};
@@ -2144,6 +2158,8 @@ buildPriceUI();
 render();
 applySheetView();
 fitToCabinets(true);
+mobileFit();
+setHandleText();
 undoButtons();
 if(restored&&cabs.length) document.getElementById('hint').innerHTML='Restored your last design from this browser. <b>Clear all</b> starts fresh.';
 loadLogo();
