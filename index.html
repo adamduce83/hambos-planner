@@ -25,6 +25,10 @@
   header.bar #hdrLogo{height:34px;background:#fff;border-radius:6px;padding:4px 8px;}
   header.bar .logo{font-weight:800;letter-spacing:1px;font-size:16px;text-transform:uppercase;}
   header.bar .logo span{color:var(--sage-lt);}
+  .roomctl{display:flex;align-items:center;gap:4px;}
+  .roomctl select{border:none;border-radius:6px;padding:7px 8px;font-size:13px;font-weight:700;background:#46553c;color:#fff;max-width:160px;}
+  .roomctl button{cursor:pointer;border:none;border-radius:6px;width:32px;height:32px;font-size:16px;font-weight:700;background:#46553c;color:#dfe7d6;}
+  .roomctl button:hover{background:var(--sage);}
   #hdrJob{flex:1;font-size:13px;color:#cdd9c1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tabs{display:flex;gap:2px;background:#46553c;border-radius:8px;padding:3px;}
   .tabs button,.toolbtn{cursor:pointer;border:none;border-radius:6px;padding:9px 14px;font-size:14px;font-weight:600;}
@@ -142,6 +146,7 @@
 <header class="bar">
   <img id="hdrLogo" alt="Hambo's" style="display:none">
   <div class="logo">Kitchen <span>Layout Tool</span></div>
+  <span class="roomctl"><select id="roomSel" title="Room"></select><button id="roomAdd" title="Add a room (laundry, linen, wardrobe...)">+</button><button id="roomDel" title="Remove this room">&times;</button></span>
   <div id="hdrJob"></div>
   <div class="tabs" role="tablist">
     <button id="tabPlan" class="active">Plan (2D)</button>
@@ -410,6 +415,8 @@ let scheme = {door:{...DOORS[0]}, bench:{...BENCH[0]}, profile:'Shaker', drawerP
 /* ---------- state ---------- */
 let cabs = [];
 let selId = null, nextId = 1, dropN = 0;
+// rooms: one job can hold several rooms (kitchen, laundry, linen...); `cabs` is always the current room's pieces
+let rooms=[{name:'Kitchen',cabs:[],nextId:1,dropN:0}], curRoom=0;
 const SNAP = 10, MAGNET = 60;
 const TITLE_H = 860;
 const BOARD = {x0:30,y0:TITLE_H+60,x1:11970,y1:6560};
@@ -1125,17 +1132,17 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------- title block live (TB_IDS is declared in the save/restore block; this runs at init) ---------- */
-function wireTitleBlock(){ TB_IDS.forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',render); el.addEventListener('change',render); }); }
+function wireTitleBlock(){ document.getElementById('tbRoom').addEventListener('input',e=>{ rooms[curRoom].name=e.target.value.trim(); buildRoomUI(); }); TB_IDS.forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',render); el.addEventListener('change',render); }); }
 
 /* ---------- pricing ---------- */
 function money(n){return '$'+Math.round(n).toLocaleString('en-AU');}
 function updateSubtotal(){
-  const sum=cabs.reduce((a,c)=>a+(c.price||0),0);
+  syncRoom(); const sum=rooms.reduce((a,r)=>a+(r.cabs||[]).reduce((b,c)=>b+(c.price||0),0),0);
   const el=document.getElementById('subTot'); if(el)el.textContent=money(sum);
   saveState();
 }
 document.getElementById('useSub').onclick=()=>{
-  const sum=cabs.reduce((a,c)=>a+(c.price||0),0);
+  syncRoom(); const sum=rooms.reduce((a,r)=>a+(r.cabs||[]).reduce((b,c)=>b+(c.price||0),0),0);
   document.getElementById('tbTotal').value=money(sum); render();
 };
 
@@ -1160,9 +1167,10 @@ function svgToCanvas(node){
 function svgToPng(node,suffix){
   svgToCanvas(node).then(cv=>{const a=document.createElement('a');a.download=safeName(val('tbJob'))+suffix+'.png';a.href=cv.toDataURL('image/png');a.click();});
 }
-document.getElementById('btnPng').onclick=()=>{
-  if(currentView==='3d'){ export3D(); }
-  else { svgToPng(buildSheet(),'-plan-sheet'); }
+document.getElementById('btnPng').onclick=async()=>{
+  if(currentView==='3d'){ export3D(); return; }
+  const sheets=allSheets();
+  for(const sh of sheets){ const cv=await svgToCanvas(sh.svg); const a=document.createElement('a'); a.download=safeName(val('tbJob'))+'-'+safeName(sh.name)+'-sheet.png'; a.href=cv.toDataURL('image/png'); a.click(); await new Promise(r=>setTimeout(r,300)); }
 };
 document.getElementById('btnPngView').onclick=()=>{
   if(currentView==='3d'){ export3D(); }
@@ -1205,10 +1213,33 @@ function printSvg(node,title){ const vb=fullViewBox(node).split(/\s+/).map(Numbe
 }
 document.getElementById('btnPrint').onclick=()=>{
   const title=(val('tbJob')||'Hambos kitchen');
-  if(currentView==='3d'){ composite3D(cv=>printImage(cv.toDataURL('image/png'),title+' — 3D')); }
-  else { printSvg(buildSheet(),title+' — plan sheet'); }
+  if(currentView==='3d'){ composite3D(cv=>printImage(cv.toDataURL('image/png'),title+' — 3D')); return; }
+  Promise.all(allSheets().map(sh=>svgToCanvas(sh.svg))).then(cvs=>printImages(cvs.map(cv=>cv.toDataURL('image/png')),title+' — plan sheets'));
 };
-document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear the whole layout? (Undo can bring it back)')){pushUndo();cabs=[];selId=null;dropN=0;render();buildPanel();} };
+document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear everything in '+roomName(curRoom)+'? (Undo can bring it back)')){pushUndo();cabs=[];selId=null;dropN=0;render();buildPanel();} };
+
+/* ---------- rooms ---------- */
+function syncRoom(){ const r=rooms[curRoom]; r.cabs=cabs; r.nextId=nextId; r.dropN=dropN; }
+function roomName(i){ return rooms[i].name||('Room '+(i+1)); }
+function buildRoomUI(){
+  const sel=document.getElementById('roomSel'); sel.innerHTML='';
+  rooms.forEach((r,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=roomName(i)+' ('+(i+1)+'/'+rooms.length+')'; sel.appendChild(o); });
+  sel.value=curRoom; document.getElementById('roomDel').disabled=rooms.length<2;
+  const tr=document.getElementById('tbRoom'); if(tr&&document.activeElement!==tr) tr.value=rooms[curRoom].name||'';
+  const tp=document.getElementById('tbPage'); if(tp&&document.activeElement!==tp) tp.value=(curRoom+1)+'/'+rooms.length;
+}
+function loadRoom(i,quiet){
+  curRoom=i; const r=rooms[i]; cabs=r.cabs||[]; nextId=r.nextId||1; dropN=r.dropN||0; selId=null;
+  UNDO.length=0; REDO.length=0; undoButtons(); buildRoomUI();
+  if(!quiet){ render(); buildPanel(); if(currentView==='elev') renderElev(); if(currentView==='3d') rebuild3D(); fitToCabinets(true); }
+}
+function switchRoom(i,quiet){
+  if(i===curRoom||!rooms[i]) return;
+  syncRoom(); loadRoom(i,quiet);
+}
+document.getElementById('roomSel').onchange=e=>switchRoom(+e.target.value);
+document.getElementById('roomAdd').onclick=()=>{ const name=prompt('Room name','Laundry'); if(name===null) return; syncRoom(); rooms.push({name:name.trim()||('Room '+(rooms.length+1)),cabs:[],nextId:1,dropN:0}); switchRoom(rooms.length-1); setSideTab('build'); };
+document.getElementById('roomDel').onclick=()=>{ if(rooms.length<2) return; if(!confirm('Remove the room "'+roomName(curRoom)+'" and everything in it?')) return; rooms.splice(curRoom,1); loadRoom(Math.min(curRoom,rooms.length-1)); };
 
 /* ---------- sidebar tabs ---------- */
 const asideEl=document.getElementById('palette');
@@ -1520,6 +1551,16 @@ function drawTitleBlock(S,R,T,L){
   bg.setAttribute('height',Math.min(SHEET_H-400,y+200-200)); // box hugs its content
 }
 
+/* every room's sheet, as detached SVGs; the current room is restored afterwards */
+function allSheets(){
+  const orig=curRoom, out=[];
+  for(let i=0;i<rooms.length;i++){ switchRoom(i,true); out.push({name:roomName(i),svg:buildSheet()}); }
+  switchRoom(orig,true); render(); buildPanel(); return out;
+}
+function printImages(urls,title){ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print/save the PDF.');return;}
+  const imgs=urls.map((u,i)=>'<img src="'+u+'" style="page-break-after:'+(i<urls.length-1||withGuide?'always':'auto')+'">').join('');
+  win.document.write('<html><head><title>'+title.replace(/[<>]/g,'')+'</title><style>@page{margin:8mm}body{margin:0}img{width:100%;display:block}</style></head><body>'+imgs+(withGuide?guidePageHTML():'')+'<script>var n=document.images.length,d=0;for(var i=0;i<n;i++){document.images[i].onload=function(){if(++d===n)setTimeout(function(){window.focus();window.print();},250);};}<\/script></body></html>'); win.document.close(); }
+
 /* ---------- customer guide (K-CG1) appended to prints and emails ---------- */
 const GUIDE_URL='https://hambos.goask.com.au/customer-guide-K-CG1.pdf';
 let withGuide=true; try{ withGuide=localStorage.getItem('hambosGuide')!=='0'; }catch(e){}
@@ -1560,12 +1601,13 @@ function designSummary(){
   computeRuns('floor').forEach((r,i)=>{ const h=r.axis==='h', it=r.items;
     const start=h?it[0].x:it[0].y, end=Math.max(...it.map(c=>h?c.x+footprint(c).w:c.y+footprint(c).h));
     L.push('Wall run '+(i+1)+': '+(end-start)+' mm ('+it.length+' pieces)'); });
-  L.push('','Pieces ('+cabs.length+'):');
-  cabs.forEach(c=>{ const t=TYPES[c.type]; let d='- '+(c.label||t.name)+' ['+mfrCode(c)+'] '+mm(c.width)+'w x '+c.depth+'d x '+(c.height||t.eh)+'h';
+  syncRoom();
+  rooms.forEach((rm,ri)=>{ if(rooms.length>1) L.push('','ROOM '+(ri+1)+' of '+rooms.length+': '+roomName(ri)); L.push('','Pieces ('+rm.cabs.length+'):');
+  rm.cabs.forEach(c=>{ const t=TYPES[c.type]; let d='- '+(c.label||t.name)+' ['+mfrCode(c)+'] '+mm(c.width)+'w x '+c.depth+'d x '+(c.height||t.eh)+'h';
     if(!(t.appliance||t.thin||t.window||t.sym)){ const ft=c.front||'doors';
       if(ft==='doors') d+=' | doors ('+({L:'hinge left',R:'hinge right',D:'double'}[c.hinge||'L'])+')';
       else if(ft==='drawers') d+=' | drawers '+drawerLabel(c); else d+=' | cover panel'; }
-    if(c.door) d+=' | '+c.door.name; if(c.price!=null) d+=' | $'+c.price; L.push(d); });
+    if(c.door) d+=' | '+c.door.name; if(c.price!=null) d+=' | $'+c.price; L.push(d); }); });
   return L.join('\n');
 }
 function mailtoUrl(subject,body){ return 'mailto:'+HAMBOS.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body); }
@@ -1587,18 +1629,18 @@ async function sendDesign(){
     'Name: '+name,'Phone: '+(phone||'-'),'Email: '+(email||'-'),'Suburb: '+(contact.suburb||'-'),
     val('sdMsg').trim()?('','Notes: '+val('sdMsg').trim()):'',
     '',designSummary(),'','(The plan image is attached.)',withGuide?['',guideText()]:[]].flat().join('\n');
-  let cv; try{ cv=await svgToCanvas(buildSheet()); }catch(e){ sdNote('Could not build the plan image. Try Download PNG and email it to '+HAMBOS.email+'.'); return; }
-  const fname=safeName(val('tbJob')||name)+'-plan-sheet.png';
+  let cvs; try{ cvs=await Promise.all(allSheets().map(sh=>svgToCanvas(sh.svg))); }catch(e){ sdNote('Could not build the plan image. Try Download sheet and email it to '+HAMBOS.email+'.'); return; }
+  const names=rooms.map((r,i)=>safeName(val('tbJob')||name)+'-'+safeName(roomName(i))+'-sheet.png'); const cv=cvs[0], fname=names[0];
   // phones and tablets: hand the image straight to Mail / Messages / WhatsApp
   if(navigator.share&&navigator.canShare){
-    try{ const blob=await new Promise(r=>cv.toBlob(r,'image/png')); const file=new File([blob],fname,{type:'image/png'});
-      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:subject,text:body}); sdNote('Shared. If you picked email, send it to '+HAMBOS.email+'.'); return; }
+    try{ const files=[]; for(let i=0;i<cvs.length;i++){ const blob=await new Promise(r=>cvs[i].toBlob(r,'image/png')); files.push(new File([blob],names[i],{type:'image/png'})); }
+      if(navigator.canShare({files})){ await navigator.share({files,title:subject,text:body}); sdNote('Shared. If you picked email, send it to '+HAMBOS.email+'.'); return; }
     }catch(e){ if(e&&e.name==='AbortError') return; }
   }
   // desktop: download the plan image, then open an email with everything filled in
-  const a=document.createElement('a'); a.download=fname; a.href=cv.toDataURL('image/png'); a.click();
+  for(let i=0;i<cvs.length;i++){ const a=document.createElement('a'); a.download=names[i]; a.href=cvs[i].toDataURL('image/png'); a.click(); await new Promise(r=>setTimeout(r,300)); }
   location.href=mailtoUrl(subject,body);
-  sdNote('Your plan image has been downloaded ('+fname+') and an email to '+HAMBOS.email+' should open now: attach the image and hit send. Or just call '+HAMBOS.phone+'.');
+  sdNote((cvs.length>1?cvs.length+' plan sheets have':'Your plan sheet has')+' been downloaded and an email to '+HAMBOS.email+' should open now: attach the image'+(cvs.length>1?'s':'')+' and hit send. Or just call '+HAMBOS.phone+'.');
 }
 document.getElementById('sdGo').onclick=sendDesign;
 
@@ -1607,17 +1649,20 @@ const STORE_KEY='hambosLayout';
 const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling','tbCabH','tbDoorFinish','tbHandle','tbDrawers','tbHinges','tbBlum','tbBenchtop','tbEdge','tbNotes','tbQuoteNotes','tbSpecial','tbBy','tbDate','tbTotal'];
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
-  return {v:3,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL};
+  syncRoom();
+  return {v:4,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,nextId:r.nextId,dropN:r.dropN})),curRoom};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
-  cabs=s.cabs.filter(c=>c&&TYPES[c.type]);
+  if(Array.isArray(s.rooms)&&s.rooms.length){ rooms=s.rooms.map(r=>({name:r.name||'Kitchen',cabs:(r.cabs||[]).filter(c=>c&&TYPES[c.type]),nextId:parseInt(r.nextId)||1,dropN:parseInt(r.dropN)||0})); curRoom=Math.min(Math.max(0,parseInt(s.curRoom)||0),rooms.length-1); }
+  else rooms=[{name:(s.tb&&s.tb.tbRoom)||'Kitchen',cabs:s.cabs.filter(c=>c&&TYPES[c.type]),nextId:parseInt(s.nextId)||1,dropN:parseInt(s.dropN)||0}], curRoom=0;
+  cabs=rooms[curRoom].cabs;
   if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme={drawerProfile:s.scheme.profile,...s.scheme};
   benchH=parseInt(s.benchH)||870;
   if(s.std&&typeof s.std==='object') STD={...STD,...s.std};
   if(s.appl&&typeof s.appl==='object') APPL={...APPL,...s.appl,items:{...(s.appl.items||{})}};
-  nextId=Math.max(parseInt(s.nextId)||1,...cabs.map(c=>(c.id||0)+1));
-  dropN=parseInt(s.dropN)||0;
+  nextId=Math.max(rooms[curRoom].nextId||1,...cabs.map(c=>(c.id||0)+1));
+  dropN=rooms[curRoom].dropN||0;
   if(s.tb) TB_IDS.forEach(id=>{ const el=document.getElementById(id); if(el.type==='checkbox') el.checked=!!s.tb[id]; else if(typeof s.tb[id]==='string') el.value=s.tb[id]; });
   if(s.contact&&typeof s.contact==='object') contact={...contact,...s.contact};
   selId=null;
@@ -1638,7 +1683,7 @@ document.getElementById('fileOpen').onchange=e=>{
   fr.onload=()=>{ let st=null; try{ st=JSON.parse(fr.result); }catch(err){}
     if(!st){ alert("That file is not a saved Hambo's design."); return; }
     pushUndo(); if(!applyState(st)){ alert("That file is not a saved Hambo's design."); UNDO.pop(); undoButtons(); return; }
-    buildFinishUI(); buildApplUI(); render(); buildPanel(); setTab('plan'); };
+    buildFinishUI(); buildApplUI(); buildRoomUI(); render(); buildPanel(); setTab('plan'); fitToCabinets(true); };
   fr.readAsText(f); e.target.value='';
 };
 
@@ -1648,6 +1693,7 @@ const restored=loadState();
 wireTitleBlock();
 buildFinishUI();
 buildApplUI();
+buildRoomUI();
 render();
 applySheetView();
 fitToCabinets(true);
