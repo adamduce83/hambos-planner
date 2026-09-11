@@ -413,7 +413,7 @@ function drawCab(c){
   const f=footprint(c), t=TYPES[c.type], fill=t.appliance?'#e6e9ec':(t.window?'#eef4f7':doorColor(c)), tc=textOn(fill);
   const g=document.createElementNS(SVGNS,'g');
   g.setAttribute('transform',`translate(${c.x},${c.y})`);
-  g.style.cursor='move'; g.dataset.id=c.id;
+  g.style.cursor='move'; g.style.touchAction='none'; g.dataset.id=c.id; // touch-action:none so a finger drag moves the cabinet instead of scrolling
   const r=document.createElementNS(SVGNS,'rect');
   r.setAttribute('width',f.w); r.setAttribute('height',f.h); r.setAttribute('rx',t.thin?2:8);
   r.setAttribute('fill',fill);
@@ -729,8 +729,11 @@ function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;retur
 function startDrag(e){
   const id=+e.currentTarget.dataset.id; selId=id; buildPanel(); render();
   const c=cabs.find(x=>x.id===id); const p=svgPt(e);
-  drag={id,dx:p.x-c.x,dy:p.y-c.y};
-  svg.addEventListener('pointermove',onDrag); svg.addEventListener('pointerup',endDrag);
+  drag={id,dx:p.x-c.x,dy:p.y-c.y,pid:e.pointerId};
+  // capture on the sheet (not the cabinet, which is redrawn mid-drag) so the drag keeps
+  // tracking when the pointer leaves the sheet, and always ends on release
+  try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+  svg.addEventListener('pointermove',onDrag); svg.addEventListener('pointerup',endDrag); svg.addEventListener('pointercancel',endDrag);
   e.preventDefault();
 }
 function onDrag(e){
@@ -748,7 +751,12 @@ function onDrag(e){
   c.y=Math.max(BOARD.y0,Math.min(BOARD.y1-f.h,ny));
   render();
 }
-function endDrag(){drag=null;svg.removeEventListener('pointermove',onDrag);svg.removeEventListener('pointerup',endDrag);}
+function endDrag(){
+  if(!drag) return;
+  try{ svg.releasePointerCapture(drag.pid); }catch(err){}
+  drag=null; svg.removeEventListener('pointermove',onDrag); svg.removeEventListener('pointerup',endDrag); svg.removeEventListener('pointercancel',endDrag);
+}
+window.addEventListener('pointerup',endDrag); window.addEventListener('pointercancel',endDrag); window.addEventListener('blur',endDrag);
 svg.addEventListener('pointerdown',e=>{ if(e.target===svg){selId=null;buildPanel();render();} });
 
 /* ---------- selected panel ---------- */
