@@ -85,6 +85,19 @@
   #coach .skip{background:transparent;color:#6a7361;padding-left:0;}
   #coach .back{background:#e7ece1;color:#3a3f33;}
   #coach .next{background:#00a357;color:#fff;}
+  .modal{position:fixed;inset:0;z-index:9998;background:rgba(20,25,18,.45);display:flex;align-items:center;justify-content:center;padding:12px;}
+  .modal[hidden]{display:none;}
+  .mcard{background:#fff;border-radius:14px;width:520px;max-width:100%;max-height:100%;overflow:auto;padding:20px 24px;box-shadow:0 14px 44px rgba(0,0,0,.32);}
+  .mcard h4{margin:0 0 6px;font-size:19px;color:#2f3a2a;}
+  .mcard p{margin:0 0 14px;font-size:14px;line-height:1.5;color:#3a3f33;}
+  .mcard textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:5px;font-size:13px;font-family:inherit;}
+  .mcard .nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+  .mcard .nav .sp{flex:1;}
+  .mcard button,.mcard .callbtn{cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;text-decoration:none;display:inline-block;}
+  .mcard .skip{background:transparent;color:#6a7361;padding-left:0;}
+  .mcard .callbtn{background:#e7ece1;color:#2f3a2a;}
+  .mcard .next{background:#00a357;color:#fff;}
+  .mcard #sdNote{margin-top:10px;color:#2f3a2a;}
   #btnJob{display:none;cursor:pointer;border:none;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;background:#46553c;color:#dfe7d6;}
   #asideHandle{display:none;position:sticky;top:-10px;z-index:1;background:#fff;align-items:center;justify-content:space-between;cursor:pointer;font-size:12px;font-weight:700;color:var(--sage-dk);text-transform:uppercase;letter-spacing:.5px;padding:8px 0;margin-top:-10px;}
   #asideHandle+h3{margin-top:0;}
@@ -146,6 +159,7 @@
 
 <div class="toprow">
   <button class="toolbtn" id="btnGuide" style="background:#00a357;">❔ Guide</button>
+  <button class="toolbtn" id="btnSend" style="background:#00a357;" title="Email your design to Hambo's for a free quote">&#9993; Send to Hambo's</button>
   <button class="toolbtn" id="btnPng">Download PNG</button>
   <button class="toolbtn alt" id="btnPrint">Print / Save PDF</button>
   <button class="toolbtn alt" id="btnClear">Clear all</button>
@@ -225,6 +239,18 @@
 </div>
 
 <div id="coach"><div class="backdrop"></div><div class="card" id="coachCard"></div></div>
+
+<div id="sendBox" class="modal" hidden><div class="mcard">
+  <h4>Send this design to Hambo's</h4>
+  <p>The team will come back to you with a proper plan and a quote. Free, no obligation.</p>
+  <div class="field"><label>Your name</label><input id="sdName" autocomplete="name"></div>
+  <div class="field"><label>Phone</label><input id="sdPhone" type="tel" autocomplete="tel"></div>
+  <div class="field"><label>Email</label><input id="sdEmail" type="email" autocomplete="email"></div>
+  <div class="field"><label>Suburb</label><input id="sdSuburb" autocomplete="address-level2"></div>
+  <div class="field"><label>Anything else? (optional)</label><textarea id="sdMsg" rows="3" placeholder="e.g. wall sizes, appliances you already have, when you'd like it done"></textarea></div>
+  <div class="nav"><button class="skip" id="sdCancel">Cancel</button><span class="sp"></span><a class="callbtn" href="tel:+61411330905">Call 0411 330 905</a><button class="next" id="sdGo">Send my design &rarr;</button></div>
+  <div id="sdNote" class="sw-name"></div>
+</div></div>
 
 <script>
 /* ---------- cabinet types ---------- */
@@ -883,7 +909,7 @@ function buildPanel(){
 /* ---------- keyboard ---------- */
 document.addEventListener('keydown',e=>{
   const c=cabs.find(x=>x.id===selId); if(!c)return;
-  if(['INPUT','SELECT'].includes(document.activeElement.tagName))return;
+  if(['INPUT','SELECT','TEXTAREA'].includes((document.activeElement||{}).tagName))return;
   if(e.key==='Delete'||e.key==='Backspace'){cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();}
   if(e.key.toLowerCase()==='r'){c.rot=((c.rot||0)+90)%360;render();}
 });
@@ -904,20 +930,25 @@ document.getElementById('useSub').onclick=()=>{
 };
 
 /* ---------- export ---------- */
+function svgToCanvas(node){
+  return new Promise((res,rej)=>{
+    const vb=node.getAttribute('viewBox').split(/\s+/).map(Number);
+    const vbW=vb[2],vbH=vb[3], outW=3000, outH=Math.round(outW*vbH/vbW);
+    const clone=node.cloneNode(true);
+    clone.setAttribute('width',outW); clone.setAttribute('height',outH);
+    const bg=document.createElementNS(SVGNS,'rect');
+    bg.setAttribute('width',vbW);bg.setAttribute('height',vbH);bg.setAttribute('fill','#ffffff');
+    clone.insertBefore(bg,clone.firstChild);
+    const xml=new XMLSerializer().serializeToString(clone);
+    const img=new Image();
+    img.onload=()=>{const cv=document.createElement('canvas');cv.width=outW;cv.height=outH;
+      const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,outW,outH);ctx.drawImage(img,0,0,outW,outH); res(cv);};
+    img.onerror=rej;
+    img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml)));
+  });
+}
 function svgToPng(node,suffix){
-  const vb=node.getAttribute('viewBox').split(/\s+/).map(Number);
-  const vbW=vb[2],vbH=vb[3], outW=3000, outH=Math.round(outW*vbH/vbW);
-  const clone=node.cloneNode(true);
-  clone.setAttribute('width',outW); clone.setAttribute('height',outH);
-  const bg=document.createElementNS(SVGNS,'rect');
-  bg.setAttribute('width',vbW);bg.setAttribute('height',vbH);bg.setAttribute('fill','#ffffff');
-  clone.insertBefore(bg,clone.firstChild);
-  const xml=new XMLSerializer().serializeToString(clone);
-  const img=new Image();
-  img.onload=()=>{const cv=document.createElement('canvas');cv.width=outW;cv.height=outH;
-    const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,outW,outH);ctx.drawImage(img,0,0,outW,outH);
-    const a=document.createElement('a');a.download=(val('tbJob')||'hambos-kitchen')+suffix+'.png';a.href=cv.toDataURL('image/png');a.click();};
-  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml)));
+  svgToCanvas(node).then(cv=>{const a=document.createElement('a');a.download=safeName(val('tbJob'))+suffix+'.png';a.href=cv.toDataURL('image/png');a.click();});
 }
 document.getElementById('btnPng').onclick=()=>{
   if(currentView==='3d'){ export3D(); }
@@ -949,7 +980,7 @@ function composite3D(cb){
   };
   tbImg.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml)));
 }
-function export3D(){ composite3D(cv=>{ const a=document.createElement('a');a.download=(val('tbJob')||'hambos-kitchen')+'-3d.png';a.href=cv.toDataURL('image/png');a.click(); }); }
+function export3D(){ composite3D(cv=>{ const a=document.createElement('a');a.download=safeName(val('tbJob'))+'-3d.png';a.href=cv.toDataURL('image/png');a.click(); }); }
 function printImage(url,title){ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print/save the PDF.');return;}
   win.document.write('<html><head><title>'+title+'</title><style>@page{margin:8mm}body{margin:0}img{width:100%;display:block}</style></head><body><img src="'+url+'" onload="setTimeout(function(){window.focus();window.print();},250)"></body></html>'); win.document.close(); }
 function printSvg(node,title){ const vb=node.getAttribute('viewBox').split(/\s+/).map(Number);
@@ -1124,6 +1155,59 @@ function loop(){
 }
 window.addEventListener('resize',()=>{ if(document.getElementById('view3d').style.display!=='none') start3D(); });
 
+/* ---------- send the design to Hambo's ---------- */
+const HAMBOS={name:"Hambo's Homemaker Centre",email:'admin@hambos.com.au',phone:'0411 330 905'};
+let contact={name:'',phone:'',email:'',suburb:''};
+function designSummary(){
+  const L=[];
+  L.push('Job: '+(val('tbJob')||'-'),'Customer: '+(val('tbCust')||'-'),'Date: '+fmtDate(val('tbDate')));
+  L.push('Doors: '+finishesUsed().map(f=>f.name).join(', ')+' | '+scheme.profile+' profile | '+scheme.finishType);
+  L.push('Benchtop: '+scheme.bench.name+' | bench height '+benchH+' mm');
+  computeRuns('floor').forEach((r,i)=>{ const h=r.axis==='h', it=r.items;
+    const start=h?it[0].x:it[0].y, end=Math.max(...it.map(c=>h?c.x+footprint(c).w:c.y+footprint(c).h));
+    L.push('Wall run '+(i+1)+': '+(end-start)+' mm ('+it.length+' pieces)'); });
+  L.push('','Pieces ('+cabs.length+'):');
+  cabs.forEach(c=>{ const t=TYPES[c.type]; let d='- '+(c.label||t.name)+' '+c.width+'w x '+c.depth+'d x '+(c.height||t.eh)+'h';
+    if(!(t.appliance||t.thin||t.window||t.sym)){ const ft=c.front||'doors';
+      if(ft==='doors') d+=' | doors ('+({L:'hinge left',R:'hinge right',D:'double'}[c.hinge||'L'])+')';
+      else if(ft==='drawers') d+=' | '+(c.drawers||3)+' drawers'; else d+=' | cover panel'; }
+    if(c.door) d+=' | '+c.door.name; if(c.price!=null) d+=' | $'+c.price; L.push(d); });
+  return L.join('\n');
+}
+function mailtoUrl(subject,body){ return 'mailto:'+HAMBOS.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body); }
+const sendBox=document.getElementById('sendBox');
+const sdNote=m=>{ document.getElementById('sdNote').textContent=m; };
+document.getElementById('btnSend').onclick=()=>{
+  ['name','phone','email','suburb'].forEach(k=>document.getElementById('sd'+k[0].toUpperCase()+k.slice(1)).value=contact[k]||'');
+  sdNote(''); sendBox.hidden=false; document.getElementById('sdName').focus();
+};
+document.getElementById('sdCancel').onclick=()=>{ sendBox.hidden=true; };
+sendBox.addEventListener('click',e=>{ if(e.target===sendBox) sendBox.hidden=true; });
+async function sendDesign(){
+  const name=val('sdName').trim(), phone=val('sdPhone').trim(), email=val('sdEmail').trim();
+  if(!name||!(phone||email)){ sdNote('Please add your name and a phone number or email so the team can reach you.'); return; }
+  if(!cabs.length){ sdNote('Add at least one cabinet to the plan first.'); return; }
+  contact={name,phone,email,suburb:val('sdSuburb').trim()}; saveState();
+  const subject='Kitchen design from the online planner - '+(val('tbJob')||name);
+  const body=["Hi Hambo's,",'','Here is my kitchen design from the online planner. Please contact me about a quote.','',
+    'Name: '+name,'Phone: '+(phone||'-'),'Email: '+(email||'-'),'Suburb: '+(contact.suburb||'-'),
+    val('sdMsg').trim()?('','Notes: '+val('sdMsg').trim()):'',
+    '',designSummary(),'','(The plan image is attached.)'].flat().join('\n');
+  let cv; try{ cv=await svgToCanvas(svg); }catch(e){ sdNote('Could not build the plan image. Try Download PNG and email it to '+HAMBOS.email+'.'); return; }
+  const fname=safeName(val('tbJob')||name)+'-plan.png';
+  // phones and tablets: hand the image straight to Mail / Messages / WhatsApp
+  if(navigator.share&&navigator.canShare){
+    try{ const blob=await new Promise(r=>cv.toBlob(r,'image/png')); const file=new File([blob],fname,{type:'image/png'});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:subject,text:body}); sdNote('Shared. If you picked email, send it to '+HAMBOS.email+'.'); return; }
+    }catch(e){ if(e&&e.name==='AbortError') return; }
+  }
+  // desktop: download the plan image, then open an email with everything filled in
+  const a=document.createElement('a'); a.download=fname; a.href=cv.toDataURL('image/png'); a.click();
+  location.href=mailtoUrl(subject,body);
+  sdNote('Your plan image has been downloaded ('+fname+') and an email to '+HAMBOS.email+' should open now: attach the image and hit send. Or just call '+HAMBOS.phone+'.');
+}
+document.getElementById('sdGo').onclick=sendDesign;
+
 /* ---------- walkthrough wizard ---------- */
 const STEPS=[
   {tab:'plan', sel:'.titleblock', title:'1. Add the job details', body:'Up the top, type the job/reference, customer, who designed it, the date and (once known) the quote total. These print on every drawing.'},
@@ -1133,7 +1217,7 @@ const STEPS=[
   {tab:'plan', sel:'#applGrid', title:'5. Add appliances', body:'Drop in the cooktop, oven, fridge, dishwasher, microwave or rangehood — they show as proper symbols.'},
   {tab:'plan', sel:'#structGrid', title:'6. Shelves, panels & windows', body:'Add open or floating shelves, end panels, fillers, and windows to work around.'},
   {tab:'plan', sel:'#planSvg', title:'7. Arrange the run', body:'Drag pieces into place — they snap together and the running dimensions tally each wall so you can work to a wall size. Click any piece to edit its size, height, off-floor, doors vs drawers, hinge, colour and price.'},
-  {tab:'plan', sel:'.tabs', title:'8. Elevation, 3D & printing', body:'Switch to Elevation or 3D View to see it front-on and in 3D. Then hit Download PNG or Print / Save PDF — it works on whichever view you’re on and carries all the job details.'}
+  {tab:'plan', sel:'.tabs', title:'8. Check it, then send it', body:'Switch to Elevation or 3D View to see it front-on and in 3D. Then hit Send to Hambo\'s to get a quote on your design, or Download PNG / Print / Save PDF to keep a copy.'}
 ];
 const coach=document.getElementById('coach'), coachCard=document.getElementById('coachCard');
 let stepIdx=0;
@@ -1142,7 +1226,7 @@ function showWelcome(){
   clearHL(); coach.classList.add('on','welcome-on');
   coachCard.innerHTML=`<div class="step-no">Welcome</div><h4>Hambo's Kitchen Layout Tool</h4>
     <p>New here? Here's the run of play:</p>
-    <ol><li>Fill in the job details</li><li>Pick your finishes (colours, profile, benchtop)</li><li>Set a size, then add cabinets</li><li>Add appliances, shelves & windows</li><li>Drag to arrange — it tallies the wall length</li><li>Click a piece to fine-tune it</li><li>Check the Elevation & 3D views</li><li>Print or save a PDF</li></ol>
+    <ol><li>Fill in the job details</li><li>Pick your finishes (colours, profile, benchtop)</li><li>Set a size, then add cabinets</li><li>Add appliances, shelves & windows</li><li>Drag to arrange — it tallies the wall length</li><li>Click a piece to fine-tune it</li><li>Check the Elevation & 3D views</li><li>Send it to Hambo's for a quote (or print / save a PDF)</li></ol>
     <div class="nav"><button class="skip" id="cSkip">Skip</button><span class="sp"></span><button class="next" id="cStart">Start walkthrough →</button></div>`;
   document.getElementById('cStart').onclick=()=>{coach.classList.remove('welcome-on');stepIdx=0;showStep();};
   document.getElementById('cSkip').onclick=endGuide;
@@ -1167,7 +1251,7 @@ const STORE_KEY='hambosLayout';
 const TB_IDS=['tbJob','tbCust','tbBy','tbDate','tbTotal'];
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>tb[id]=val(id));
-  return {v:1,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb};
+  return {v:1,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
@@ -1177,6 +1261,7 @@ function applyState(s){
   nextId=Math.max(parseInt(s.nextId)||1,...cabs.map(c=>(c.id||0)+1));
   dropN=parseInt(s.dropN)||0;
   if(s.tb) TB_IDS.forEach(id=>{ if(typeof s.tb[id]==='string') document.getElementById(id).value=s.tb[id]; });
+  if(s.contact&&typeof s.contact==='object') contact={...contact,...s.contact};
   selId=null;
   return true;
 }
