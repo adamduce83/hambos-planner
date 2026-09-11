@@ -498,13 +498,21 @@ const TYPES = {
   tall:     {name:'Tall/Pantry',  depth:600, code:'T',   eh:2100,mount:'floor'},
   island:   {name:'Island/Bench', depth:900, code:'IS',  eh:900, mount:'floor', bench:true, dw:1200},
   wall:     {name:'Wall (overhead)',depth:350,code:'W',  eh:720, mount:'wall', bottom:1450, dashed:true, dw:600},
-  shelf:    {name:'Open shelves', depth:300, code:'SHELF',  eh:900, mount:'wall', bottom:1200, sym:'shelves', dw:900},
+  shelf:    {name:'Open shelves', depth:300, code:'SHELF',  eh:900, mount:'wall', bottom:1200, dw:900, defFront:'open'}, // carcass all round, open front
   floating: {name:'Floating shelf',depth:250,code:'F/SHELF',eh:40, mount:'wall', bottom:1500, sym:'shelves', dw:900},
   filler:   {name:'Filler',       depth:600, code:'F',       eh:900, mount:'floor', thin:true, dw:20},
   endpanel: {name:'End panel',    depth:600, code:'P',       eh:900, mount:'floor', thin:true, dw:20},
   halfpanel:{name:'\u00bd pantry panel',depth:600,code:'\u00bd P',eh:1400,mount:'floor', thin:true, dw:20},
   pole:     {name:'Pole',         depth:50,  code:'POLE',    eh:2400,mount:'floor', thin:true, dw:50},
   bbar:     {name:'Breakfast bar',depth:300, code:'B/BAR',   eh:900, mount:'floor', bench:true, benchOnly:true, dw:1200},
+  blindcorner:{name:'Blind corner', depth:600, code:'BC',     eh:900, mount:'floor', bench:true, blind:true, dw:1200},
+  blindpantry:{name:'Blind corner pantry',depth:600,code:'BCP',eh:2100,mount:'floor', blind:true, dw:1200},
+  onbench:  {name:'On-bench pantry',depth:400,code:'OBP',    eh:900, mount:'bench', dw:600},
+  winerack: {name:'Wine rack',    depth:600, code:'WINE',    eh:900, mount:'floor', bench:true, dw:600, defFront:'winerack'},
+  bin:      {name:'Bin drawer',   depth:600, code:'BIN',     eh:900, mount:'floor', bench:true, dw:450, defFront:'bin'},
+  microwall:{name:'Micro + overhead',depth:350,code:'W/M',   eh:1170,mount:'wall', dashed:true, dw:600, stack:['micro','overhead']},
+  microbase:{name:'U/B micro + drawer',depth:600,code:'B/M', eh:900, mount:'floor', bench:true, dw:600, stack:['drawer','micro']},
+  tower:    {name:'Oven / micro tower',depth:600,code:'TOWER',eh:2100,mount:'floor', dw:600, stack:['potdrawer','oven','micro','overhead']},
   window:   {name:'Window',       depth:120, code:'WINDOW',  eh:1200,mount:'sill', bottom:900, window:true, dw:1200},
   cooktop:   {name:'Cooktop',    depth:600, code:'COOKTOP',eh:900, mount:'floor', bench:true, appliance:true, sym:'cooktop',    dw:600},
   oven:      {name:'Oven',       depth:600, code:'OVEN',   eh:900, mount:'floor', bench:true, appliance:true, sym:'oven',       dw:600},
@@ -528,7 +536,7 @@ function cabBand(c){ // returns [bottomMM, topMM]
 }
 const COMMON_WIDTHS = [300,400,450,500,600,800,900,1000,1200];
 // quick labels seen on real Hambo's plans
-const LABEL_PRESETS=['TOP DRAW','D/W','BUTLER SINK','PANTRY 3 INNERS','WALK-IN PANTRY','OPEN SHELF','APPLIANCE CUPBOARD','FRIDGE','RANGEHOOD','OVEN/MICRO STACK','CUTLERY','U/B WASHER','U/B DRYER','LINEN','BROOM','FREE-STANDING OVEN/COOKTOP','BREAKFAST BAR','POLE','\u00bd PANTRY PANEL'];
+const LABEL_PRESETS=['TOP DRAW','D/W','BIN DRAW','WINE RACK','ON-BENCH PANTRY','BLIND CORNER','MICRO + O/H','U/B MICRO','GLASS DOORS','POCKET DOORS','BUTLER SINK','PANTRY 3 INNERS','WALK-IN PANTRY','OPEN SHELF','APPLIANCE CUPBOARD','FRIDGE','RANGEHOOD','OVEN/MICRO STACK','CUTLERY','U/B WASHER','U/B DRYER','LINEN','BROOM','FREE-STANDING OVEN/COOKTOP','BREAKFAST BAR','POLE','\u00bd PANTRY PANEL'];
 
 /* ---------- finishes ---------- */
 // Hambo's SKB range, transcribed from the showroom sample boards (Sep 2026).
@@ -616,6 +624,19 @@ function drawerLabel(c){ return '('+drawerGroups(c).join('+')+')'; }
 /* row heights for a drawer bank: the first group are shallow drawers (1 unit), later groups are deep (2 units) */
 function drawerRows(c){ const g=drawerGroups(c), rows=[]; g.forEach((n,i)=>{ for(let k=0;k<n;k++) rows.push(i===0&&g.length>1?1:(g.length>1?2:1)); }); return rows; }
 
+/* ---------- front styles and stacks ---------- */
+const FRONTS=[['doors','Doors'],['glass','Glass doors \u2014 plain'],['glassfluted','Glass doors \u2014 fluted'],['glasscolonial','Glass doors \u2014 colonial bars'],['pocket','Pocket doors'],['drawers','Drawers'],['bin','Bin drawer'],['open','Open shelves (no doors)'],['winerack','Wine rack'],['none','Cover panel / none']];
+const FRONT_NAME=Object.fromEntries(FRONTS);
+const isDoorFront=ft=>['doors','glass','glassfluted','glasscolonial','pocket'].includes(ft);
+const isDrawerFront=ft=>ft==='drawers'||ft==='bin';
+const SEG_H={drawer:300,potdrawer:350,oven:600,micro:450}; // fixed segment heights; overhead / doors / open take what is left
+const SEG_NAME={drawer:'Drawer',potdrawer:'Pot drawer',oven:'Oven',micro:'Microwave',overhead:'Overhead doors',doors:'Doors',open:'Open shelf'};
+function stackSegs(c){ const segs=(Array.isArray(c.stack)&&c.stack.length?c.stack:(TYPES[c.type].stack||['doors'])).filter(k=>SEG_NAME[k]); return segs.length?segs:['doors']; }
+function stackHeights(c,total){ const segs=stackSegs(c); let fixed=0, flex=0; segs.forEach(k=>{ if(SEG_H[k]) fixed+=SEG_H[k]; else flex++; });
+  const scale=fixed>total?total/fixed:1, rest=Math.max(0,total-fixed*scale); return segs.map(k=>SEG_H[k]?SEG_H[k]*scale:(flex?rest/flex:0)); }
+function stackLabel(c){ return stackSegs(c).slice().reverse().map(k=>({drawer:'DRAW',potdrawer:'POT DRAW',oven:'OVEN',micro:'MICRO',overhead:'O/H',doors:'DOORS',open:'OPEN'}[k])).join(' / '); }
+function blindSplit(c){ const w=c.width, door=w>900?600:Math.round(w/2); return {door,blind:w-door,side:c.blindSide||'L'}; }
+
 /* ---------- colour helpers ---------- */
 function lum(hex){const c=hex.replace('#','');return 0.2126*parseInt(c.substr(0,2),16)/255+0.7152*parseInt(c.substr(2,2),16)/255+0.0722*parseInt(c.substr(4,2),16)/255;}
 function textOn(hex){return lum(hex)>0.55?'#23241f':'#f7f7f4';}
@@ -634,7 +655,15 @@ function cardArt(k){
     tall:`<rect x="24" y="4" width="36" height="52" rx="1.5" ${S}/><line x1="42" y1="4" x2="42" y2="56" ${L}/><line x1="24" y1="30" x2="60" y2="30" ${L}/>${dh(38,46,26)}`,
     wall:`<rect x="12" y="8" width="60" height="30" rx="1.5" ${S}/><line x1="42" y1="8" x2="42" y2="38" ${L}/>${dh(38,46,26)}<line x1="12" y1="44" x2="72" y2="44" stroke="#c9d1bf" stroke-width="2"/>`,
     island:`<rect x="4" y="16" width="76" height="7" ${B}/><rect x="14" y="23" width="56" height="28" rx="1.5" ${S}/><line x1="42" y1="23" x2="42" y2="51" ${L}/><circle cx="12" cy="40" r="4" ${L}/><line x1="12" y1="44" x2="12" y2="56" ${L}/><circle cx="72" cy="40" r="4" ${L}/><line x1="72" y1="44" x2="72" y2="56" ${L}/>`,
-    shelf:`<rect x="12" y="18" width="60" height="5" ${B}/><rect x="12" y="38" width="60" height="5" ${B}/><path d="M20 23v6M64 23v6M20 43v6M64 43v6" ${L}/><path d="M36 18v-6a4 4 0 0 1 8 0v6" ${L}/><circle cx="52" cy="14" r="3" ${L}/>`,
+    shelf:`<rect x="12" y="8" width="60" height="44" rx="1.5" ${S}/><rect x="17" y="13" width="50" height="34" fill="#fff" ${L}/><line x1="17" y1="24" x2="67" y2="24" ${L}/><line x1="17" y1="36" x2="67" y2="36" ${L}/>`,
+    bin:`<rect x="8" y="12" width="68" height="6" ${B}/><rect x="20" y="18" width="44" height="36" rx="1.5" ${S}/><line x1="36" y1="24" x2="48" y2="24" ${L}/><path d="M34 32h16l-2 14H36z" ${L}/><line x1="32" y1="32" x2="52" y2="32" ${L}/>`,
+    winerack:`<rect x="8" y="12" width="68" height="6" ${B}/><rect x="16" y="18" width="52" height="36" rx="1.5" ${S}/><path d="M16 18l52 36M68 18L16 54M16 36h52M42 18v36" ${L}/>`,
+    blindcorner:`<rect x="6" y="12" width="72" height="6" ${B}/><rect x="10" y="18" width="64" height="36" rx="1.5" ${S}/><path d="M10 18l20 36M20 18l20 36M30 18l20 36M40 18l14 26" stroke="#9aa392" stroke-width="1.2"/><line x1="52" y1="18" x2="52" y2="54" ${L}/><line x1="66" y1="32" x2="66" y2="40" ${L}/>`,
+    blindpantry:`<rect x="14" y="4" width="56" height="52" rx="1.5" ${S}/><path d="M14 4l24 52M22 4l24 52M30 4l16 34" stroke="#9aa392" stroke-width="1.2"/><line x1="46" y1="4" x2="46" y2="56" ${L}/><line x1="62" y1="26" x2="62" y2="34" ${L}/>`,
+    onbench:`<rect x="8" y="34" width="68" height="6" ${B}/><rect x="12" y="40" width="60" height="16" rx="1.5" ${S}/><rect x="30" y="8" width="24" height="26" rx="1.5" ${S}/><line x1="42" y1="8" x2="42" y2="34" ${L}/><line x1="38" y1="18" x2="38" y2="24" ${L}/><line x1="46" y1="18" x2="46" y2="24" ${L}/>`,
+    tower:`<rect x="26" y="2" width="32" height="56" rx="1.5" ${S}/><line x1="26" y1="16" x2="58" y2="16" ${L}/><line x1="26" y1="28" x2="58" y2="28" ${L}/><line x1="26" y1="44" x2="58" y2="44" ${L}/><line x1="42" y1="2" x2="42" y2="16" ${L}/><rect x="31" y="19" width="22" height="6" rx="1" ${L}/><rect x="31" y="32" width="22" height="9" rx="1" ${L}/><line x1="36" y1="51" x2="48" y2="51" ${L}/>`,
+    microwall:`<rect x="14" y="6" width="56" height="26" rx="1.5" ${S}/><line x1="42" y1="6" x2="42" y2="32" ${L}/>${dh(38,46,18)}<rect x="14" y="34" width="56" height="20" rx="1.5" ${S}/><rect x="20" y="38" width="30" height="12" rx="1" ${L}/><line x1="60" y1="40" x2="60" y2="48" ${L}/>`,
+    microbase:`<rect x="8" y="12" width="68" height="6" ${B}/><rect x="14" y="18" width="56" height="36" rx="1.5" ${S}/><rect x="20" y="22" width="30" height="14" rx="1" ${L}/><line x1="60" y1="25" x2="60" y2="33" ${L}/><line x1="14" y1="40" x2="70" y2="40" ${L}/><line x1="36" y1="47" x2="48" y2="47" ${L}/>`,
     bbar:`<rect x="4" y="16" width="76" height="7" ${B}/><rect x="40" y="23" width="34" height="28" rx="1.5" ${S}/><path d="M12 23v30M28 23v30" ${L}/>`,
     floating:`<rect x="12" y="28" width="60" height="6" ${B}/><path d="M22 28v-5M62 28v-5" ${L}/>`,
     cooktop:`<rect x="10" y="20" width="64" height="24" rx="2" ${S}/><circle cx="26" cy="32" r="5" ${L}/><circle cx="42" cy="28" r="4" ${L}/><circle cx="58" cy="32" r="5" ${L}/><circle cx="42" cy="38" r="3" ${L}/>`,
@@ -653,7 +682,7 @@ function cardArt(k){
   return '<svg viewBox="0 0 84 60" aria-hidden="true">'+(art[k]||art.appliance)+'</svg>';
 }
 const CARD_GROUPS={
-  typeGrid:[['base','Base Cabinet'],['drawers','Drawers'],['sink','Sink Base'],['corner','Corner Cabinet'],['tall','Tall / Pantry'],['wall','Overhead'],['island','Island / Bench'],['shelf','Open Shelves'],['bbar','Breakfast Bar']],
+  typeGrid:[['base','Base Cabinet'],['drawers','Drawers'],['sink','Sink Base'],['bin','Bin Drawer'],['winerack','Wine Rack'],['corner','Corner Cabinet'],['blindcorner','Blind Corner'],['tall','Tall / Pantry'],['blindpantry','Blind Corner Pantry'],['onbench','On-bench Pantry'],['tower','Oven / Micro Tower'],['wall','Overhead'],['microwall','Micro + Overhead'],['microbase','U/B Micro + Drawer'],['shelf','Open Shelves'],['island','Island / Bench'],['bbar','Breakfast Bar']],
   applGrid:[['cooktop','Cooktop'],['oven','Oven'],['rangehood','Rangehood'],['dishwasher','Dishwasher'],['fridge','Fridge'],['microwave','Microwave'],['appliance','Other appliance']],
   structGrid:[['window','Window'],['filler','Filler (F)'],['endpanel','End Panel (P)'],['halfpanel','½ Pantry Panel'],['floating','Floating Shelf'],['pole','Pole']],
 };
@@ -769,8 +798,8 @@ function addCab(type){
   const dp=dropPoint(); const ox=dp.x+(dropN%6)*120, oy=dp.y+(dropN%6)*120;
   dropN++;
   const noDoor=t.appliance||t.thin||t.window||t.sym||t.benchOnly;
-  const bottom=(t.mount==='wall'&&(type==='wall'||type==='rangehood'||type==='microwave'))?benchH+overheadClear():(t.bottom||0);
-  cabs.push({id:nextId++,type,width,depth,height:t.eh,bottom,x:snap(ox),y:snap(oy),rot:0,front:(noDoor?'none':'doors'),hinge:(width>600?'D':'L'),drawers:3,label:'',door:null,price:null});
+  const bottom=t.mount==='bench'?benchH:((t.mount==='wall'&&(type==='wall'||type==='rangehood'||type==='microwave'||type==='microwall'))?benchH+overheadClear():(t.bottom||0));
+  cabs.push({id:nextId++,type,width,depth,height:t.eh,bottom,x:snap(ox),y:snap(oy),rot:0,front:(t.stack?'stack':(t.defFront||(noDoor?'none':'doors'))),stack:t.stack?t.stack.slice():undefined,hinge:(width>600?'D':'L'),drawers:3,label:'',door:null,price:null});
   selId=nextId-1; render(); buildPanel();
 }
 function snap(v){return snapOn?Math.round(v/SNAP)*SNAP:Math.round(v);}
@@ -890,9 +919,12 @@ function drawCab(c){
     g.appendChild(mkText(f.w/2,f.h-22,c.width+'\u00d7'+c.depth,tc,44,400,'middle',0.65));
   } else {
     drawFront(g,f.w,f.h,c,tc);
+    if(t.blind){ const bs=blindSplit(c), rot=((c.rot||0)%360+360)%360, horiz=(rot===0||rot===180); const bw=bs.blind; const bx=(bs.side==='L')^(rot===180||rot===270)?0:(horiz?f.w-bw:0); const by=(bs.side==='L')^(rot===180||rot===270)?0:(horiz?0:f.h-bw);
+      const hb=document.createElementNS(SVGNS,'g'); hb.setAttribute('transform',horiz?`translate(${bx},0)`:`translate(0,${by})`); drawHatch(hb,horiz?bw:f.w,horiz?f.h:bw,tc); g.appendChild(hb);
+      g.appendChild(mkText(horiz?bx+bw/2:f.w/2,horiz?f.h/2-60:by+bw/2,'BLIND',tc,44,800,'middle',0.8)); }
     const big=Math.min(150,Math.min(f.w,f.h)/3+30);
     g.appendChild(mkText(f.w/2,f.h/2+big*0.18,mm(c.width),tc,big,700,'middle'));
-    g.appendChild(mkText(f.w/2,28+58,(c.label||mfrCode(c))+((c.front||'doors')==='drawers'?' '+drawerLabel(c):''),tc,66,600,'middle',0.85));
+    g.appendChild(mkText(f.w/2,28+58,(c.label||((c.front||'doors')==='stack'?stackLabel(c):mfrCode(c)))+((c.front||'doors')==='drawers'?' '+drawerLabel(c):''),tc,66,600,'middle',0.85));
     g.appendChild(mkText(f.w/2,f.h-24,'d'+c.depth,tc,54,400,'middle',0.7));
   }
   if(OVERLAP.has(c.id)) g.appendChild(mkText(f.w/2,-14,'OVERLAP','#d0342c',44,800,'middle'));
@@ -979,7 +1011,10 @@ function drawFront(g,fw,fh,c,col){
     l.setAttribute('stroke',col);l.setAttribute('stroke-width',w);l.setAttribute('stroke-linecap','round');
     l.setAttribute('vector-effect','non-scaling-stroke'); if(op)l.setAttribute('stroke-opacity',op); g.appendChild(l);};
   ln(0,0,span,0,2.6,0.95); // front edge (the door side)
-  if(ft==='doors'){
+  if(ft==='open'){ for(let u=0;u<=span;u+=Math.max(120,span/6)) ln(u,0,u,Math.min(60,depthA*0.2),1.2,0.6); return; }
+  if(ft==='winerack'){ const st=Math.max(90,span/6); for(let u=0;u<span;u+=st){ ln(u,0,Math.min(span,u+st),Math.min(st,depthA*0.5),1,0.5); ln(Math.min(span,u+st),0,u,Math.min(st,depthA*0.5),1,0.5); } return; }
+  if(ft==='stack'){ return; }
+  if(isDoorFront(ft)){
     const hg=c.hinge||(c.width>600?'D':'L');
     const doors=hg==='D'?2:1;
     for(let i=0;i<doors;i++){
@@ -996,13 +1031,13 @@ function drawFront(g,fw,fh,c,col){
   } else if(ft==='drawers'){
     const rows=drawerRows(c), tot=rows.reduce((a,b)=>a+b,0); const depthUse=Math.min(depthA*0.85,70*tot); let u=0;
     rows.forEach((h,i)=>{ if(i<rows.length-1){ u+=depthUse*h/tot; ln(0,u,span,u,1.4,0.55); } });
-  }
+  } else if(ft==='bin'){ ln(0,Math.min(60,depthA*0.2),span,Math.min(60,depthA*0.2),1.4,0.55); }
 }
 
 /* ---------- running dimensions ---------- */
 // Wall lengths only count what stands on the floor. Overheads (wall-mounted) get their own
 // string drawn above the run, so a wall unit sitting over a base unit is never added twice.
-function levelOf(c){ const m=TYPES[c.type].mount||'floor'; return m==='wall'?'wall':m==='sill'?'window':'floor'; }
+function levelOf(c){ const m=TYPES[c.type].mount||'floor'; return (m==='wall'||m==='bench')?'wall':m==='sill'?'window':'floor'; }
 function computeRuns(level){
   const tol=45; level=level||'floor';
   const boxes=cabs.filter(c=>levelOf(c)===level).map(c=>{const f=footprint(c);return{c,l:c.x,r:c.x+f.w,t:c.y,b:c.y+f.h,w:f.w,h:f.h};});
@@ -1130,7 +1165,7 @@ function drawElevCab(c,xLeft,floorYp){
   }
   if(!t.thin){
     eT(xLeft+w/2,y+hh/2+30,mm(c.width),tc,Math.min(130,w/3+28),700,'middle');
-    eT(xLeft+w/2,y+hh-22,(c.label||mfrCode(c))+((c.front||'doors')==='drawers'&&!t.sym?' '+drawerLabel(c):''),tc,52,600,'middle',0.8);
+    eT(xLeft+w/2,y+hh-22,(c.label||((c.front||'doors')==='stack'?stackLabel(c):mfrCode(c)))+((c.front||'doors')==='drawers'&&!t.sym?' '+drawerLabel(c):''),tc,52,600,'middle',0.8);
   } else { eT(xLeft+w/2,y+hh/2,(c.label||t.code),tc,42,700,'middle'); }
 }
 function renderElev(){
@@ -1187,17 +1222,38 @@ function eDetail(x,y,w,h,c,tc){
   if(t.appliance) return;
   eFront(x,y,w,h,c,tc);
 }
+function eGlass(x,y,w,h,kind,tc){ const ins=Math.min(80,w*0.14,h*0.14); const gx=x+ins,gy=y+ins,gw=w-2*ins,gh=h-2*ins; if(gw<40||gh<40) return;
+  const r=eR(gx,gy,gw,gh,'#dbe9ee','#5a7a8a',1.2,4); r.setAttribute('fill-opacity',0.6);
+  if(kind==='glassfluted'){ for(let fx=gx+30;fx<gx+gw;fx+=45) eL(fx,gy+6,fx,gy+gh-6,'#5a7a8a',1,0.5); }
+  if(kind==='glasscolonial'){ eL(gx+gw/2,gy,gx+gw/2,gy+gh,tc,2.2,0.8); [1/3,2/3].forEach(p=>eL(gx,gy+gh*p,gx+gw,gy+gh*p,tc,2.2,0.8)); } }
+function eSegment(kind,x,y,w,h,c,tc,frame){
+  if(kind==='drawer'||kind==='potdrawer'){ frame(x,y,w,h); eL(x+w*0.38,y+h/2,x+w*0.62,y+h/2,tc,2.4,0.7); }
+  else if(kind==='oven'){ eR(x+w*0.12,y+h*0.26,w*0.76,h*0.6,'none',tc,1.8,4); eL(x+w*0.12,y+h*0.16,x+w*0.88,y+h*0.16,tc,2,0.6); eL(x+w*0.4,y+h*0.5,x+w*0.6,y+h*0.5,tc,2.4,0.7); }
+  else if(kind==='micro'){ eR(x+w*0.14,y+h*0.2,w*0.56,h*0.6,'none',tc,1.8,4); eL(x+w*0.78,y+h*0.3,x+w*0.78,y+h*0.7,tc,2.6,0.7); }
+  else if(kind==='open'){ const n=Math.max(1,Math.round(h/300)); for(let i=1;i<=n;i++) eL(x+10,y+h*i/(n+1),x+w-10,y+h*i/(n+1),tc,2,0.6); }
+  else { if(w>600){ eL(x+w/2,y+20,x+w/2,y+h-20,tc,1.6,0.55); frame(x,y,w/2,h); frame(x+w/2,y,w/2,h); eL(x+w/2-100,y+h*0.42,x+w/2-100,y+h*0.58,tc,2.4,0.7); eL(x+w/2+100,y+h*0.42,x+w/2+100,y+h*0.58,tc,2.4,0.7); } else { frame(x,y,w,h); eL(x+w-110,y+h*0.42,x+w-110,y+h*0.58,tc,2.4,0.7); } }
+}
 function eFront(x,y,w,h,c,tc){
-  const ft=c.front||'doors';
-  const shaker=FRAMED.test(ft==='drawers'?(scheme.drawerProfile||scheme.profile):scheme.profile);
+  const ft=c.front||'doors', t=TYPES[c.type];
+  const shaker=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
   const frame=(fx,fy,fw,fh)=>{ if(!shaker)return; const ins=Math.min(70,fw*0.16,fh*0.16); if(fw-2*ins>20&&fh-2*ins>20) eR(fx+ins,fy+ins,fw-2*ins,fh-2*ins,'none',tc,1.3); };
-  if(ft==='doors'){
+  if(ft==='stack'){ const segs=stackSegs(c), hs=stackHeights(c,h); let yy=y+h; segs.forEach((k,i)=>{ const sh=hs[i]; yy-=sh; if(i>0) eL(x,yy+sh,x+w,yy+sh,tc,1.8,0.6); eSegment(k,x,yy,w,sh,c,tc,frame); }); return; }
+  if(ft==='open'){ eR(x+30,y+30,w-60,h-60,'none',tc,1.4); eSegment('open',x,y,w,h,c,tc,frame); return; }
+  if(ft==='winerack'){ const st=Math.max(120,Math.min(w,h)/4); for(let o=-h;o<w;o+=st){ eL(x+Math.max(0,o),y+Math.max(0,-o),x+Math.min(w,o+h),y+Math.min(h,w-o),tc,1.2,0.6); eL(x+Math.max(0,o),y+h-Math.max(0,-o),x+Math.min(w,o+h),y+h-Math.min(h,w-o),tc,1.2,0.6); } return; }
+  if(ft==='bin'){ frame(x,y,w,h); eL(x+w*0.38,y+h*0.16,x+w*0.62,y+h*0.16,tc,2.4,0.7); const bx=x+w/2, by=y+h*0.62, bw=Math.min(180,w*0.3), bh=Math.min(220,h*0.34); eL(bx-bw/2,by-bh/2,bx+bw/2,by-bh/2,tc,2,0.7); eL(bx-bw/2+14,by-bh/2,bx-bw/2+30,by+bh/2,tc,2,0.7); eL(bx+bw/2-14,by-bh/2,bx+bw/2-30,by+bh/2,tc,2,0.7); eL(bx-bw/2+30,by+bh/2,bx+bw/2-30,by+bh/2,tc,2,0.7); eT(bx,by+bh/2+60,'BIN',tc,40,700,'middle',0.8); return; }
+  if(t.blind&&isDoorFront(ft)){ const bs=blindSplit(c); const dx=bs.side==='L'?x+bs.blind:x, hx=bs.side==='L'?x:x+bs.door;
+    for(let o=-h;o<bs.blind;o+=Math.max(60,h/8)){ eL(hx+Math.max(0,o),y+Math.max(0,-o),hx+Math.min(bs.blind,o+h),y+Math.min(h,bs.blind-o),tc,1,0.35); }
+    eL(dx,y+10,dx,y+h-10,tc,1.6,0.6); frame(dx,y,bs.door,h); eL(bs.side==='L'?dx+110:dx+bs.door-110,y+h*0.42,bs.side==='L'?dx+110:dx+bs.door-110,y+h*0.58,tc,2.4,0.7); eT(hx+bs.blind/2,y+h/2,'BLIND',tc,44,800,'middle',0.7);
+    if(ft!=='doors'&&ft!=='pocket') eGlass(dx,y,bs.door,h,ft,tc); return; }
+  if(isDoorFront(ft)){
     const hg=c.hinge||(c.width>600?'D':'L');
     if(hg==='D'){ eL(x+w/2,y+20,x+w/2,y+h-20,tc,1.6,0.55);
       frame(x,y,w/2,h); frame(x+w/2,y,w/2,h);
       eL(x+w/2-100,y+h*0.42,x+w/2-100,y+h*0.58,tc,2.4,0.7); eL(x+w/2+100,y+h*0.42,x+w/2+100,y+h*0.58,tc,2.4,0.7);
     } else if(hg==='L'){ frame(x,y,w,h); eL(x+w-110,y+h*0.42,x+w-110,y+h*0.58,tc,2.4,0.7); }
     else { frame(x,y,w,h); eL(x+110,y+h*0.42,x+110,y+h*0.58,tc,2.4,0.7); }
+    if(ft.startsWith('glass')){ if(hg==='D'){ eGlass(x,y,w/2,h,ft,tc); eGlass(x+w/2,y,w/2,h,ft,tc); } else eGlass(x,y,w,h,ft,tc); }
+    if(ft==='pocket'){ eL(x+26,y+10,x+26,y+h-10,tc,1.4,0.6); eL(x+w-26,y+10,x+w-26,y+h-10,tc,1.4,0.6); eT(x+w/2,y+h*0.9,'POCKET',tc,40,700,'middle',0.7); }
   } else if(ft==='drawers'){
     const rows=drawerRows(c), tot=rows.reduce((a,b)=>a+b,0); let yy=y;
     rows.forEach((rh,i)=>{ const dh=h*rh/tot; if(i>0) eL(x,yy,x+w,yy,tc,1.6,0.5); frame(x,yy,w,dh); eL(x+w*0.38,yy+dh/2,x+w*0.62,yy+dh/2,tc,2.4,0.7); yy+=dh; });
@@ -1286,12 +1342,12 @@ function buildPanel(){
   let frontUI='';
   if(showFront){
     let extra='';
-    if(ft==='doors') extra=`<div class="field"><label>Door opening</label><select id="edH">
+    if(isDoorFront(ft)) extra=`<div class="field"><label>Door opening</label><select id="edH">
         <option value="L">Single — hinge left</option><option value="R">Single — hinge right</option><option value="D">Double doors</option></select></div>`;
     else if(ft==='drawers') extra=`<div class="field"><label>Drawer bank — count or combo, e.g. 3 or 2+1</label><input id="edN" value="${c.drawerLayout||c.drawers||3}" placeholder="2+1"><div class="quick">${['1','2','3','4','2+1','1+2','3+1','2+2'].map(v=>`<button data-dl="${v}">${v}</button>`).join('')}</div></div>`;
-    frontUI=`<div class="field"><label>Front</label><select id="edF">
-        <option value="doors">Doors</option><option value="drawers">Drawers</option><option value="none">Cover panel / none</option>
-      </select></div>${extra}`;
+    if(ft==='stack') extra=`<div class="field"><label>Stack, bottom \u2192 top (drawer, potdrawer, oven, micro, overhead, doors, open)</label><input id="edStack" value="${stackSegs(c).join(', ')}"><div class="quick">${[['micro, overhead','Micro + O/H'],['drawer, micro','Drawer + micro'],['potdrawer, oven, micro, overhead','Pot / oven / micro / O/H'],['drawer, oven, micro, overhead','Draw / oven / micro / O/H'],['drawer, oven, overhead','Draw / oven / O/H']].map(([v,l])=>`<button data-stk="${v}">${l}</button>`).join('')}</div></div>`;
+    if(t.blind) extra+=`<div class="field"><label>Blind (hidden) side</label><select id="edBlind"><option value="L">Left</option><option value="R">Right</option></select></div>`;
+    frontUI=`<div class="field"><label>Front</label><select id="edF">${(t.stack?[['stack','Stacked unit']]:[]).concat(FRONTS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div>${extra}`;
   }
   p.className='panel';
   p.innerHTML=`
@@ -1333,7 +1389,10 @@ function buildPanel(){
   const updHint=()=>{const hn=document.getElementById('edBhint'); if(hn){const gap=(c.bottom!=null?c.bottom:(t.bottom||0))-benchH; hn.textContent='Gap above benchtop: '+gap+' mm';}};
   document.getElementById('edB').oninput=e=>{pushUndo('edB');c.bottom=clampMM(e.target.value,0,3000,0); updHint(); render();};
   updHint();
-  if(document.getElementById('edF')) document.getElementById('edF').onchange=e=>{pushUndo();c.front=e.target.value; if(c.front==='doors'&&!c.hinge)c.hinge=(c.width>600?'D':'L'); buildPanel(); render();};
+  if(document.getElementById('edStack')){ document.getElementById('edStack').oninput=e=>{ pushUndo('stk'); c.stack=e.target.value.split(/[\s,\/>]+/).map(x=>x.toLowerCase()).filter(x=>SEG_NAME[x]); render(); };
+    p.querySelectorAll('[data-stk]').forEach(b=>b.onclick=()=>{ pushUndo(); c.stack=b.dataset.stk.split(/,\s*/); document.getElementById('edStack').value=stackSegs(c).join(', '); render(); }); }
+  if(document.getElementById('edBlind')){ document.getElementById('edBlind').value=c.blindSide||'L'; document.getElementById('edBlind').onchange=e=>{ pushUndo(); c.blindSide=e.target.value; render(); }; }
+  if(document.getElementById('edF')) document.getElementById('edF').onchange=e=>{pushUndo();c.front=e.target.value; if(isDoorFront(c.front)&&!c.hinge)c.hinge=(c.width>600?'D':'L'); buildPanel(); render();};
   document.getElementById('edL').value=c.label||''; // set as a value so quotes and symbols in a label survive
   document.getElementById('edLP').onchange=e=>{ if(!e.target.value) return; pushUndo(); c.label=e.target.value; document.getElementById('edL').value=c.label; e.target.value=''; render(); };
   document.getElementById('edL').oninput=e=>{pushUndo('edL');c.label=e.target.value;render();};
@@ -1564,6 +1623,7 @@ function placePanels(){
   if(selPanelEl.parentNode!==pieceHost) pieceHost.appendChild(selPanelEl);
   const rp=document.getElementById('rightPanel'), host=mobile?document.getElementById('mobileRoomHost'):document.querySelector('main');
   if(rp.parentNode!==host){ host.appendChild(rp); rp.classList.toggle('mobileRoom',mobile); rp.style.cssText=mobile?'display:block;position:static;width:auto;box-shadow:none;max-height:none;':''; }
+  if(!mobile&&typeof currentView!=='undefined') rp.style.display=currentView==='plan'?'':'none'; // keep it hidden off the plan view
 }
 function showPiece(){ if(isMobile()) setSideTab('selected',false); else renderRightPanel(); updateMobileChip(); }
 function renderRightPanel(){
@@ -1796,7 +1856,7 @@ function rebuild3D(){
   });
 }
 function addFrontDetail3D(c,f,by,hh,px,pz){
-  const ft=c.front||'doors'; if(ft==='none')return;
+  const ft=c.front||'doors'; if(ft==='none'||ft==='open')return;
   const rot=((c.rot||0)%360+360)%360;
   const fw=f.w/1000, fh=f.h/1000, off=0.005;
   function P(u,v){ const y=by+v*hh;
@@ -1806,10 +1866,13 @@ function addFrontDetail3D(c,f,by,hh,px,pz){
     return new THREE.Vector3(px+fw/2+off,y,pz+(u-0.5)*fh);
   }
   const pts=[]; const seg=(u1,v1,u2,v2)=>{pts.push(P(u1,v1),P(u2,v2));};
-  const shaker=FRAMED.test(ft==='drawers'?(scheme.drawerProfile||scheme.profile):scheme.profile);
+  const shaker=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
   const frame=(u0,v0,u1,v1)=>{ if(!shaker)return; const iu=Math.min(0.16,(u1-u0)*0.22), iv=Math.min(0.12,(v1-v0)*0.22);
     const a=u0+iu,b=u1-iu,p=v0+iv,q=v1-iv; if(b<=a||q<=p)return; seg(a,p,b,p); seg(b,p,b,q); seg(b,q,a,q); seg(a,q,a,p); };
-  if(ft==='doors'){
+  if(ft==='stack'){ const hs=stackHeights(c,hh*1000); let v=0; hs.forEach((sh,i)=>{ const dv=sh/(hh*1000); if(i>0) seg(0.04,v,0.96,v); seg(0.4,v+dv/2,0.6,v+dv/2); v+=dv; }); }
+  else if(ft==='winerack'){ for(let u=0;u<1;u+=0.25){ seg(u,0.05,Math.min(1,u+0.25),0.95); seg(Math.min(1,u+0.25),0.05,u,0.95); } }
+  else if(ft==='bin'){ seg(0.4,0.85,0.6,0.85); seg(0.4,0.3,0.6,0.3); seg(0.6,0.3,0.55,0.6); seg(0.4,0.3,0.45,0.6); seg(0.45,0.6,0.55,0.6); }
+  else if(isDoorFront(ft)){
     const hg=c.hinge||(c.width>600?'D':'L');
     if(hg==='D'){ seg(0.5,0.04,0.5,0.96); frame(0,0.02,0.5,0.98); frame(0.5,0.02,1,0.98); seg(0.42,0.45,0.42,0.6); seg(0.58,0.45,0.58,0.6); }
     else if(hg==='L'){ frame(0,0.02,1,0.98); seg(0.85,0.45,0.85,0.62); }
@@ -2023,8 +2086,9 @@ function designSummary(){
   rooms.forEach((rm,ri)=>{ if(rooms.length>1) L.push('','ROOM '+(ri+1)+' of '+rooms.length+': '+roomName(ri)); L.push('','Pieces ('+rm.cabs.length+'):');
   rm.cabs.forEach(c=>{ const t=TYPES[c.type]; let d='- '+(c.label||t.name)+' ['+mfrCode(c)+'] '+mm(c.width)+'w x '+c.depth+'d x '+(c.height||t.eh)+'h';
     if(!(t.appliance||t.thin||t.window||t.sym)){ const ft=c.front||'doors';
-      if(ft==='doors') d+=' | doors ('+({L:'hinge left',R:'hinge right',D:'double'}[c.hinge||'L'])+')';
-      else if(ft==='drawers') d+=' | drawers '+drawerLabel(c); else d+=' | cover panel'; }
+      if(isDoorFront(ft)) d+=' | '+(FRONT_NAME[ft]||ft).toLowerCase()+' ('+({L:'hinge left',R:'hinge right',D:'double'}[c.hinge||'L'])+')';
+      else if(ft==='drawers') d+=' | drawers '+drawerLabel(c); else if(ft==='stack') d+=' | stack top to bottom: '+stackLabel(c); else d+=' | '+(FRONT_NAME[ft]||ft).toLowerCase(); }
+      if(t.blind) d+=' | blind side '+(c.blindSide||'L');
     if(c.door) d+=' | '+c.door.name; if(c.price!=null) d+=' | $'+c.price; L.push(d); }); });
   return L.join('\n');
 }
