@@ -906,7 +906,7 @@ function buildPanel(){
       <input id="edB" type="number" step="10" value="${c.bottom!=null?c.bottom:(t.bottom||0)}">
       ${mt==='wall'?'<div class="sw-name" id="edBhint"></div>':''}</div>
     ${frontUI}
-    <div class="field"><label>Label (optional)</label><input id="edL" value="${c.label||''}" placeholder="${t.code}"></div>
+    <div class="field"><label>Label (optional)</label><input id="edL" placeholder="${t.code}"></div>
     <div class="field"><label>Price $ (optional)</label><input id="edP" type="number" step="1" value="${c.price!=null?c.price:''}" placeholder="ex. 480"></div>
     <div class="field"><label>Front colour (this unit)</label><div class="sw-row" id="edDoor"></div></div>
     <div class="rowbtns">
@@ -932,6 +932,7 @@ function buildPanel(){
   document.getElementById('edB').oninput=e=>{c.bottom=clampMM(e.target.value,0,3000,0); updHint(); render();};
   updHint();
   if(document.getElementById('edF')) document.getElementById('edF').onchange=e=>{c.front=e.target.value; if(c.front==='doors'&&!c.hinge)c.hinge=(c.width>600?'D':'L'); buildPanel(); render();};
+  document.getElementById('edL').value=c.label||''; // set as a value so quotes and symbols in a label survive
   document.getElementById('edL').oninput=e=>{c.label=e.target.value;render();};
   document.getElementById('edP').oninput=e=>{c.price=e.target.value===''?null:(parseFloat(e.target.value)||0);updateSubtotal();};
   document.getElementById('bRot').onclick=()=>{c.rot=((c.rot||0)+90)%360;render();};
