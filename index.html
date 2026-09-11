@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hambo's Kitchen Layout Tool</title>
+<title>Hambo's Kitchen Designer</title>
 <meta name="description" content="Free online kitchen planner from Hambo's Homemaker Centre, Toowoomba. Lay out your cabinets, pick doors and benchtops, see it in 3D, then send it to Hambo's for a quote.">
 <meta name="theme-color" content="#2f3a2a">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Hambo's Kitchen Layout Tool">
+<meta property="og:title" content="Hambo's Kitchen Designer">
 <meta property="og:description" content="Lay out your kitchen, pick doors and benchtops, see it in 3D, then send it to Hambo's for a free quote.">
 <meta property="og:url" content="https://hambos.goask.com.au/">
 <meta property="og:locale" content="en_AU">
@@ -151,85 +151,185 @@
     #planWrap,#viewElev{padding:0;}
   }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&display=swap">
+<style id="design">
+  :root{--forest:#1e4a2f;--forest-dk:#173a25;--cta:#2f9e5b;--ink:#2a2f28;--line:#dfe3da;--paper:#f6f7f3;}
+  .script{font-family:'Caveat','Segoe Script','Bradley Hand',cursive;}
+  header.bar{background:var(--forest);padding:0 22px;gap:22px;min-height:72px;flex-wrap:nowrap;position:relative;}
+  header.bar #hdrLogo{height:44px;background:none;padding:0;border-radius:0;}
+  header.bar .title{font-size:34px;color:#fff;line-height:1;white-space:nowrap;}
+  header.bar nav.steps{display:flex;gap:14px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#cfe0d3;}
+  header.bar nav.steps button{background:none;border:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;padding:0;}
+  header.bar nav.steps button.on,header.bar nav.steps button:hover{color:#8fe0ad;}
+  header.bar nav.steps span{opacity:.5;}
+  header.bar .tag{flex:1;text-align:center;font-size:26px;color:#e7f0e9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  header.bar .hbtn{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:11px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+  header.bar .hbtn:hover{background:rgba(255,255,255,.18);}
+  header.bar .hbtn.icon-only{padding:11px 13px;}
+  header.bar .cta{display:inline-flex;align-items:center;gap:10px;background:var(--cta);color:#fff;border:none;border-radius:8px;padding:12px 20px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 2px 0 rgba(0,0,0,.15);font-family:inherit;}
+  header.bar .cta:hover{filter:brightness(1.07);}
+  header.bar .menu{right:22px;top:calc(100% - 6px);}
+  .layout{background:var(--paper);}
+  aside{width:420px;padding:16px 16px 20px;background:#fff;border-right:1px solid var(--line);}
+  #sideTabs{gap:8px;padding:16px 0 14px;margin-top:-16px;top:-16px;}
+  #sideTabs button{min-height:72px;border-radius:10px;background:#f6f7f3;border:1px solid var(--line);font-size:12px;font-weight:600;gap:8px;padding:10px 4px 8px;line-height:1.15;}
+  #sideTabs button .ic{width:24px;height:24px;stroke-width:1.7;}
+  #sideTabs button.active{background:var(--forest);border-color:var(--forest);color:#fff;}
+  #sideTabs button[data-tab="selected"]{display:none;}
+  .stab h2{font-size:22px;margin:4px 0 2px;color:var(--ink);display:flex;align-items:center;justify-content:space-between;}
+  .stab h2 .ic{width:22px;height:22px;color:#6a7361;}
+  .stab .sub{font-size:13px;color:#6a7361;margin:0 0 12px;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink);font-family:inherit;transition:box-shadow .12s,border-color .12s;}
+  .card:hover{border-color:#9fb094;box-shadow:0 4px 14px rgba(0,0,0,.08);}
+  .card svg{width:88px;height:60px;}
+  .sizes{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px;}
+  .sizes button{cursor:pointer;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 0;min-width:52px;flex:1;font-size:14px;font-weight:600;color:var(--ink);font-family:inherit;}
+  .sizes button:hover,.sizes button.on{border-color:var(--forest);background:#eef4ee;}
+  details.custom{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:13px;}
+  details.custom summary{cursor:pointer;color:#566b4b;font-weight:600;display:flex;align-items:center;gap:8px;list-style:none;}
+  details.custom summary .ic{width:14px;height:14px;}
+  details.custom .field{margin-top:8px;}
+  .promo{background:linear-gradient(135deg,#3f5545,#7e9472);color:#fff;border-radius:12px;padding:22px 20px;margin-top:8px;}
+  .promo h3{margin:0 0 6px;font-size:22px;line-height:1.15;color:#fff;text-transform:none;letter-spacing:0;}
+  .promo p{margin:0 0 14px;font-size:13px;color:#e8efe6;}
+  .promo button{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#2f3a2a;border:none;border-radius:20px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+  main{background:#f7f8f4;overflow:hidden;display:flex;flex-direction:column;touch-action:auto;}
+  #canvasScroll{flex:1;min-height:0;overflow:auto;position:relative;touch-action:pan-x pan-y;}
+  #planSvg,#elevSvg{box-shadow:none;background:transparent;}
+  #floatTools{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.10);padding:6px;z-index:20;max-width:calc(100% - 28px);}
+  #floatTools button{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:78px;padding:10px 8px 8px;border:none;background:none;border-radius:9px;font-size:12px;font-weight:500;color:var(--ink);cursor:pointer;line-height:1;font-family:inherit;}
+  #floatTools button .ic{width:22px;height:22px;stroke-width:1.7;}
+  #floatTools button:hover{background:#f1f3ee;}
+  #floatTools button.active{background:#e6efe4;color:#1e4a2f;font-weight:700;}
+  #floatTools button:disabled{opacity:.4;cursor:default;}
+  #floatTools .fsep{width:1px;height:44px;background:var(--line);margin:0 6px;}
+  #floatTools #zPct{font-size:13px;font-weight:600;min-width:44px;text-align:center;color:var(--ink);}
+  #warn{position:absolute;top:96px;left:50%;transform:translateX(-50%);background:#fff3f0;border:1px solid #f0c8c0;color:#b3392a;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;z-index:19;}
+  #warn:empty{display:none;}
+  #rightPanel{position:absolute;top:14px;right:14px;width:236px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.10);z-index:20;font-size:12px;max-height:calc(100% - 150px);overflow:auto;}
+  #rightPanel .rphead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;color:var(--ink);}
+  #rightPanel .rphead .ic{width:18px;height:18px;color:#566b4b;}
+  #rightPanel .rpbody{padding:12px 14px;}
+  #rightPanel .empty{display:flex;gap:8px;color:#6a7361;line-height:1.4;}
+  #rightPanel .empty .ic{width:14px;height:14px;color:#2f9e5b;flex:0 0 auto;margin-top:1px;}
+  #rightPanel .empty b{display:block;color:var(--ink);font-size:12px;}
+  #rightPanel .wallrow{display:flex;align-items:center;gap:6px;margin:4px 0;}
+  #rightPanel .wallrow input{width:72px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;font-size:12px;}
+  #rightPanel .wallrow button{border:none;background:none;color:#b3392a;cursor:pointer;font-size:16px;}
+  #rightPanel .rpbtn{display:inline-flex;align-items:center;gap:6px;margin-top:10px;cursor:pointer;background:var(--forest);color:#fff;border:none;border-radius:7px;padding:8px 12px;font-size:12px;font-weight:600;font-family:inherit;}
+  #rightPanel .panel{margin-top:0;background:none;border:none;padding:0;}
+  #rightPanel .roomctl{display:flex;gap:4px;align-items:center;margin-bottom:10px;}
+  #rightPanel .roomctl select{flex:1;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;font-weight:600;background:#fff;color:var(--ink);max-width:none;}
+  #rightPanel .roomctl button{width:28px;height:28px;border:1px solid var(--line);background:#fff;border-radius:6px;font-size:14px;cursor:pointer;color:var(--ink);}
+  #rightPanel #hdrJob{font-size:12px;color:#6a7361;white-space:normal;margin-bottom:8px;overflow:visible;}
+  #emptyState{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:5;}
+  #emptyState .big{font-size:64px;color:#1e4a2f;line-height:1;}
+  #emptyState .caps{font-size:13px;letter-spacing:2.5px;font-weight:700;color:#2f3a2a;margin-top:6px;}
+  #emptyState .lead{margin-top:22px;font-size:17px;color:#2f3a2a;display:flex;align-items:center;gap:14px;justify-content:center;text-align:left;}
+  #emptyState .lead .script{font-size:34px;color:#2f3a2a;}
+  #viewPill{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;background:#fff;border:1px solid var(--line);border-radius:40px;box-shadow:0 6px 24px rgba(0,0,0,.10);padding:5px;z-index:20;}
+  #viewPill button{display:inline-flex;align-items:center;gap:8px;border:none;background:none;border-radius:30px;padding:11px 20px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
+  #viewPill button .ic{width:18px;height:18px;}
+  #viewPill button.active{background:var(--forest);color:#fff;}
+  #canvasOpts{position:absolute;right:14px;bottom:16px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.10);padding:10px 14px;display:flex;flex-direction:column;gap:8px;font-size:13px;z-index:20;}
+  #canvasOpts label{display:flex;align-items:center;gap:8px;cursor:pointer;}
+  #canvasOpts input{accent-color:var(--forest);width:15px;height:15px;margin:0;}
+  .hint{bottom:16px;left:14px;font-size:11px;max-width:230px;background:rgba(255,255,255,.92);border:1px solid var(--line);z-index:18;}
+  footer.strip{display:flex;align-items:center;gap:18px;padding:8px 26px;background:#fff;border-top:1px solid var(--line);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#6a7361;}
+  footer.strip b{color:var(--ink);letter-spacing:1px;font-size:13px;}
+  footer.strip .rule{flex:1;height:1px;background:var(--line);}
+  footer.strip .script{font-size:22px;letter-spacing:0;text-transform:none;color:var(--ink);}
+  @media (max-width:1180px){ header.bar .tag{display:none;} header.bar nav.steps{display:none;} }
+  @media (max-width:820px){
+    header.bar{padding:6px 10px;gap:8px;min-height:0;flex-wrap:wrap;}
+    header.bar .title{font-size:26px;} header.bar .hbtn span{display:none;} header.bar .hbtn{padding:9px 11px;}
+    header.bar .cta{padding:9px 12px;font-size:13px;margin-left:auto;}
+    aside{width:100%;padding:10px 12px;}
+    #sideTabs{padding:10px 0 10px;margin-top:-10px;top:-10px;gap:5px;} #sideTabs button{min-height:58px;font-size:10px;} #sideTabs button[data-tab="selected"]{display:flex;}
+    .cards{gap:6px;} .card svg{width:70px;height:48px;}
+    #floatTools{top:8px;left:8px;right:8px;transform:none;max-width:none;overflow-x:auto;padding:4px;} #floatTools button{min-width:60px;font-size:10px;padding:7px 6px 6px;} #floatTools .fsep{margin:0 2px;}
+    #emptyState .big{font-size:44px;} #emptyState .lead{font-size:14px;} #emptyState .lead .script{font-size:22px;}
+    #viewPill{bottom:8px;} #viewPill button{padding:9px 12px;font-size:12px;}
+    #canvasOpts{display:none;}
+    .hint{display:none;}
+    footer.strip{display:none;}
+    #rightPanel.mobileRoom{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
+  }
+  @media print{ #floatTools,#rightPanel,#viewPill,#canvasOpts,#emptyState,footer.strip{display:none!important;} }
+
+</style>
 </head>
 <body>
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-add" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></symbol><symbol id="i-jobs" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol><symbol id="i-open" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 20h16"/></symbol><symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></symbol><symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2"/></symbol><symbol id="i-band" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M9 2h6v4H9zM9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 13l2 2 4-4"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol><symbol id="i-build" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><path d="M17 14v6M14 17h6"/></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.2 0 2-.9 2-2 0-.6-.3-1-.3-1.6 0-1.2 1-2.2 2.2-2.2H18a4 4 0 0 0 4-4c0-5.5-4.5-10.2-10-10.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="10" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="17" cy="11" r="1.2" fill="currentColor" stroke="none"/></symbol><symbol id="i-piece" viewBox="0 0 24 24"><path d="M4 4l7 16 2-7 7-2z"/></symbol><symbol id="i-appl" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="7" cy="6.5" r=".9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="6.5" r=".9" fill="currentColor" stroke="none"/><rect x="7" y="12" width="10" height="5" rx="1"/></symbol><symbol id="i-job" viewBox="0 0 24 24"><path d="M9 2h6v4H9zM9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 12h6M9 16h6"/></symbol><symbol id="i-plan" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol><symbol id="i-elev" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M3 12h18M9 6v12M15 6v12"/></symbol><symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7zM12 12l9-5M12 12v10M12 12L3 7"/></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></symbol></svg>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-add" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></symbol><symbol id="i-jobs" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol><symbol id="i-open" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 20h16"/></symbol><symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></symbol><symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2"/></symbol><symbol id="i-band" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M9 2h6v4H9zM9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 13l2 2 4-4"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol><symbol id="i-build" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><path d="M17 14v6M14 17h6"/></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.2 0 2-.9 2-2 0-.6-.3-1-.3-1.6 0-1.2 1-2.2 2.2-2.2H18a4 4 0 0 0 4-4c0-5.5-4.5-10.2-10-10.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="10" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="17" cy="11" r="1.2" fill="currentColor" stroke="none"/></symbol><symbol id="i-piece" viewBox="0 0 24 24"><path d="M4 4l7 16 2-7 7-2z"/></symbol><symbol id="i-appl" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="7" cy="6.5" r=".9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="6.5" r=".9" fill="currentColor" stroke="none"/><rect x="7" y="12" width="10" height="5" rx="1"/></symbol><symbol id="i-job" viewBox="0 0 24 24"><path d="M9 2h6v4H9zM9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 12h6M9 16h6"/></symbol><symbol id="i-plan" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol><symbol id="i-elev" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M3 12h18M9 6v12M15 6v12"/></symbol><symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7zM12 12l9-5M12 12v10M12 12L3 7"/></symbol><symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol><symbol id="i-dim" viewBox="0 0 24 24"><path d="M3 12h18M3 7v10M21 7v10M8 9l-3 3 3 3M16 9l3 3-3 3"/></symbol><symbol id="i-zoomout" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></symbol><symbol id="i-zoomin" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></symbol><symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol><symbol id="i-wall" viewBox="0 0 24 24"><path d="M3 5h18v14H3zM3 12h18M9 5v7M15 12v7"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></symbol></svg>
 <header class="bar">
-  <img id="hdrLogo" alt="Hambo's" style="display:none">
-  <div class="logo">Kitchen <span>Layout Tool</span></div>
-  <span class="roomctl"><svg class="ic" aria-hidden="true"><use href="#i-house"/></svg><select id="roomSel" title="Room"></select><button id="roomAdd" title="Add a room (laundry, linen, wardrobe...)">+</button><button id="roomDel" title="Remove this room">&times;</button></span>
-  <div id="hdrJob"></div>
-  <div class="tabs" role="tablist">
-    <button id="tabPlan" class="active"><svg class="ic" aria-hidden="true"><use href="#i-plan"/></svg>Plan</button>
-    <button id="tabElev"><svg class="ic" aria-hidden="true"><use href="#i-elev"/></svg>Elevation</button>
-    <button id="tab3d"><svg class="ic" aria-hidden="true"><use href="#i-cube"/></svg>3D</button>
+  <img id="hdrLogo" alt="Hambo's Homemaker Centre" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMiIgZGF0YS1uYW1lPSJMYXllciAyIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5ODAgNDY4LjA3IiB4bWxuczpjMnBhPSJodHRwOi8vYzJwYS5vcmcvbWFuaWZlc3QiPjxtZXRhZGF0YT48YzJwYTptYW5pZmVzdD5BQUFXZ21wMWJXSUFBQUFlYW5WdFpHTXljR0VBRVFBUWdBQUFxZ0E0bTNFRFl6SndZUUFBQUJaY2FuVnRZZ0FBQUVkcWRXMWtZekp0WVFBUkFCQ0FBQUNxQURpYmNRTjFjbTQ2WXpKd1lUb3haVFF3WWpoaE5TMWtZMlV4TFRSaU4yUXRPVGxpWmkxaE16SmhZelk1WVdNMk1qRUFBQUFEbDJwMWJXSUFBQUFwYW5WdFpHTXlZWE1BRVFBUWdBQUFxZ0E0bTNFRFl6SndZUzVoYzNObGNuUnBiMjV6QUFBQUFMeHFkVzFpQUFBQVJHcDFiV1JqWW05eUFCRUFFSUFBQUtvQU9KdHhFMk15Y0dFdWFXNW5jbVZrYVdWdWRDNTJNd0FBQUFBWVl6SnphUEdCNnBxWnN6eHhDT0tqL0pTNTd4NEFBQUJ3WTJKdmNxTnBaR002Wm05eWJXRjBiV2x0WVdkbEwzTjJaeXQ0Yld4cWFXNXpkR0Z1WTJWSlJIZ3NlRzF3T21scFpEcG1ZemRrTVdGbFpDMWxOVEJqTFRSa1lXUXRPREl5TXkxbU16STJZemsyWVRKbE1UVnNjbVZzWVhScGIyNXphR2x3YUhCaGNtVnVkRTltQUFBQjRtcDFiV0lBQUFCQmFuVnRaR05pYjNJQUVRQVFnQUFBcWdBNG0zRVRZekp3WVM1aFkzUnBiMjV6TG5ZeUFBQUFBQmhqTW5Ob2V3TUNOM3N0c0NWbm9uSUY5QmRkcWdBQUFabGpZbTl5b21kaFkzUnBiMjV6Z3FKbVlXTjBhVzl1YTJNeWNHRXViM0JsYm1Wa2FuQmhjbUZ0WlhSbGNuT2hhMmx1WjNKbFpHbGxiblJ6Z2FKamRYSnNlQzF6Wld4bUkycDFiV0ptUFdNeWNHRXVZWE56WlhKMGFXOXVjeTlqTW5CaExtbHVaM0psWkdsbGJuUXVkak5rYUdGemFGZ2dHelpXbk5mMmU4S3JZZTZxTnE4aWVkNVJQdVJWV2hIL0NLME5KTFdSQUpHa1ptRmpkR2x2Ym5nZFkyOXRMbUZ1ZEdoeWIzQnBZeTVqYkdGMVpHVXVjSEp2ZG1sa1pXUnFjR0Z5WVcxbGRHVnljNkY0SDJOdmJTNWhiblJvY205d2FXTXViM0pwWjJsdUxXTnZibVpwWkdWdVkyVm5kVzVyYm05M2JtdGtaWE5qY21sd2RHbHZibmhtUTJ4aGRXUmxJSEJ5YjNacFpHVmtJSFJvYVhNZ1ptbHNaU0JoZENCMGFHVWdjbVZ4ZFdWemRDQnZaaUJoSUhWelpYSWdZVzVrSUcxaGVTQm9ZWFpsSUdOeVpXRjBaV1FnYjNJZ2JXOWthV1pwWldRZ2RHaGxJR1pwYkdVZ1kyOXVkR1Z1ZEhNdWJYTnZablIzWVhKbFFXZGxiblNoWkc1aGJXVm1RMnhoZFdSbGNtRnNiRUZqZEdsdmJuTkpibU5zZFdSbFpQVUFBQURJYW5WdFlnQUFBRUJxZFcxa1kySnZjZ0FSQUJDQUFBQ3FBRGliY1JOak1uQmhMbWhoYzJndVpHRjBZUUFBQUFBWVl6SnphR09PNWx4NU1JNVNsMkZrdjIzWTlvY0FBQUNBWTJKdmNxVmpZV3huWm5Ob1lUSTFObU53WVdSTkFBQUFBQUFBQUFBQUFBQUFBR1JvWVhOb1dDRDJDZFovaWR6NlpzY1ZXSHF1a2RkdnF6T2pLZkpZMTFodWlCaG9NQkJYRUdSdVlXMWxibXAxYldKbUlHMWhibWxtWlhOMGFtVjRZMngxYzJsdmJuT0JvbVZ6ZEdGeWRCaklabXhsYm1kMGFCa2VCQUFBQWo1cWRXMWlBQUFBSjJwMWJXUmpNbU5zQUJFQUVJQUFBS29BT0p0eEEyTXljR0V1WTJ4aGFXMHVkaklBQUFBQ0QyTmliM0tsWTJGc1oyWnphR0V5TlRacGMybG5ibUYwZFhKbGVFMXpaV3htSTJwMWJXSm1QUzlqTW5CaEwzVnlianBqTW5CaE9qRmxOREJpT0dFMUxXUmpaVEV0TkdJM1pDMDVPV0ptTFdFek1tRmpOamxoWXpZeU1TOWpNbkJoTG5OcFoyNWhkSFZ5WldwcGJuTjBZVzVqWlVsRWVDeDRiWEE2YVdsa09qRmpNREU1WTJRNUxUUmxNMkV0TkRWak5TMDROVE13TFRnNE4yUTFNV1V4WVRka1lYSmpjbVZoZEdWa1gyRnpjMlZ5ZEdsdmJuT0RvbU4xY214NExYTmxiR1lqYW5WdFltWTlZekp3WVM1aGMzTmxjblJwYjI1ekwyTXljR0V1YVc1bmNtVmthV1Z1ZEM1Mk0yUm9ZWE5vV0NBYk5sYWMxL1o3d3F0aDdxbzJyeUo1M2xFKzVGVmFFZjhJclEwa3RaRUFrYUpqZFhKc2VDcHpaV3htSTJwMWJXSm1QV015Y0dFdVlYTnpaWEowYVc5dWN5OWpNbkJoTG1GamRHbHZibk11ZGpKa2FHRnphRmdnWXNYaUp5M2t5TmxvMWVGK3FYSXNtUjNUK0JHK0lMQWRqQUZyMC9XWEFmU2lZM1Z5YkhncGMyVnNaaU5xZFcxaVpqMWpNbkJoTG1GemMyVnlkR2x2Ym5Ndll6SndZUzVvWVhOb0xtUmhkR0ZrYUdGemFGZ2dERDZuU3pVTlZaWksyR0JlMGpwV050R09IN055blN2ekRYVk1wdGwzWmNOMFkyeGhhVzFmWjJWdVpYSmhkRzl5WDJsdVptK2paRzVoYldWdlFXNTBhSEp2Y0dsaklFWnBiR1Z6WjNabGNuTnBiMjVsTVM0d0xqQnJjM0JsWTFabGNuTnBiMjVsTWk0MExqQUFBQkE0YW5WdFlnQUFBQ2hxZFcxa1l6Smpjd0FSQUJDQUFBQ3FBRGliY1FOak1uQmhMbk5wWjI1aGRIVnlaUUFBQUJBSVkySnZjdEtFV1FJU29nRW1HQ0ZaQWdvd2dnSUdNSUlCamFBREFnRUNBaFJBNWFBSzdzSTUwTDY0Zy9vR1FnVTlaMVVUQURBS0JnZ3Foa2pPUFFRREF6QkpNUmN3RlFZRFZRUUtFdzVCYm5Sb2NtOXdhV01zSUZCQ1F6RXVNQ3dHQTFVRUF4TWxRVzUwYUhKdmNHbGpJRU52Ym5SbGJuUWdRM0psWkdWdWRHbGhiSE1nVW05dmRDQkRRVEFlRncweU5qQTRNRGN4T0RRek5UWmFGdzB5T0RBNE1EWXhPVFF6TlRaYU1FUXhGekFWQmdOVkJBb1REa0Z1ZEdoeWIzQnBZeXdnVUVKRE1Ta3dKd1lEVlFRREV5QkJiblJvY205d2FXTWdRMnhoZFdSbElFTnZiblJsYm5RZ1UybG5ibWx1WnpCWk1CTUdCeXFHU000OUFnRUdDQ3FHU000OUF3RUhBMElBQkpoNkNtdkxVQmdGRk5VMHZVS2xPVnRFNmRqZDE3TDVTdXdYMExlbUZpc0JNM2RrZC8zY3lqeEZBM1FvNVM0NmZYMC9paFkwVlo3bWZiOUtGNzAzdDVPaldEQldNQTRHQTFVZER3RUIvd1FFQXdJSGdEQVZCZ05WSFNVRURqQU1CZ29yQmdFRUFZUG9YZ0lCTUF3R0ExVWRFd0VCL3dRQ01BQXdId1lEVlIwakJCZ3dGb0FVemxIaUJJRk9aRnNqK09QRXo1bytuTUhYWE1Jd0NnWUlLb1pJemowRUF3TURad0F3WkFJd01YTWRGSjRCZXRMTFZZN09SdUU5bm9xYmJBWk9abi9hQXJYeVR3RkFaZktyUHp4RjJ2UG9KTmYxK1VDZGcxWEdBakJ3WDF6ZDlXR3FZa3FtTDVTRnF3MVF5U2pyMXpKZnBKTTkrMXJkRHdTUExNT1BPakt1aVhqb1UvcFVVZUc5UndtaFkzQmhaRmtObmdBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFQWllRSmpnYS9tZkRDY29kcnZVOWVrNmFzSVJUdFBweDlhbTVmTE1XY2lXRmRrVlJjODgvd1dGS2pYVk51RTJ5eGJ5TlJGNnd5blE4Vkc1Rk04WnZjRVdnaVk9PC9jMnBhOm1hbmlmZXN0PjwvbWV0YWRhdGE+CiAgPGRlZnM+CiAgICA8c3R5bGU+CiAgICAgIC5jbHMtMSB7CiAgICAgICAgZmlsbDogI0ZGRkZGRjsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPGcgaWQ9IkxheWVyXzEtMiIgZGF0YS1uYW1lPSJMYXllciAxIj4KICAgIDxnPgogICAgICA8Zz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik04Ni4yMyw0NjYuOTd2LTU5LjE5aDExLjg0djI0LjQ0bDE4LjQzLTI0LjQ0aDE1LjQ3bC0yMi45MiwyNy43NCwyNC42MSwzMS40NmgtMTUuMTRsLTIwLjQ2LTI2LjEzdjI2LjEzaC0xMS44NFoiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xNDAuNzcsNDE5LjM3Yy0xLjkyLDAtMy41NC0uNjYtNC44Ni0xLjk5LTEuMzMtMS4zMi0xLjk5LTIuOTItMS45OS00Ljc4cy42Ni0zLjM3LDEuOTktNC42OSwyLjk1LTEuOTksNC44Ni0xLjk5LDMuNjEuNjYsNC45LDEuOTljMS4zLDEuMzMsMS45NSwyLjg5LDEuOTUsNC42OSwwLDEuOTItLjY1LDMuNTItMS45NSw0LjgyLTEuMywxLjMtMi45MywxLjk1LTQuOSwxLjk1Wk0xMzUuMSw0NjYuOTd2LTQzLjk3aDExLjQydjQzLjk3aC0xMS40MloiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xNjkuOTQsNDY2Ljk3Yy00LjM0LDAtNy42Ny0xLjA3LTkuOTgtMy4yMXMtMy40Ny01LjYxLTMuNDctMTAuNHYtMjAuNjNoLTYuMTd2LTkuNzJoNi4xN3YtOC44OGwxMS40Mi0xLjE4djEwLjA2aDkuM3Y5LjcyaC05LjN2MjAuMDRjMCwyLjcxLDEuMTgsNC4wNiwzLjU1LDQuMDZoNC43NHYxMC4xNWgtNi4yNloiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMDAuODEsNDY4LjA3Yy0zLjE2LDAtNi4xLS41OS04Ljg0LTEuNzgtMi43My0xLjE4LTUuMTQtMi44My03LjIzLTQuOTUtMi4wOS0yLjExLTMuNzEtNC41Ny00Ljg2LTcuMzYtMS4xNi0yLjc5LTEuNzMtNS43OS0xLjczLTksMC00LjI4LDEtOC4xNiwzLTExLjYzLDItMy40Nyw0Ljc2LTYuMjQsOC4yOS04LjMzLDMuNTItMi4wOCw3LjUxLTMuMTMsMTEuOTYtMy4xMyw0LS4wNSw3LjU4LjY1LDEwLjc0LDIuMTEsMy4xNiwxLjQ3LDUuNjcsMy41LDcuNTMsNi4wOWwtOC43OSw3LjE5Yy0xLjAxLTEuNTItMi4zMy0yLjczLTMuOTMtMy42NC0xLjYxLS45LTMuNC0xLjM1LTUuMzctMS4zNS0yLjQyLDAtNC41NC41OC02LjM0LDEuNzMtMS44LDEuMTYtMy4yLDIuNjktNC4xOSw0LjYxLS45OSwxLjkyLTEuNDgsNC4wMy0xLjQ4LDYuMzRzLjUyLDQuMzUsMS41Niw2LjNjMS4wNCwxLjk0LDIuNDgsMy41LDQuMzEsNC42NSwxLjgzLDEuMTYsMy45NiwxLjczLDYuMzgsMS43MywyLjIsMCw0LjA2LS40OSw1LjU4LTEuNDhzMi44NS0yLjI0LDMuOTctMy43Nmw4LjI5LDcuMTljLTIuMDksMi42NS00LjY3LDQuNzItNy43NCw2LjIxLTMuMDcsMS40OS02Ljc4LDIuMjQtMTEuMTIsMi4yNFoiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMjQuMTUsNDY2Ljk3di02MS43M2gxMS40MnYyMy44NWMyLjM3LTQuNzQsNi43OS03LjEsMTMuMjgtNy4xLDMuMTYsMCw2LC43Myw4LjU0LDIuMiwyLjU0LDEuNDcsNC41NCwzLjU1LDYsNi4yNiwxLjQ2LDIuNzEsMi4yLDUuOTIsMi4yLDkuNjR2MjYuODloLTExLjQydi0yNC4xYzAtMy44My0uODgtNi42MS0yLjYyLTguMzMtMS43NS0xLjcyLTQuMDMtMi41OC02Ljg1LTIuNTgtMi40MiwwLTQuNTUuODYtNi4zOCwyLjU4cy0yLjc1LDQuNS0yLjc1LDguMzN2MjQuMWgtMTEuNDJaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjkyLjk4LDQ2OC4wN2MtNC41MSwwLTguNDktMS4wNC0xMS45Mi0zLjEzcy02LjEtNC44Ni03Ljk5LTguMzNjLTEuODktMy40Ny0yLjgzLTcuMzEtMi44My0xMS41NHMuOTktOC4xLDIuOTYtMTEuNjNjMS45Ny0zLjUyLDQuNjYtNi4zMyw4LjA4LTguNDEsMy40MS0yLjA4LDcuMzEtMy4xMywxMS43MS0zLjEzczguMjcsMS4wNCwxMS42MywzLjEzYzMuMzUsMi4wOSw1Ljk3LDQuODksNy44Niw4LjQxLDEuODksMy41MiwyLjgzLDcuNCwyLjgzLDExLjYzLDAsLjYyLS4wMywxLjI3LS4wOCwxLjk1LS4wNi42OC0uMTQsMS4zOC0uMjUsMi4xMWgtMzIuODljLjYyLDIuNTksMS44Nyw0LjcxLDMuNzYsNi4zNCwxLjg5LDEuNjQsNC4yNywyLjQ1LDcuMTUsMi40NSwyLjQ4LDAsNC42NC0uNTYsNi40Ny0xLjY5LDEuODMtMS4xMywzLjI1LTIuNTQsNC4yNy00LjIzbDguODgsNi42OGMtMS43NSwyLjc2LTQuMzcsNS4wMi03Ljg2LDYuNzYtMy41LDEuNzUtNy40MSwyLjYyLTExLjc1LDIuNjJaTTI5Mi44MSw0MzEuNzFjLTIuNzEsMC01LjAyLjgyLTYuOTMsMi40NS0xLjkyLDEuNjQtMy4xOSwzLjc4LTMuODEsNi40M2gyMS43M2MtLjYyLTIuNDItMS45LTQuNTEtMy44NS02LjI2LTEuOTQtMS43NS00LjMzLTIuNjItNy4xNS0yLjYyWiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTMyMC4yOSw0NjYuOTd2LTQzLjk3aDExLjI1djYuNDNjMi4zMS00Ljk2LDYuNzktNy40NCwxMy40NS03LjQ0LDMuMTYsMCw2LC43Myw4LjU0LDIuMiwyLjU0LDEuNDcsNC41NCwzLjU1LDYsNi4yNiwxLjQ2LDIuNzEsMi4yLDUuOTIsMi4yLDkuNjR2MjYuODloLTExLjQydi0yNC4xYzAtMy44My0uODgtNi42MS0yLjYyLTguMzMtMS43NS0xLjcyLTQuMDMtMi41OC02Ljg1LTIuNTgtMi40MiwwLTQuNTUuODYtNi4zOCwyLjU4cy0yLjc1LDQuNS0yLjc1LDguMzN2MjQuMWgtMTEuNDJaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzgzLjEyLDQ2OC4wN2MtNy4zOSwwLTEzLjQ3LTIuNTYtMTguMjctNy43bDcuNy03LjAyYzMuMjEsMy42MSw2LjY1LDUuNDEsMTAuMzIsNS40MSwxLjk3LDAsMy40OC0uNDQsNC41Mi0xLjMxczEuNTYtMS45NiwxLjU2LTMuMjZjMC0uNzktLjE4LTEuNDctLjU1LTIuMDMtLjM3LS41Ni0xLjEzLTEuMS0yLjI4LTEuNjEtMS4xNi0uNTEtMi44OS0xLjAxLTUuMi0xLjUyLTMuOTUtLjk2LTYuODgtMi4xNC04Ljc5LTMuNTUtMS45Mi0xLjQxLTMuMTktMi45OS0zLjgxLTQuNzQtLjYyLTEuNzUtLjkzLTMuNTUtLjkzLTUuNDEsMC0zLjgzLDEuNDUtNy4wMyw0LjM1LTkuNiwyLjktMi41Niw2LjkyLTMuODUsMTIuMDUtMy44NSwzLjU1LDAsNi42LjU0LDkuMTMsMS42MSwyLjU0LDEuMDcsNC45MywzLjA3LDcuMTksNmwtOC4yOSw2LjM0Yy0xLjA3LTEuNjktMi4yNy0yLjktMy41OS0zLjY0LTEuMzMtLjczLTIuNzItMS4xLTQuMTktMS4xLTEuNTgsMC0yLjg5LjMxLTMuOTMuOTMtMS4wNC42Mi0xLjU2LDEuNjEtMS41NiwyLjk2LDAsLjczLjM0LDEuNDUsMS4wMSwyLjE2LjY4LjcxLDIuMzEsMS40LDQuOSwyLjA3LDQuMjgsMS4wNyw3LjU1LDIuMzMsOS44MSwzLjc2LDIuMjUsMS40NCwzLjgsMy4wNiw0LjY1LDQuODYuODUsMS44LDEuMjcsMy44LDEuMjcsNiwwLDIuNzEtLjc1LDUuMTMtMi4yNCw3LjI3LTEuNDksMi4xNC0zLjUyLDMuODMtNi4wOSw1LjA3LTIuNTcsMS4yNC01LjQ4LDEuODYtOC43NSwxLjg2WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTQzNi43Myw0NjguMDdjLTQuMDYsMC03LjUxLS44LTEwLjM2LTIuNDFzLTUtMy43NS02LjQ3LTYuNDNjLTEuNDctMi42OC0yLjItNS41Ny0yLjItOC42NywwLTMuODMuOTctNy4wOSwyLjkyLTkuNzcsMS45NS0yLjY4LDQuMjQtNC44LDYuODktNi4zOGwxLjI3LS43Ni0xLjE4LTEuNDRjLTEuNTItMS44LTIuNjYtMy41NS0zLjQyLTUuMjRzLTEuMTQtMy42OS0xLjE0LTZjMC0yLjg4LjczLTUuMzgsMi4yLTcuNTMsMS40Ny0yLjE0LDMuNDItMy44LDUuODgtNC45OSwyLjQ1LTEuMTgsNS4xNC0xLjc4LDguMDgtMS43OCwyLjc2LDAsNS4zNS41OSw3Ljc4LDEuNzgsMi40MiwxLjE4LDQuNCwyLjg1LDUuOTIsNC45OSwxLjUyLDIuMTQsMi4yOCw0LjY1LDIuMjgsNy41MywwLDIuMzEtLjQ0LDQuNDctMS4zMSw2LjQ3LS44OCwyLTIuODksNC4wNS02LjA1LDYuMTNsLTMuMzgsMi4yOCw5LjQ3LDExLjY3LDcuOTUtNi41MSw2LjE3LDcuODYtNy44Niw2LjI2LDkuNTYsMTEuODRoLTEzLjAybC0zLjk3LTUuNS0yLjExLDEuODZjLS43My42Mi0xLjgyLDEuMzEtMy4yNSwyLjA3cy0zLjA3LDEuNC00LjkxLDEuOWMtMS44My41MS0zLjczLjc2LTUuNzEuNzZaTTQyOS4yOCw0NDkuOThjMCwxLjkyLjY1LDMuNjgsMS45NCw1LjI5LDEuMywxLjYxLDMuMDcsMi40MSw1LjMzLDIuNDEsMS42OSwwLDMuMTMtLjI1LDQuMzEtLjc2LDEuMTgtLjUxLDIuNTctMS4zNSw0LjE0LTIuNTRsLjUxLS40Mi0xMC4wNi0xMi4yNi0yLjAzLDEuMzVjLTEuMjQuODUtMi4yNCwxLjgzLTMsMi45Ni0uNzYsMS4xMy0xLjE0LDIuNDUtMS4xNCwzLjk3Wk00MzYuMzksNDI1Ljk2bDEuODYsMi4yOC45My0uNTljMi4wOC0xLjE4LDMuNDgtMi4yOCw0LjE5LTMuMy43LTEuMDEsMS4wNi0yLjE3LDEuMDYtMy40NywwLTEuNDYtLjQ4LTIuNjUtMS40NC0zLjU1LS45Ni0uOS0yLjExLTEuMzUtMy40Ny0xLjM1LTEuNTIsMC0yLjc5LjQ1LTMuODEsMS4zNS0xLjAxLjktMS41MiwyLjA5LTEuNTIsMy41NSwwLC43OS4xNCwxLjU1LjQyLDIuMjguMjguNzMuODcsMS42NiwxLjc4LDIuNzlaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNDg2LjUzLDQ2Ni45N3YtNTkuMTloMTkuOTZjNi40MywwLDExLjMzLDEuNDQsMTQuNzEsNC4zMSwzLjM4LDIuODgsNS4wNyw2LjYyLDUuMDcsMTEuMjUsMCwyLjgyLS42OSw1LjI2LTIuMDcsNy4zMS0xLjM4LDIuMDYtMy44OCwzLjc2LTcuNDgsNS4xMiw0Ljg1LDEuMTMsOC4yLDIuOTcsMTAuMDYsNS41NCwxLjg2LDIuNTcsMi43OSw1LjY4LDIuNzksOS4zNCwwLDQuOTYtMS44OSw4LjkyLTUuNjcsMTEuODgtMy43OCwyLjk2LTguODgsNC40NC0xNS4zLDQuNDRoLTIyLjA3Wk00OTguMzcsNDMyLjIyaDcuMDJjMy4yMSwwLDUuNS0uNTgsNi44NS0xLjczLDEuMzUtMS4xNSwyLjAzLTIuOTIsMi4wMy01LjI5LDAtMi4wMy0uNjgtMy42OC0yLjAzLTQuOTVzLTMuNjQtMS45LTYuODUtMS45aC03LjAydjEzLjg3Wk00OTguMzcsNDU2LjMyaDkuMTNjMy4yMSwwLDUuNjktLjYxLDcuNDQtMS44MiwxLjc1LTEuMjEsMi42Mi0zLjExLDIuNjItNS43MSwwLTIuMTQtLjg4LTMuODMtMi42Mi01LjA3LTEuNzUtMS4yNC00LjIzLTEuODYtNy40NC0xLjg2aC05LjEzdjE0LjQ2WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTU1My44NCw0NjguMDdjLTQsMC03LjY1LTEuMDMtMTAuOTUtMy4wOS0zLjMtMi4wNi01LjkyLTQuODItNy44Ni04LjI5LTEuOTQtMy40Ny0yLjkyLTcuMzEtMi45Mi0xMS41NCwwLTMuMTYuNTYtNi4xMywxLjY5LTguOTIsMS4xMy0yLjc5LDIuNjgtNS4yNCw0LjY1LTcuMzYsMS45Ny0yLjExLDQuMjctMy43OCw2Ljg5LTQuOTksMi42Mi0xLjIxLDUuNDUtMS44Miw4LjUtMS44MiwzLjgzLDAsNi44Mi43Miw4Ljk2LDIuMTYsMi4xNCwxLjQ0LDMuODEsMy4zNCw0Ljk5LDUuNzF2LTYuOTNoMTEuMzN2NDMuOTdoLTExLjA4di03LjE5Yy0xLjE4LDIuNDgtMi44Niw0LjQ4LTUuMDMsNi0yLjE3LDEuNTItNS4yMywyLjI4LTkuMTcsMi4yOFpNNTU1LjcsNDU3Ljc2YzIuNTQsMCw0LjcyLS41OCw2LjU1LTEuNzMsMS44My0xLjE2LDMuMjYtMi42OSw0LjI3LTQuNjEsMS4wMS0xLjkyLDEuNTItNCwxLjUyLTYuMjZzLS41MS00LjQyLTEuNTItNi4zNGMtMS4wMS0xLjkyLTIuNDQtMy40Ny00LjI3LTQuNjUtMS44My0xLjE4LTQuMDItMS43OC02LjU1LTEuNzhzLTQuNTUuNTgtNi4zOCwxLjczYy0xLjgzLDEuMTYtMy4yNiwyLjY5LTQuMjcsNC42MS0xLjAxLDEuOTItMS41Miw0LjAzLTEuNTIsNi4zNHMuNTEsNC4yNywxLjUyLDYuMjJjMS4wMSwxLjk0LDIuNDQsMy41MSw0LjI3LDQuNjksMS44MywxLjE4LDMuOTYsMS43OCw2LjM4LDEuNzhaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjAyLjU1LDQ2Ni45N2MtNC4zNCwwLTcuNjctMS4wNy05Ljk4LTMuMjFzLTMuNDctNS42MS0zLjQ3LTEwLjR2LTIwLjYzaC02LjE3di05LjcyaDYuMTd2LTguODhsMTEuNDItMS4xOHYxMC4wNmg5LjN2OS43MmgtOS4zdjIwLjA0YzAsMi43MSwxLjE4LDQuMDYsMy41NSw0LjA2aDQuNzR2MTAuMTVoLTYuMjZaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNjEzLjYyLDQ2Ni45N3YtNjEuNzNoMTEuNDJ2MjMuODVjMi4zNy00Ljc0LDYuNzktNy4xLDEzLjI4LTcuMSwzLjE2LDAsNiwuNzMsOC41NCwyLjIsMi41NCwxLjQ3LDQuNTQsMy41NSw2LDYuMjYsMS40NiwyLjcxLDIuMiw1LjkyLDIuMiw5LjY0djI2Ljg5aC0xMS40MnYtMjQuMWMwLTMuODMtLjg4LTYuNjEtMi42Mi04LjMzLTEuNzUtMS43Mi00LjAzLTIuNTgtNi44NS0yLjU4LTIuNDIsMC00LjU1Ljg2LTYuMzgsMi41OHMtMi43NSw0LjUtMi43NSw4LjMzdjI0LjFoLTExLjQyWiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTY2MS40LDQ2Ni45N3YtNDMuOTdoMTEuMDh2OC4zN2MuNzMtMy4xNiwyLjIzLTUuNTcsNC40OC03LjIzLDIuMjUtMS42Niw1LjMtMi4zOCw5LjEzLTIuMTZ2MTAuNzRoLTEuNjFjLTMuMjcsMC02LjAzLDEuMDQtOC4yOSwzLjEzLTIuMjYsMi4wOS0zLjM4LDQuOTYtMy4zOCw4LjYydjIyLjQ5aC0xMS40MloiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik03MDkuNTEsNDY4LjA3Yy00LjUxLDAtOC41NC0xLjA0LTEyLjA5LTMuMTNzLTYuMzMtNC44Ni04LjMzLTguMzNjLTItMy40Ny0zLTcuMzEtMy0xMS41NHMxLTguMDksMy0xMS41OGMyLTMuNDksNC43OC02LjI5LDguMzMtOC4zNywzLjU1LTIuMDgsNy41OC0zLjEzLDEyLjA5LTMuMTNzOC42MSwxLjA0LDEyLjEzLDMuMTNjMy41MiwyLjA5LDYuMjksNC44OCw4LjI5LDguMzcsMiwzLjUsMyw3LjM2LDMsMTEuNThzLTEsOC4wOC0zLDExLjU0Yy0yLDMuNDctNC43Niw2LjI0LTguMjksOC4zMy0zLjUyLDIuMDgtNy41NywzLjEzLTEyLjEzLDMuMTNaTTcwOS41MSw0NTcuNjdjMi40MiwwLDQuNTQtLjU4LDYuMzQtMS43MywxLjgtMS4xNiwzLjItMi42OSw0LjE5LTQuNjEuOTktMS45MiwxLjQ4LTQsMS40OC02LjI2cy0uNDktNC40Mi0xLjQ4LTYuMzRjLS45OS0xLjkyLTIuMzgtMy40NS00LjE5LTQuNjEtMS44MS0xLjE2LTMuOTItMS43My02LjM0LTEuNzNzLTQuNTQuNTgtNi4zNCwxLjczYy0xLjgsMS4xNi0zLjIsMi42OS00LjE5LDQuNjEtLjk5LDEuOTItMS40OCw0LjAzLTEuNDgsNi4zNHMuNDksNC4zNCwxLjQ4LDYuMjZjLjk5LDEuOTIsMi4zOCwzLjQ1LDQuMTksNC42MSwxLjgsMS4xNiwzLjkyLDEuNzMsNi4zNCwxLjczWiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTc1OS4zMiw0NjguMDdjLTQuNTEsMC04LjU0LTEuMDQtMTIuMDktMy4xM3MtNi4zMy00Ljg2LTguMzMtOC4zM2MtMi0zLjQ3LTMtNy4zMS0zLTExLjU0czEtOC4wOSwzLTExLjU4YzItMy40OSw0Ljc4LTYuMjksOC4zMy04LjM3LDMuNTUtMi4wOCw3LjU4LTMuMTMsMTIuMDktMy4xM3M4LjYxLDEuMDQsMTIuMTMsMy4xM2MzLjUyLDIuMDksNi4yOSw0Ljg4LDguMjksOC4zNywyLDMuNSwzLDcuMzYsMywxMS41OHMtMSw4LjA4LTMsMTEuNTRjLTIsMy40Ny00Ljc2LDYuMjQtOC4yOSw4LjMzLTMuNTIsMi4wOC03LjU3LDMuMTMtMTIuMTMsMy4xM1pNNzU5LjMyLDQ1Ny42N2MyLjQyLDAsNC41NC0uNTgsNi4zNC0xLjczLDEuOC0xLjE2LDMuMi0yLjY5LDQuMTktNC42MS45OS0xLjkyLDEuNDgtNCwxLjQ4LTYuMjZzLS40OS00LjQyLTEuNDgtNi4zNGMtLjk5LTEuOTItMi4zOC0zLjQ1LTQuMTktNC42MS0xLjgxLTEuMTYtMy45Mi0xLjczLTYuMzQtMS43M3MtNC41NC41OC02LjM0LDEuNzNjLTEuOCwxLjE2LTMuMiwyLjY5LTQuMTksNC42MS0uOTksMS45Mi0xLjQ4LDQuMDMtMS40OCw2LjM0cy40OSw0LjM0LDEuNDgsNi4yNmMuOTksMS45MiwyLjM4LDMuNDUsNC4xOSw0LjYxLDEuOCwxLjE2LDMuOTIsMS43Myw2LjM0LDEuNzNaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNzg3LjgyLDQ2Ni45N3YtNDMuOTdoMTEuMjV2Ni40M2MyLjMxLTQuOTYsNi43OS03LjQ0LDEzLjQ1LTcuNDQsMy4xLDAsNS44OS43Miw4LjM3LDIuMTZzNC40NSwzLjQ4LDUuOTIsNi4xM2MxLjQ2LTIuNjUsMy4zNC00LjY5LDUuNjItNi4xM3M1LjM3LTIuMTYsOS4yNi0yLjE2YzMuMTYsMCw2LC43Myw4LjU0LDIuMiwyLjU0LDEuNDcsNC41NCwzLjU1LDYsNi4yNiwxLjQ3LDIuNzEsMi4yLDUuOTIsMi4yLDkuNjR2MjYuODloLTExLjQydi0yNC4xYzAtMy44My0uODItNi42MS0yLjQ1LTguMzMtMS42NC0xLjcyLTMuNzUtMi41OC02LjM0LTIuNThzLTQuODEuNzYtNi40NywyLjI4Yy0xLjY2LDEuNTItMi40OSw0LjQtMi40OSw4LjYydjI0LjFoLTExLjQydi0yNC4xYzAtMy44My0uODgtNi42MS0yLjYyLTguMzMtMS43NS0xLjcyLTQuMDMtMi41OC02Ljg1LTIuNTgtMi40MiwwLTQuNTUuODYtNi4zOCwyLjU4cy0yLjc1LDQuNS0yLjc1LDguMzN2MjQuMWgtMTEuNDJaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODc5LjgyLDQ2OC4wN2MtNy4zOSwwLTEzLjQ3LTIuNTYtMTguMjctNy43bDcuNy03LjAyYzMuMjEsMy42MSw2LjY1LDUuNDEsMTAuMzIsNS40MSwxLjk3LDAsMy40OC0uNDQsNC41Mi0xLjMxczEuNTYtMS45NiwxLjU2LTMuMjZjMC0uNzktLjE4LTEuNDctLjU1LTIuMDMtLjM3LS41Ni0xLjEzLTEuMS0yLjI4LTEuNjEtMS4xNi0uNTEtMi44OS0xLjAxLTUuMi0xLjUyLTMuOTUtLjk2LTYuODgtMi4xNC04Ljc5LTMuNTUtMS45Mi0xLjQxLTMuMTktMi45OS0zLjgxLTQuNzQtLjYyLTEuNzUtLjkzLTMuNTUtLjkzLTUuNDEsMC0zLjgzLDEuNDUtNy4wMyw0LjM1LTkuNiwyLjktMi41Niw2LjkyLTMuODUsMTIuMDUtMy44NSwzLjU1LDAsNi42LjU0LDkuMTMsMS42MSwyLjU0LDEuMDcsNC45MywzLjA3LDcuMTksNmwtOC4yOSw2LjM0Yy0xLjA3LTEuNjktMi4yNy0yLjktMy41OS0zLjY0LTEuMzMtLjczLTIuNzItMS4xLTQuMTktMS4xLTEuNTgsMC0yLjg5LjMxLTMuOTMuOTMtMS4wNC42Mi0xLjU2LDEuNjEtMS41NiwyLjk2LDAsLjczLjM0LDEuNDUsMS4wMSwyLjE2LjY4LjcxLDIuMzEsMS40LDQuOSwyLjA3LDQuMjgsMS4wNyw3LjU1LDIuMzMsOS44MSwzLjc2LDIuMjUsMS40NCwzLjgsMy4wNiw0LjY1LDQuODYuODUsMS44LDEuMjcsMy44LDEuMjcsNiwwLDIuNzEtLjc1LDUuMTMtMi4yNCw3LjI3LTEuNDksMi4xNC0zLjUyLDMuODMtNi4wOSw1LjA3LTIuNTcsMS4yNC01LjQ4LDEuODYtOC43NSwxLjg2WiIvPgogICAgICA8L2c+CiAgICAgIDxnPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTY2Ni43MiwzNzAuMDFjLTIuNDMsMS4wNi01LjI0LDEuNTktOC40MiwxLjU5LTQuMywwLTguMDItLjk4LTExLjE0LTIuOTUtMy4xMi0xLjk3LTUuNTItNC41OS03LjIxLTcuODYtMS42OS0zLjI4LTIuNTMtNi45MS0yLjUzLTEwLjlzLjg0LTcuNjQsMi41My0xMC45NWMxLjY4LTMuMzEsNC4wNy01Ljk2LDcuMTYtNy45NiwzLjA5LTIsNi43Mi0zLDEwLjktMyw1Ljg3LDAsMTAuNzYsMi4wNiwxNC43LDYuMThsOS4yNy04LjA1Yy0yLjkzLTMuNDktNi4zMi02LjA4LTEwLjE2LTcuNzctMy44NC0xLjY4LTguNDQtMi41My0xMy44MS0yLjUzLTUuMDUsMC05LjY3Ljg5LTEzLjg1LDIuNjctNC4xOCwxLjc4LTcuNzgsNC4yMy0xMC44MSw3LjM1LTMuMDMsMy4xMi01LjM3LDYuNzQtNy4wMiwxMC44Ni0xLjY1LDQuMTItMi40OCw4LjUyLTIuNDgsMTMuMnMuODYsOS4wNiwyLjU3LDEzLjE1YzEuNzIsNC4wOSw0LjEyLDcuNjksNy4yMSwxMC44MSwzLjA5LDMuMTIsNi43MSw1LjU1LDEwLjg2LDcuMyw0LjE1LDEuNzUsOC42NiwyLjYyLDEzLjUzLDIuNjIsNS43NCwwLDEwLjY4LS45OCwxNC44NC0yLjk1LDQuMTUtMS45Nyw3LjQ3LTQuNDUsOS45Ny03LjQ0bC05LjU1LTguMTRjLTEuOTMsMi4xMi00LjEyLDMuNzEtNi41NSw0Ljc3WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTcyMC42OCwzMzYuMTNjLTMuNzEtMi4zMS04LTMuNDYtMTIuODctMy40NnMtOS4xOSwxLjE2LTEyLjk2LDMuNDZjLTMuNzgsMi4zMS02Ljc2LDUuNDEtOC45NCw5LjMxLTIuMTgsMy45LTMuMjgsOC4xOS0zLjI4LDEyLjg3czEuMDQsOC45NCwzLjE0LDEyLjc4YzIuMDksMy44NCw1LjA0LDYuOTEsOC44NSw5LjIyLDMuODEsMi4zMSw4LjIsMy40NiwxMy4yLDMuNDZzOS4xNC0uOTcsMTMuMDEtMi45YzMuODctMS45Myw2Ljc3LTQuNDMsOC43LTcuNDlsLTkuODMtNy4zOWMtMS4xMiwxLjg3LTIuNywzLjQzLTQuNzMsNC42OC0yLjAzLDEuMjUtNC40MiwxLjg3LTcuMTYsMS44Ny0zLjE4LDAtNS44Mi0uOS03LjkxLTIuNzEtMi4wOS0xLjgxLTMuNDgtNC4xNS00LjE2LTcuMDJoMzYuNDFjLjEyLS44MS4yMi0xLjU5LjI4LTIuMzQuMDYtLjc1LjA5LTEuNDcuMDktMi4xNSwwLTQuNjgtMS4wNS04Ljk3LTMuMTQtMTIuODctMi4wOS0zLjktNC45OS03LTguNy05LjMxWk02OTUuNzMsMzUzLjM1Yy42OS0yLjkzLDIuMDktNS4zLDQuMjEtNy4xMSwyLjEyLTEuODEsNC42OC0yLjcxLDcuNjctMi43MXM1Ljc2Ljk3LDcuOTEsMi45YzIuMTUsMS45MywzLjU3LDQuMjQsNC4yNiw2LjkzaC0yNC4wNloiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik04ODYuMTYsMzM2LjEzYy0zLjcxLTIuMzEtOC0zLjQ2LTEyLjg3LTMuNDZzLTkuMTksMS4xNi0xMi45NiwzLjQ2Yy0zLjc4LDIuMzEtNi43Niw1LjQxLTguOTQsOS4zMS0yLjE4LDMuOS0zLjI4LDguMTktMy4yOCwxMi44N3MxLjA0LDguOTQsMy4xNCwxMi43OGMyLjA5LDMuODQsNS4wNCw2LjkxLDguODUsOS4yMiwzLjgxLDIuMzEsOC4yLDMuNDYsMTMuMiwzLjQ2czkuMTQtLjk3LDEzLjAxLTIuOWMzLjg3LTEuOTMsNi43Ny00LjQzLDguNy03LjQ5bC05LjgzLTcuMzljLTEuMTIsMS44Ny0yLjcsMy40My00LjczLDQuNjgtMi4wMywxLjI1LTQuNDIsMS44Ny03LjE2LDEuODctMy4xOCwwLTUuODItLjktNy45MS0yLjcxLTIuMDktMS44MS0zLjQ4LTQuMTUtNC4xNi03LjAyaDM2LjQxYy4xMi0uODEuMjItMS41OS4yOC0yLjM0LjA2LS43NS4wOS0xLjQ3LjA5LTIuMTUsMC00LjY4LTEuMDUtOC45Ny0zLjE0LTEyLjg3LTIuMDktMy45LTQuOTktNy04LjctOS4zMVpNODYxLjIyLDM1My4zNWMuNjktMi45MywyLjA5LTUuMyw0LjIxLTcuMTEsMi4xMi0xLjgxLDQuNjgtMi43MSw3LjY3LTIuNzFzNS43Ni45Nyw3LjkxLDIuOWMyLjE1LDEuOTMsMy41Nyw0LjI0LDQuMjYsNi45M2gtMjQuMDZaIi8+CiAgICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNNTk3LjgzLDMzNS4xNWMtMi41LDEuODQtNC4xNSw0LjUxLTQuOTYsOHYtOS4yN2gtMTIuMjZ2NDguNjdoMTIuNjR2LTI0LjljMC00LjA2LDEuMjUtNy4yNCwzLjc0LTkuNTUsMi41LTIuMzEsNS41NS0zLjQ2LDkuMTctMy40NmgxLjc4di0xMS44OWMtNC4yNC0uMjUtNy42MS41NS0xMC4xMSwyLjM5WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTg0OC4xMSwzMzIuNzZjLTQuMjQtLjI1LTcuNjEuNTUtMTAuMTEsMi4zOS0yLjUsMS44NC00LjE1LDQuNTEtNC45Niw4di05LjI3aC0xMi4yNnY0OC42N2gxMi42NHYtMjQuOWMwLTQuMDYsMS4yNS03LjI0LDMuNzQtOS41NSwyLjUtMi4zMSw1LjU1LTMuNDYsOS4xNy0zLjQ2aDEuNzh2LTExLjg5WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTgwNi4yNywzMjIuNzVsLTEyLjY0LDEuMzF2OS44M2gtNi44M3YxMC43Nmg2LjgzdjIyLjg0YzAsNS4zLDEuMjgsOS4xNCwzLjg0LDExLjUxLDIuNTYsMi4zNyw2LjI0LDMuNTYsMTEuMDUsMy41Nmg2Ljkzdi0xMS4yM2gtNS4yNGMtMi42MiwwLTMuOTMtMS41LTMuOTMtNC40OXYtMjIuMThoMTAuM3YtMTAuNzZoLTEwLjN2LTExLjE0WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTU2My4yNCwzMzYuMTNjLTMuNzEtMi4zMS04LTMuNDYtMTIuODctMy40NnMtOS4xOSwxLjE2LTEyLjk2LDMuNDZjLTMuNzgsMi4zMS02Ljc2LDUuNDEtOC45NCw5LjMxLTIuMTgsMy45LTMuMjgsOC4xOS0zLjI4LDEyLjg3czEuMDQsOC45NCwzLjE0LDEyLjc4YzIuMDksMy44NCw1LjA0LDYuOTEsOC44NSw5LjIyLDMuODEsMi4zMSw4LjIsMy40NiwxMy4yLDMuNDZzOS4xNC0uOTcsMTMuMDEtMi45YzMuODctMS45Myw2Ljc3LTQuNDMsOC43LTcuNDlsLTkuODMtNy4zOWMtMS4xMiwxLjg3LTIuNywzLjQzLTQuNzMsNC42OC0yLjAzLDEuMjUtNC40MiwxLjg3LTcuMTYsMS44Ny0zLjE4LDAtNS44Mi0uOS03LjkxLTIuNzEtMi4wOS0xLjgxLTMuNDgtNC4xNS00LjE2LTcuMDJoMzYuNDFjLjEyLS44MS4yMi0xLjU5LjI4LTIuMzQuMDYtLjc1LjA5LTEuNDcuMDktMi4xNSwwLTQuNjgtMS4wNS04Ljk3LTMuMTQtMTIuODctMi4wOS0zLjktNC45OS03LTguNy05LjMxWk01MzguMywzNTMuMzVjLjY5LTIuOTMsMi4wOS01LjMsNC4yMS03LjExLDIuMTItMS44MSw0LjY4LTIuNzEsNy42Ny0yLjcxczUuNzYuOTcsNy45MSwyLjljMi4xNSwxLjkzLDMuNTcsNC4yNCw0LjI2LDYuOTNoLTI0LjA2WiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTc3NC44MiwzMzUuMTljLTIuODEtMS42Mi01Ljk2LTIuNDMtOS40NS0yLjQzLTcuMzYsMC0xMi4zMiwyLjc1LTE0Ljg4LDguMjR2LTcuMTFoLTEyLjQ1djQ4LjY3aDEyLjY0di0yNi42OGMwLTQuMjQsMS4wMS03LjMyLDMuMDQtOS4yMiwyLjAzLTEuOSw0LjM4LTIuODUsNy4wNy0yLjg1LDMuMTIsMCw1LjY1Ljk1LDcuNTgsMi44NSwxLjkzLDEuOSwyLjksNC45OCwyLjksOS4yMnYyNi42OGgxMi42NHYtMjkuNzZjMC00LjEyLS44MS03LjY4LTIuNDMtMTAuNjctMS42Mi0zLTMuODQtNS4zLTYuNjUtNi45M1oiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xODEuMjYsMzM2LjIyYy0zLjktMi4zMS04LjM4LTMuNDYtMTMuNDMtMy40NnMtOS40NSwxLjE2LTEzLjM4LDMuNDZjLTMuOTMsMi4zMS03LjAxLDUuNC05LjIyLDkuMjctMi4yMiwzLjg3LTMuMzIsOC4xNC0zLjMyLDEyLjgyczEuMTEsOC45NCwzLjMyLDEyLjc4YzIuMjEsMy44NCw1LjI5LDYuOTEsOS4yMiw5LjIyLDMuOTMsMi4zMSw4LjM5LDMuNDYsMTMuMzgsMy40NnM5LjUzLTEuMTYsMTMuNDMtMy40NmMzLjktMi4zMSw2Ljk2LTUuMzgsOS4xNy05LjIyLDIuMjEtMy44NCwzLjMyLTguMSwzLjMyLTEyLjc4cy0xLjExLTguOTUtMy4zMi0xMi44MmMtMi4yMi0zLjg3LTUuMjctNi45Ni05LjE3LTkuMjdaTTE3OS40OCwzNjUuMjRjLTEuMDksMi4xMi0yLjY0LDMuODItNC42Myw1LjEtMiwxLjI4LTQuMzQsMS45Mi03LjAyLDEuOTJzLTUuMDItLjY0LTcuMDItMS45MmMtMi0xLjI4LTMuNTQtMi45OC00LjYzLTUuMS0xLjA5LTIuMTItMS42NC00LjQzLTEuNjQtNi45M3MuNTUtNC45LDEuNjQtNy4wMmMxLjA5LTIuMTIsMi42NC0zLjgyLDQuNjMtNS4xLDItMS4yOCw0LjM0LTEuOTIsNy4wMi0xLjkyczUuMDIuNjQsNy4wMiwxLjkyYzIsMS4yOCwzLjU0LDIuOTgsNC42Myw1LjEsMS4wOSwyLjEyLDEuNjQsNC40NiwxLjY0LDcuMDJzLS41NSw0LjgxLTEuNjQsNi45M1oiLz4KICAgICAgICA8cG9seWdvbiBjbGFzcz0iY2xzLTEiIHBvaW50cz0iNTI5Ljc4IDMzMy44OCA1MTEuODEgMzMzLjg4IDQ5My41NiAzNTMuNTQgNDkzLjU2IDMxNC4yMyA0ODAuOTIgMzE0LjIzIDQ4MC45MiAzODIuNTYgNDkzLjU2IDM4Mi41NiA0OTMuNTYgMzU5LjQ0IDUxMy4xMiAzODIuNTYgNTI5Ljg3IDM4Mi41NiA1MDYuODUgMzU2LjU0IDUyOS43OCAzMzMuODgiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNjguNDUsMzM1LjE5Yy0yLjgxLTEuNjItNS45Ni0yLjQzLTkuNDUtMi40My00LjMxLDAtNy43Mi44LTEwLjI1LDIuMzktMi41MywxLjU5LTQuNiwzLjg1LTYuMjIsNi43OS0xLjYyLTIuOTMtMy44MS01LjE5LTYuNTUtNi43OS0yLjc1LTEuNTktNS44NC0yLjM5LTkuMjctMi4zOS03LjM2LDAtMTIuMzIsMi43NS0xNC44OCw4LjI0di03LjExaC0xMi40NXY0OC42N2gxMi42NHYtMjYuNjhjMC00LjI0LDEuMDEtNy4zMiwzLjA0LTkuMjIsMi4wMy0xLjksNC4zOC0yLjg1LDcuMDctMi44NSwzLjEyLDAsNS42NS45NSw3LjU4LDIuODUsMS45MywxLjksMi45LDQuOTgsMi45LDkuMjJ2MjYuNjhoMTIuNjR2LTI2LjY4YzAtNC42OC45Mi03Ljg2LDIuNzYtOS41NSwxLjg0LTEuNjgsNC4yMy0yLjUzLDcuMTYtMi41M3M1LjIxLjk1LDcuMDIsMi44NWMxLjgxLDEuOSwyLjcxLDQuOTgsMi43MSw5LjIydjI2LjY4aDEyLjY0di0yOS43NmMwLTQuMTItLjgxLTcuNjgtMi40My0xMC42Ny0xLjYyLTMtMy44NC01LjMtNi42NS02LjkzWiIvPgogICAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMSIgcG9pbnRzPSIxMjIuMjUgMzQzLjQzIDk1LjEgMzQzLjQzIDk1LjEgMzE3LjA0IDgyIDMxNy4wNCA4MiAzODIuNTYgOTUuMSAzODIuNTYgOTUuMSAzNTUuMjIgMTIyLjI1IDM1NS4yMiAxMjIuMjUgMzgyLjU2IDEzNS4zNSAzODIuNTYgMTM1LjM1IDMxNy4wNCAxMjIuMjUgMzE3LjA0IDEyMi4yNSAzNDMuNDMiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik00NjAuODksMzQxLjU2Yy0xLjMxLTIuNjItMy4xNS00LjczLTUuNTItNi4zMi0yLjM3LTEuNTktNS42OC0yLjM5LTkuOTItMi4zOS0zLjM3LDAtNi41MS42Ny05LjQxLDIuMDEtMi45LDEuMzQtNS40NSwzLjE4LTcuNjMsNS41Mi0yLjE4LDIuMzQtMy45LDUuMDUtNS4xNSw4LjE0LTEuMjUsMy4wOS0xLjg3LDYuMzgtMS44Nyw5Ljg3LDAsNC42OCwxLjA4LDguOTQsMy4yMywxMi43OCwyLjE1LDMuODQsNS4wNSw2LjksOC43LDkuMTcsMy42NSwyLjI4LDcuNjksMy40MiwxMi4xMiwzLjQyczcuNzUtLjg0LDEwLjE2LTIuNTNjMi40LTEuNjgsNC4yNi0zLjksNS41Ny02LjY1djcuOTZoMTIuMjZ2LTQ4LjY3aC0xMi41NHY3LjY4Wk00NTkuNDksMzY1LjMzYy0xLjEyLDIuMTItMi43LDMuODItNC43Myw1LjEtMi4wMywxLjI4LTQuNDUsMS45Mi03LjI1LDEuOTJzLTUuMDQtLjY2LTcuMDctMS45N2MtMi4wMy0xLjMxLTMuNi0zLjA0LTQuNzMtNS4xOS0xLjEyLTIuMTUtMS42OS00LjQ1LTEuNjktNi44OCwwLTIuNTYuNTYtNC45LDEuNjktNy4wMiwxLjEyLTIuMTIsMi43LTMuODIsNC43My01LjEsMi4wMy0xLjI4LDQuMzgtMS45Miw3LjA3LTEuOTJzNS4yMy42Niw3LjI1LDEuOTdjMi4wMywxLjMxLDMuNiwzLjAzLDQuNzMsNS4xNSwxLjEyLDIuMTIsMS42OCw0LjQ2LDEuNjgsNy4wMnMtLjU2LDQuODEtMS42OCw2LjkzWiIvPgogICAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTMyMC43MywzMzYuMTNjLTMuNzEtMi4zMS04LTMuNDYtMTIuODctMy40NnMtOS4xOSwxLjE2LTEyLjk2LDMuNDZjLTMuNzgsMi4zMS02Ljc2LDUuNDEtOC45NCw5LjMxLTIuMTgsMy45LTMuMjgsOC4xOS0zLjI4LDEyLjg3czEuMDQsOC45NCwzLjE0LDEyLjc4YzIuMDksMy44NCw1LjA0LDYuOTEsOC44NSw5LjIyLDMuODEsMi4zMSw4LjIsMy40NiwxMy4yLDMuNDZzOS4xNC0uOTcsMTMuMDEtMi45YzMuODctMS45Myw2Ljc3LTQuNDMsOC43LTcuNDlsLTkuODMtNy4zOWMtMS4xMiwxLjg3LTIuNywzLjQzLTQuNzMsNC42OC0yLjAzLDEuMjUtNC40MiwxLjg3LTcuMTYsMS44Ny0zLjE4LDAtNS44Mi0uOS03LjkxLTIuNzEtMi4wOS0xLjgxLTMuNDgtNC4xNS00LjE3LTcuMDJoMzYuNDFjLjEyLS44MS4yMi0xLjU5LjI4LTIuMzQuMDYtLjc1LjA5LTEuNDcuMDktMi4xNSwwLTQuNjgtMS4wNS04Ljk3LTMuMTQtMTIuODctMi4wOS0zLjktNC45OS03LTguNy05LjMxWk0yOTUuNzgsMzUzLjM1Yy42OS0yLjkzLDIuMDktNS4zLDQuMjEtNy4xMSwyLjEyLTEuODEsNC42OC0yLjcxLDcuNjgtMi43MXM1Ljc2Ljk3LDcuOTEsMi45YzIuMTUsMS45MywzLjU3LDQuMjQsNC4yNiw2LjkzaC0yNC4wNloiLz4KICAgICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik00MDcuMTYsMzM1LjE5Yy0yLjgxLTEuNjItNS45Ni0yLjQzLTkuNDUtMi40My00LjMxLDAtNy43Mi44LTEwLjI1LDIuMzktMi41MywxLjU5LTQuNiwzLjg1LTYuMjIsNi43OS0xLjYyLTIuOTMtMy44MS01LjE5LTYuNTUtNi43OS0yLjc1LTEuNTktNS44My0yLjM5LTkuMjctMi4zOS03LjM2LDAtMTIuMzIsMi43NS0xNC44OCw4LjI0di03LjExaC0xMi40NXY0OC42N2gxMi42NHYtMjYuNjhjMC00LjI0LDEuMDEtNy4zMiwzLjA0LTkuMjIsMi4wMy0xLjksNC4zOC0yLjg1LDcuMDctMi44NSwzLjEyLDAsNS42NS45NSw3LjU4LDIuODUsMS45MywxLjksMi45LDQuOTgsMi45LDkuMjJ2MjYuNjhoMTIuNjR2LTI2LjY4YzAtNC42OC45Mi03Ljg2LDIuNzYtOS41NSwxLjg0LTEuNjgsNC4yMy0yLjUzLDcuMTYtMi41M3M1LjIxLjk1LDcuMDIsMi44NWMxLjgxLDEuOSwyLjcxLDQuOTgsMi43MSw5LjIydjI2LjY4aDEyLjY0di0yOS43NmMwLTQuMTItLjgxLTcuNjgtMi40My0xMC42Ny0xLjYyLTMtMy44NC01LjMtNi42NS02LjkzWiIvPgogICAgICA8L2c+CiAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMSIgcG9pbnRzPSIyNDEuNiAyNTguNTQgMjQxLjYgMTQ2LjUyIDE4NC41NCAxODQuNzcgMTg0LjU0IDI1OC41NCAxODQuMTYgMjg2LjY5IDI0MS45OSAyODYuNjkgMjQxLjYgMjU4LjU0Ii8+CiAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMSIgcG9pbnRzPSIxODQuNTQgMzkuMTcgMTg0LjU0IDc3LjIgMjQxLjYyIDM3Ljk5IDI0MS45OSAxMS4wMiAxODQuMTYgMTEuMDIgMTg0LjU0IDM5LjE3Ii8+CiAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTg1NC43NCwxNzQuNTRjMSwuNzQsMi4wNywxLjUyLDMuMjQsMi4zNWwxNy4yNSwxMS4wNC4xNi4xMWMxMC4yOSw2LjksMTguMTksMTUuMSwyMy40OSwyNC4zNy40Ny44Mi45MSwxLjY1LDEuMzQsMi40OGg3OS43OGwtMTI1LjI2LTQwLjM1WiIvPgogICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yOTIuMjIsMjU0Ljk1aDI5LjI2bDUuMTEsMzEuMzVoMzQuMzdsLTMwLjQyLTE2Ni4wMmgtNDcuMzdsLTMwLjY1LDE2Ni4wMmgzNC44M2w0Ljg4LTMxLjM1Wk0zMDMuMTMsMTg2LjY5YzEuMzktOC4zNiwyLjU1LTE5LjUsMy4wMi0yNi4wMWgxLjM5Yy40Niw2LjUsMS44NiwxNy42NSwzLjAyLDI2LjAxbDYuMDQsMzguMDhoLTE5LjVsNi4wNC0zOC4wOFoiLz4KICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzcyLjc5LDEyMC4yOGwuMjMsMTYuOTV2MTMyLjEybC0uMjMsMTYuOTVoMzAuNjVsLS4yMy0xNi45NXYtNjkuODljMC02LjczLS40Ni0xNi4wMi0uNy0yMi4wNmguOTNjLjkzLDYuMDQsMi41NSwxNS4wOSwzLjk1LDIxLjU5bDE5LjI3LDg3LjNoMjUuNTRsMTkuMDQtODcuM2MxLjM5LTYuNSwyLjc5LTE1LjU2LDMuOTUtMjEuNTloLjkzYy0uNDYsNi4wNC0uNywxNS4zMi0uNywyMi4wNnY2OS44OWwtLjIzLDE2Ljk1aDMwLjg4bC0uMjMtMTYuOTV2LTEzMi4xMmwuMjMtMTYuOTVoLTQ1Ljc0bC0xNi40OSw3NC4wN2MtMS4zOSw2LjUtMi43OSwxNS41Ni0zLjcyLDIxLjgzaC0uOTNjLS45My02LjI3LTIuMzItMTUuMzItMy43Mi0yMS44M2wtMTYuNDktNzQuMDdoLTQ2LjIxWiIvPgogICAgICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik02MDQuMDYsMTk5LjY5di0uOTNjMTIuNTQtNi45NywxOS41LTE4LjExLDE5LjUtMzUuMjl2LS40NmMwLTI2LjAxLTE1LjU2LTQyLjcyLTQ3LjM3LTQyLjcyaC00NS45OGwuMjMsMTYuOTV2MTMyLjEybC0uMjMsMTYuOTVoNDYuNjdjMzIuNzQsMCw1MC44NS0xNy4xOCw1MC44NS00OS4yM3YtLjQ2YzAtMTguNTgtOC44Mi0zMC42NS0yMy42OS0zNi45MlpNNTg5LjQzLDE2NS43OXYxLjM5YzAsMTAuNjgtNS4xMSwxOC41OC0xNi43MiwxOC41OGgtNy45di0zNi40NWg4LjEzYzExLjE1LDAsMTYuNDksNS44MSwxNi40OSwxNi40OVpNNTkxLjk4LDIzNi4xNGMwLDEzLjctNC40MSwyMS4xMy0xOC41OCwyMS4xM2gtOC41OXYtNDIuNzJoOC4zNmMxMy4yMywwLDE4LjgxLDcuMiwxOC44MSwyMC4ydjEuMzlaIi8+CiAgICAgIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTcyMi43MSwxMjcuNzFjLTcuNjYtNi41LTE4LjU4LTEwLjIyLTMyLjc0LTEwLjIycy0yNS4zMSwzLjcyLTMyLjk3LDEwLjIyYy0xMC4yMiw4LjgyLTE1LjA5LDIzLjIyLTE1LjA5LDU1Ljk2djM5LjI0YzAsMzIuNzQsNC44OCw0Ny4xNCwxNS4wOSw1NS45Niw3LjY2LDYuNzMsMTguODEsMTAuMjIsMzIuOTcsMTAuMjJzMjUuMDgtMy40OCwzMi43NC0xMC4yMmMxMC4yMi04LjgyLDE1LjMyLTIzLjIyLDE1LjMyLTU1Ljk2di0zOS4yNGMwLTMyLjc0LTUuMTEtNDcuMTQtMTUuMzItNTUuOTZaTTcwMy4yLDE3Ni40N3Y1My42NGMwLDEzLjQ3LDAsMjcuODYtMTMuMjQsMjcuODZzLTEzLjIzLTE0LjQtMTMuMjMtMjcuODZ2LTUzLjY0YzAtMTMuNDcsMC0yNy44NiwxMy4yMy0yNy44NnMxMy4yNCwxNC40LDEzLjI0LDI3Ljg2WiIvPgogICAgICA8cG9seWdvbiBjbGFzcz0iY2xzLTEiIHBvaW50cz0iNzU0Ljk4IDE0OS43NyA3NjUuNDMgMTQ5Ljc3IDc1Ni42IDE3OC43OSA3NzIuMTYgMTc4Ljc5IDc4Ny4yNiAxNDkuNzcgNzg3LjI2IDEyMC4yOCA3NTQuOTggMTIwLjI4IDc1NC45OCAxNDkuNzciLz4KICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNODcwLjM4LDE5NS41MWwtMTcuNDItMTEuMTVjLTEwLjkxLTcuNjYtMTcuNDEtMTMuNy0xNy40MS0yMi43NSwwLTcuNjYsNC42NC0xMywxMi43Ny0xMyw5LjA2LDAsMTMuMjQsNi41LDE1LjA5LDE3LjY1bDMyLjc0LTIuNzljLTIuNzktMjkuNzItMTkuNzQtNDUuOTctNDcuMTQtNDUuOTctMjkuOTUsMC00OC43NiwxOC44MS00OC43Niw0NS45NywwLDE4LjM0LDguNTksMzMuNjcsMjYuNyw0Ni4yMWwxNy4xOCwxMS4xNWMxMyw4LjgyLDE4LjM0LDE2LjI1LDE4LjM0LDI0LjYxLDAsNy42Ni00Ljg4LDEyLjU0LTEzLjcsMTIuNTQtOS45OCwwLTE2LjI1LTYuMjctMTkuMDQtMjEuMTNsLTMyLjc0LDIuNzljMy4wMiwzMS44MSwyMi4wNiw0OS40Niw1Mi4yNCw0OS40NnM0OC43Ni0xNy4xOCw0OC43Ni00NS4yOGMwLTE5Ljc0LTkuMjktMzUuOTktMjcuNjMtNDguM1oiLz4KICAgICAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzEyLjgyLDBsLTE2NC4zOCwxMTIuOTJ2ODUuMjJMMzY2LjU1LDUxLjkzbDE4OC41Myw1OS4zNWgyMS4xMWMyMi40NCwwLDM5LjEzLDcuODMsNDguMzEsMjEuODVsMTQuNyw0LjYzYzIuODUtNi45OSw2Ljc2LTEyLjQxLDExLjkxLTE2Ljg2bC4wNi0uMDVjMy43My0zLjE3LDguMDctNS43NCwxMi45MS03LjcxTDMxMi44MiwwWiIvPgogICAgICA8cG9seWdvbiBjbGFzcz0iY2xzLTEiIHBvaW50cz0iMCAyMTQuODkgNzMuMzggMjE2LjEgNzMuMzggMTY0LjQ4IDAgMjE0Ljg5Ii8+CiAgICAgIDxwb2x5Z29uIGNsYXNzPSJjbHMtMSIgcG9pbnRzPSIxMzkuNDQgMzkuMTcgMTM5LjgyIDExLjAyIDgxLjk5IDExLjAyIDgyLjM4IDM5LjE3IDgyLjM4IDIyNS4yNSA4Mi4zOCAyNTguNTQgODEuOTkgMjg2LjY5IDEzOS44MiAyODYuNjkgMTM5LjQ0IDI1OC41NCAxMzkuNDQgMjE1LjAxIDEzOS40NCAzOS4xNyIvPgogICAgPC9nPgogIDwvZz4KPC9zdmc+Cg==">
+  <div class="title script">Kitchen Designer</div>
+  <nav class="steps" aria-label="Steps"><button data-step="plan">Plan</button><span>&middot;</span><button data-step="design" class="on">Design</button><span>&middot;</span><button data-step="visualise">Visualise</button><span>&middot;</span><button data-step="quote">Get a quote</button></nav>
+  <div class="tag script">Great kitchens start here.</div>
+  <button class="hbtn" id="btnOpen" title="Open a design file saved earlier"><svg class="ic" aria-hidden="true"><use href="#i-open"/></svg><span>Open</span></button>
+  <button class="hbtn" id="btnSave" title="Download this design as a file"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg><span>Save</span></button>
+  <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
+  <button class="hbtn icon-only" id="btnMore" title="More" aria-haspopup="true" aria-label="More options"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
+  <button class="cta" id="btnSend" title="Send this design to Hambo's for a quote">Get My Quote <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+  <div class="menu" id="moreMenu" hidden>
+    <button id="btnJobs"><svg class="ic" aria-hidden="true"><use href="#i-jobs"/></svg>Jobs on this device</button>
+    <button id="btnPng"><svg class="ic" aria-hidden="true"><use href="#i-sheet"/></svg>Download plan sheet (PNG)</button>
+    <button id="btnPrint"><svg class="ic" aria-hidden="true"><use href="#i-print"/></svg>Print / save as PDF</button>
+    <button id="btnPngView"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Download just this view (PNG)</button>
+    <button id="btnChecklist"><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg>Print check-measure checklist</button>
+    <label><input type="checkbox" id="bandToggle"><svg class="ic" aria-hidden="true"><use href="#i-band"/></svg>Show title band on screen</label>
+    <label><input type="checkbox" id="guideToggle" checked><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>Customer guide page on prints and emails</label>
+    <button id="btnClear" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Clear this room</button>
   </div>
 </header>
 
-<div class="toprow">
-  <span class="tgroup">
-    <button class="toolbtn" id="btnAdd" title="Add cabinets, appliances, shelves and panels"><svg class="ic" aria-hidden="true"><use href="#i-add"/></svg>Add</button>
-    <button class="toolbtn" id="btnSend" style="background:#00a357;" title="Email this design to Hambo's"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>Send to Hambo's</button>
-    <button class="toolbtn alt" id="btnJobs" title="Saved jobs on this device"><svg class="ic" aria-hidden="true"><use href="#i-jobs"/></svg>Jobs</button>
-    <button class="toolbtn alt" id="btnSave" title="Download this design as a file you can open again later"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Save</button>
-    <button class="toolbtn alt" id="btnOpen" title="Open a design file saved earlier"><svg class="ic" aria-hidden="true"><use href="#i-open"/></svg>Open</button>
-    <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
-  </span>
-  <span class="tsep"></span>
-  <span class="tgroup">
-    <button class="toolbtn alt" id="btnPng" title="Plan + elevations + title block on one sheet"><svg class="ic" aria-hidden="true"><use href="#i-sheet"/></svg>Sheet</button>
-    <button class="toolbtn alt" id="btnPrint" title="Print, or save as PDF"><svg class="ic" aria-hidden="true"><use href="#i-print"/></svg>Print / PDF</button>
-  </span>
-  <span class="tsep"></span>
-  <span class="tgroup">
-    <button class="toolbtn alt icon-only" id="btnUndo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg></button>
-    <button class="toolbtn alt icon-only" id="btnRedo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg class="ic" aria-hidden="true"><use href="#i-redo"/></svg></button>
-    <span class="zoomctl"><button id="zOut" title="Zoom out" aria-label="Zoom out"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button><span id="zPct">100%</span><button id="zIn" title="Zoom in" aria-label="Zoom in"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button><button id="zFit" title="Fit the cabinets to the screen"><svg class="ic" aria-hidden="true"><use href="#i-fit"/></svg>Fit</button></span>
-  </span>
-  <span id="warn" style="color:#c0392b;font-size:13px;font-weight:600;margin-left:8px;"></span>
-  <span class="grow"></span>
-  <button class="toolbtn alt icon-only" id="btnMore" title="More options" aria-haspopup="true" aria-label="More options"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
-  <div class="menu" id="moreMenu" hidden>
-    <label><input type="checkbox" id="dimToggle" checked><svg class="ic" aria-hidden="true"><use href="#i-ruler"/></svg>Running dimensions</label>
-    <label><input type="checkbox" id="bandToggle"><svg class="ic" aria-hidden="true"><use href="#i-band"/></svg>Show title band on screen</label>
-    <label><input type="checkbox" id="guideToggle" checked><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>Customer guide page on prints and emails</label>
-    <button id="btnPngView"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Download just this view (PNG)</button>
-    <button id="btnChecklist"><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg>Print check-measure checklist</button>
-    <button id="btnClear" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Clear this room</button>
-  </div>
-</div>
-
 <div class="layout">
   <aside id="palette">
-    <div id="asideHandle"><span>Cabinets &amp; finishes</span><span id="asideArrow">&#9660;</span></div>
+    <div id="asideHandle"><span>Design tools</span><span id="asideArrow">&#9660;</span></div>
     <div id="sideTabs" role="tablist">
-      <button data-tab="build" class="active"><svg class="ic" aria-hidden="true"><use href="#i-build"/></svg>Build</button>
-      <button data-tab="finishes"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Finishes</button>
-      <button data-tab="selected"><svg class="ic" aria-hidden="true"><use href="#i-piece"/></svg>Piece</button>
+      <button data-tab="build" class="active"><svg class="ic" aria-hidden="true"><use href="#i-build"/></svg>Cabinets</button>
       <button data-tab="appl"><svg class="ic" aria-hidden="true"><use href="#i-appl"/></svg>Appliances</button>
-      <button data-tab="job"><svg class="ic" aria-hidden="true"><use href="#i-job"/></svg>Job</button>
+      <button data-tab="walls"><svg class="ic" aria-hidden="true"><use href="#i-wall"/></svg>Walls &amp; Windows</button>
+      <button data-tab="finishes"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Finishes</button>
+      <button data-tab="job"><svg class="ic" aria-hidden="true"><use href="#i-job"/></svg>Room Setup</button>
+      <button data-tab="selected"><svg class="ic" aria-hidden="true"><use href="#i-piece"/></svg>Piece</button>
     </div>
 
     <div class="stab" data-tab="build">
-      <h3>Add a cabinet <span style="font-weight:500;text-transform:none;letter-spacing:0;">(click to place it on the plan)</span></h3>
-      <div class="typegrid" id="typeGrid"></div>
-      <div class="field">
-        <label>Width (mm) — standard or custom</label>
-        <input id="newWidth" type="number" value="600" min="50" max="4000" step="0.5">
-        <div class="quick" id="quickWidths"></div>
-      </div>
-      <div class="field">
-        <label>Depth (mm)</label>
-        <input id="newDepth" type="number" value="560" min="50" max="1500" step="10">
-      </div>
-      <h3>Add an appliance</h3>
-      <div class="typegrid" id="applGrid"></div>
-      <h3>Shelves, panels &amp; windows</h3>
-      <div class="typegrid" id="structGrid"></div>
+      <h2>Cabinets <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></h2><p class="sub">Click an item to place it on the plan</p>
+      <div class="cards" id="typeGrid"></div>
+      <h3>Common sizes (mm)</h3>
+      <div class="sizes" id="quickWidths"></div>
+      <details class="custom"><summary><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg>Custom size</summary>
+        <div class="field"><label>Width (mm)</label><input id="newWidth" type="number" value="600" min="50" max="4000" step="0.5"></div>
+        <div class="field"><label>Depth (mm)</label><input id="newDepth" type="number" value="560" min="50" max="1500" step="10"></div>
+      </details>
+      <div class="promo"><h3>Need help with your design?</h3><p>Our kitchen specialists are here to help bring it to life.</p><button id="btnAdvice">Get Expert Advice <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></div>
+    </div>
+
+    <div class="stab" data-tab="appl" hidden>
+      <h2>Appliances</h2><p class="sub">Click an item to place it on the plan</p>
+      <div class="cards" id="applGrid"></div>
+      <h3>Appliance list <span style="font-weight:500;text-transform:none;letter-spacing:0;">(prints with the plan)</span></h3>
+      <div class="field"><label>Cooktop type — sets the overhead clearance</label>
+        <select id="apCooktop"><option value="electric">Electric (600 mm above bench)</option><option value="gas">Gas (700 mm above bench)</option></select></div>
+      <div class="field"><label>Rangehood</label><select id="apHoodMode"><option value="">—</option><option value="Duct">Ducted</option><option value="Recirculate">Recirculating</option></select></div>
+      <div class="field"><label>Fridge allowance (mm) — width used when you add a fridge</label>
+        <div class="quick"><button data-fa="800">800</button><button data-fa="900">900</button><button data-fa="1000">1000</button></div>
+        <input id="apFridgeAllow" type="number" step="10" min="500" max="1500" style="margin-top:4px;"></div>
+      <div id="apRows"></div>
+    </div>
+
+    <div class="stab" data-tab="walls" hidden>
+      <h2>Walls &amp; Windows</h2><p class="sub">Draw the room, then add windows, panels and fillers</p>
+      <button class="bigbtn" id="btnDrawWall"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg> Draw a wall on the plan</button>
+      <p class="sub" style="margin-top:6px;">Click and drag along the plan. Walls snap straight and the length shows as you draw. Click a wall to change its length or remove it. Esc returns to the select tool.</p>
+      <div class="cards" id="structGrid"></div>
     </div>
 
     <div class="stab" data-tab="finishes" hidden>
-      <h3>Finishes (defaults for new pieces)</h3>
+      <h2>Finishes</h2><p class="sub">Defaults for new pieces; each piece can be changed on its own</p>
       <div class="field">
         <label>Door / drawer fronts</label>
         <div class="sw-row" id="doorSw"></div>
@@ -267,23 +367,13 @@
     </div>
 
     <div class="stab" data-tab="selected" hidden>
-      <h3>Selected piece</h3>
+      <h2>Piece</h2>
       <div id="selPanel" class="panel empty">Nothing selected. Click a piece on the plan.</div>
     </div>
 
-    <div class="stab" data-tab="appl" hidden>
-      <h3>Appliance list <span style="font-weight:500;text-transform:none;letter-spacing:0;">(prints with the plan)</span></h3>
-      <div class="field"><label>Cooktop type — sets the overhead clearance</label>
-        <select id="apCooktop"><option value="electric">Electric (600 mm above bench)</option><option value="gas">Gas (700 mm above bench)</option></select></div>
-      <div class="field"><label>Rangehood</label><select id="apHoodMode"><option value="">—</option><option value="Duct">Ducted</option><option value="Recirculate">Recirculating</option></select></div>
-      <div class="field"><label>Fridge allowance (mm) — width used when you add a fridge</label>
-        <div class="quick"><button data-fa="800">800</button><button data-fa="900">900</button><button data-fa="1000">1000</button></div>
-        <input id="apFridgeAllow" type="number" step="10" min="500" max="1500" style="margin-top:4px;"></div>
-      <div id="apRows"></div>
-    </div>
-
     <div class="stab" data-tab="job" hidden>
-      <h3>Title block <span style="font-weight:500;text-transform:none;letter-spacing:0;">(prints down the right of the sheet)</span></h3>
+      <h2>Room Setup</h2><p class="sub">Job details print down the right of the sheet</p>
+      <div id="mobileRoomHost"></div>
       <div class="field"><label>Order / Ref number</label><input id="tbJob" placeholder="e.g. 2026-041"></div>
       <div class="field" style="display:flex;gap:6px;"><div style="flex:2;"><label>Room</label><input id="tbRoom" placeholder="Kitchen" list="roomList"><datalist id="roomList"><option>Kitchen</option><option>Laundry</option><option>Linen</option><option>Wardrobe</option><option>Bathroom vanity</option><option>Butler's pantry</option></datalist></div><div style="flex:1;"><label>Page</label><input id="tbPage" placeholder="1/1"></div></div>
       <div class="field"><label>Customer</label><input id="tbCust" placeholder="Customer name"></div>
@@ -295,7 +385,7 @@
       <div class="field"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--ink);cursor:pointer;"><input type="checkbox" id="tbBlum"> Blum hinge/drawer upgrade (+30%)</label></div>
       <div class="field"><label>Benchtop — material + supplier</label><input id="tbBenchtop" placeholder="e.g. 20mm Stone by Hambos / Polytec Boston Oak Woodmatt"></div>
       <div class="field"><label>Edge finish</label><input id="tbEdge" list="edgeList" placeholder="Pencil Edge"><datalist id="edgeList"><option>Pencil Edge</option><option>Square Edge</option><option>Bullnose</option><option>Waterfall</option></datalist></div>
-      <div class="sw-name" style="margin:-4px 0 10px;color:#6a7361;font-weight:500;">Door colour, door and drawer profiles come from the Finishes tab; kickboard from Manufacturer standards.</div>
+      <div class="sw-name" style="margin:-4px 0 10px;color:#6a7361;font-weight:500;">Door colour, door and drawer profiles come from Finishes; kickboard from Manufacturer standards.</div>
       <div class="field"><label>Notes (e.g. flooring)</label><textarea id="tbNotes" rows="2"></textarea></div>
       <div class="field"><label>Quoting notes</label><textarea id="tbQuoteNotes" rows="2"></textarea></div>
       <div class="field"><label>Special requests</label><textarea id="tbSpecial" rows="2"></textarea></div>
@@ -319,6 +409,36 @@
   </aside>
 
   <main>
+    <div id="floatTools">
+      <button data-tool="select" class="active" title="Select and move"><svg class="ic" aria-hidden="true"><use href="#i-piece"/></svg>Select</button>
+      <button data-tool="wall" title="Draw a wall"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg>Draw Wall</button>
+      <button data-tool="dim" title="Add a dimension between two points"><svg class="ic" aria-hidden="true"><use href="#i-dim"/></svg>Dimension</button>
+      <span class="fsep"></span>
+      <button id="btnUndo" title="Undo (Ctrl+Z)"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg>Undo</button>
+      <button id="btnRedo" title="Redo (Ctrl+Shift+Z)"><svg class="ic" aria-hidden="true"><use href="#i-redo"/></svg>Redo</button>
+      <span class="fsep"></span>
+      <button id="zOut" title="Zoom out"><svg class="ic" aria-hidden="true"><use href="#i-zoomout"/></svg>Zoom Out</button>
+      <span id="zPct">100%</span>
+      <button id="zIn" title="Zoom in"><svg class="ic" aria-hidden="true"><use href="#i-zoomin"/></svg>Zoom In</button>
+      <button id="zFit" title="Fit to screen"><svg class="ic" aria-hidden="true"><use href="#i-fit"/></svg>Fit to Screen</button>
+    </div>
+    <div id="warn"></div>
+    <div id="rightPanel">
+      <div class="rphead" id="rpTitle"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>Room Details</span></div>
+      <div class="rpbody" id="rpRoom">
+        <div id="hdrJob"></div>
+        <div class="roomctl"><select id="roomSel" title="Room"></select><button id="roomAdd" title="Add a room (laundry, linen, wardrobe...)">+</button><button id="roomDel" title="Remove this room">&times;</button></div>
+        <div id="wallList"></div>
+      </div>
+      <div class="rpbody" id="rpPiece" hidden></div>
+      <div class="rpbody" id="rpWall" hidden></div>
+    </div>
+    <div id="emptyState" hidden>
+      <div class="big script">Design your kitchen</div>
+      <div class="caps">DRAG CABINETS, APPLIANCES AND MORE<br>ONTO THE PLAN</div>
+      <div class="lead"><span class="script">&#8617;</span><span>Start by adding a wall<br>or choose an item from the left</span></div>
+    </div>
+    <div id="canvasScroll">
     <div id="planWrap">
       <svg id="planSvg" viewBox="0 0 12000 6950" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
@@ -326,9 +446,21 @@
       <svg id="elevSvg" viewBox="0 0 12000 3200" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
     <div id="view3d"><canvas id="c3d"></canvas></div>
-    <div class="hint" id="hint">Tip: arrow keys nudge the selected piece (Shift = 100 mm), <b>R</b> rotates, <b>Delete</b> removes it. Ctrl + scroll zooms.</div>
+    </div>
+    <div class="hint" id="hint">Arrow keys nudge (Shift = 100 mm) · R rotates · Delete removes · Esc = select tool</div>
+    <div id="viewPill" role="tablist">
+      <button id="tabPlan" class="active"><svg class="ic" aria-hidden="true"><use href="#i-plan"/></svg>2D Plan</button>
+      <button id="tabElev"><svg class="ic" aria-hidden="true"><use href="#i-elev"/></svg>Elevation</button>
+      <button id="tab3d"><svg class="ic" aria-hidden="true"><use href="#i-cube"/></svg>3D View</button>
+    </div>
+    <div id="canvasOpts">
+      <label><input type="checkbox" id="gridToggle" checked> Show grid</label>
+      <label><input type="checkbox" id="dimToggle" checked> Show dimensions</label>
+      <label><input type="checkbox" id="snapToggle" checked> Snap to grid</label>
+    </div>
   </main>
 </div>
+<footer class="strip"><b>HAMBO'S</b><span>Kitchens</span><span>Bathrooms</span><span>Laundries</span><span>Wardrobes</span><span class="rule"></span><span class="script">Real advice. Real brands. Real people.</span></footer>
 
 <div id="jobsBox" class="modal" hidden><div class="mcard" style="width:640px;">
   <h4>Jobs on this device</h4>
@@ -447,7 +579,7 @@ let scheme = {door:{...DOORS[0]}, bench:{...BENCH[0]}, profile:'Shaker', drawerP
 let cabs = [];
 let selId = null, nextId = 1, dropN = 0;
 // rooms: one job can hold several rooms (kitchen, laundry, linen...); `cabs` is always the current room's pieces
-let rooms=[{name:'Kitchen',cabs:[],nextId:1,dropN:0}], curRoom=0;
+let rooms=[{name:'Kitchen',cabs:[],walls:[],dims:[],nextId:1,dropN:0}], curRoom=0;
 const SNAP = 10, MAGNET = 60;
 const TITLE_H = 860;
 const BOARD = {x0:30,y0:TITLE_H+60,x1:11500,y1:6560}; // right margin leaves room for a vertical run's dimension string
@@ -483,23 +615,59 @@ function doorColor(c){return (c.door&&c.door.color)||scheme.door.color;}
 
 /* ---------- palette UI ---------- */
 function catOf(t){ if(t.appliance)return 'appl'; if(t.thin||t.window||t.sym==='shelves')return 'struct'; return 'cab'; }
-function buildPaletteGrid(gridId,cat){
-  const grid=document.getElementById(gridId);
-  Object.entries(TYPES).forEach(([k,t])=>{ if(catOf(t)!==cat)return;
-    const b=document.createElement('button');
-    const sw=cat==='cab'?scheme.door.color:(t.window?'#cfe2ea':'#dfe3e7');
-    b.innerHTML=`<span class="swatch" style="background:${sw};border:1px solid #889"></span>${t.name}`;
+function cardArt(k){
+  const S='stroke="#55605a" stroke-width="1.6" fill="#eceee8"', L='stroke="#55605a" stroke-width="1.6" fill="none"', B='fill="#d9dcd2" stroke="#55605a" stroke-width="1.4"';
+  const dh=(x1,x2,y)=>`<line x1="${x1}" y1="${y}" x2="${x1}" y2="${y+8}" ${L}/><line x1="${x2}" y1="${y}" x2="${x2}" y2="${y+8}" ${L}/>`;
+  const art={
+    base:`<rect x="8" y="12" width="68" height="6" ${B}/><rect x="12" y="18" width="60" height="36" rx="1.5" ${S}/><line x1="42" y1="18" x2="42" y2="54" ${L}/>${dh(38,46,32)}`,
+    drawers:`<rect x="8" y="12" width="68" height="6" ${B}/><rect x="12" y="18" width="60" height="36" rx="1.5" ${S}/><line x1="12" y1="30" x2="72" y2="30" ${L}/><line x1="12" y1="42" x2="72" y2="42" ${L}/><line x1="36" y1="24" x2="48" y2="24" ${L}/><line x1="36" y1="36" x2="48" y2="36" ${L}/><line x1="36" y1="48" x2="48" y2="48" ${L}/>`,
+    sink:`<rect x="8" y="14" width="68" height="6" ${B}/><rect x="28" y="7" width="28" height="7" rx="2" ${L}/><path d="M42 7V2h5" ${L}/><rect x="12" y="20" width="60" height="34" rx="1.5" ${S}/><line x1="42" y1="20" x2="42" y2="54" ${L}/>${dh(38,46,33)}`,
+    corner:`<rect x="6" y="12" width="46" height="6" ${B}/><rect x="10" y="18" width="38" height="36" rx="1.5" ${S}/><rect x="44" y="24" width="34" height="30" rx="1.5" ${S}/><line x1="61" y1="24" x2="61" y2="54" ${L}/><line x1="30" y1="34" x2="30" y2="42" ${L}/>`,
+    tall:`<rect x="24" y="4" width="36" height="52" rx="1.5" ${S}/><line x1="42" y1="4" x2="42" y2="56" ${L}/><line x1="24" y1="30" x2="60" y2="30" ${L}/>${dh(38,46,26)}`,
+    wall:`<rect x="12" y="8" width="60" height="30" rx="1.5" ${S}/><line x1="42" y1="8" x2="42" y2="38" ${L}/>${dh(38,46,26)}<line x1="12" y1="44" x2="72" y2="44" stroke="#c9d1bf" stroke-width="2"/>`,
+    island:`<rect x="4" y="16" width="76" height="7" ${B}/><rect x="14" y="23" width="56" height="28" rx="1.5" ${S}/><line x1="42" y1="23" x2="42" y2="51" ${L}/><circle cx="12" cy="40" r="4" ${L}/><line x1="12" y1="44" x2="12" y2="56" ${L}/><circle cx="72" cy="40" r="4" ${L}/><line x1="72" y1="44" x2="72" y2="56" ${L}/>`,
+    shelf:`<rect x="12" y="18" width="60" height="5" ${B}/><rect x="12" y="38" width="60" height="5" ${B}/><path d="M20 23v6M64 23v6M20 43v6M64 43v6" ${L}/><path d="M36 18v-6a4 4 0 0 1 8 0v6" ${L}/><circle cx="52" cy="14" r="3" ${L}/>`,
+    bbar:`<rect x="4" y="16" width="76" height="7" ${B}/><rect x="40" y="23" width="34" height="28" rx="1.5" ${S}/><path d="M12 23v30M28 23v30" ${L}/>`,
+    floating:`<rect x="12" y="28" width="60" height="6" ${B}/><path d="M22 28v-5M62 28v-5" ${L}/>`,
+    cooktop:`<rect x="10" y="20" width="64" height="24" rx="2" ${S}/><circle cx="26" cy="32" r="5" ${L}/><circle cx="42" cy="28" r="4" ${L}/><circle cx="58" cy="32" r="5" ${L}/><circle cx="42" cy="38" r="3" ${L}/>`,
+    oven:`<rect x="14" y="8" width="56" height="46" rx="2" ${S}/><line x1="14" y1="18" x2="70" y2="18" ${L}/><circle cx="22" cy="13" r="2" ${L}/><circle cx="30" cy="13" r="2" ${L}/><rect x="22" y="24" width="40" height="22" rx="2" ${L}/><line x1="36" y1="35" x2="48" y2="35" ${L}/>`,
+    fridge:`<rect x="22" y="4" width="40" height="52" rx="2" ${S}/><line x1="22" y1="24" x2="62" y2="24" ${L}/><line x1="56" y1="10" x2="56" y2="18" ${L}/><line x1="56" y1="30" x2="56" y2="46" ${L}/>`,
+    dishwasher:`<rect x="14" y="8" width="56" height="46" rx="2" ${S}/><line x1="14" y1="16" x2="70" y2="16" ${L}/><line x1="36" y1="12" x2="48" y2="12" ${L}/><line x1="30" y1="24" x2="54" y2="24" ${L}/>`,
+    microwave:`<rect x="10" y="16" width="64" height="32" rx="2" ${S}/><rect x="16" y="22" width="36" height="20" rx="2" ${L}/><circle cx="62" cy="27" r="2.5" ${L}/><line x1="59" y1="36" x2="65" y2="36" ${L}/><line x1="59" y1="41" x2="65" y2="41" ${L}/>`,
+    rangehood:`<rect x="34" y="6" width="16" height="16" ${S}/><path d="M12 42h60l-10-20H22z" ${S}/><line x1="20" y1="48" x2="64" y2="48" ${L}/>`,
+    appliance:`<rect x="14" y="10" width="56" height="44" rx="2" ${S}/><text x="42" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#55605a" font-family="Helvetica,Arial">?</text>`,
+    window:`<rect x="12" y="10" width="60" height="40" rx="1" ${S}/><line x1="42" y1="10" x2="42" y2="50" ${L}/><line x1="12" y1="30" x2="72" y2="30" ${L}/><rect x="8" y="50" width="68" height="4" ${B}/>`,
+    filler:`<rect x="12" y="18" width="30" height="36" rx="1.5" ${S}/><rect x="42" y="18" width="8" height="36" fill="#c9d1bf" stroke="#55605a" stroke-width="1.6"/><line x1="54" y1="18" x2="54" y2="54" stroke="#55605a" stroke-width="3"/><text x="46" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="#55605a" font-family="Helvetica,Arial">F</text>`,
+    endpanel:`<rect x="14" y="18" width="34" height="36" rx="1.5" ${S}/><rect x="48" y="16" width="10" height="40" ${S}/><rect x="51" y="19" width="4" height="34" ${L}/><text x="53" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="#55605a" font-family="Helvetica,Arial">P</text>`,
+    halfpanel:`<rect x="36" y="22" width="12" height="32" ${S}/><rect x="14" y="30" width="20" height="24" rx="1.5" ${S}/><rect x="50" y="30" width="20" height="24" rx="1.5" ${S}/>`,
+    pole:`<rect x="39" y="4" width="6" height="52" rx="1" ${S}/><rect x="30" y="52" width="24" height="4" ${B}/>`,
+  };
+  return '<svg viewBox="0 0 84 60" aria-hidden="true">'+(art[k]||art.appliance)+'</svg>';
+}
+const CARD_GROUPS={
+  typeGrid:[['base','Base Cabinet'],['drawers','Drawers'],['sink','Sink Base'],['corner','Corner Cabinet'],['tall','Tall / Pantry'],['wall','Overhead'],['island','Island / Bench'],['shelf','Open Shelves'],['bbar','Breakfast Bar']],
+  applGrid:[['cooktop','Cooktop'],['oven','Oven'],['rangehood','Rangehood'],['dishwasher','Dishwasher'],['fridge','Fridge'],['microwave','Microwave'],['appliance','Other appliance']],
+  structGrid:[['window','Window'],['filler','Filler (F)'],['endpanel','End Panel (P)'],['halfpanel','½ Pantry Panel'],['floating','Floating Shelf'],['pole','Pole']],
+};
+function buildPaletteGrid(gridId){
+  const grid=document.getElementById(gridId); grid.innerHTML='';
+  CARD_GROUPS[gridId].forEach(([k,name])=>{
+    const typeKey=k==='drawers'?'base':k, t=TYPES[typeKey];
+    const b=document.createElement('button'); b.type='button'; b.className='card'; b.innerHTML=cardArt(k)+'<span>'+name+'</span>'; b.title='Click to place a '+name.toLowerCase()+' on the plan';
     b.onclick=()=>{ document.getElementById('newDepth').value=t.depth;
-      if(t.dw) document.getElementById('newWidth').value=(k==='fridge'?APPL.fridgeAllow:t.dw); addCab(k); };
+      const chip=document.querySelector('.sizes button.on');
+      if(t.dw) document.getElementById('newWidth').value=(k==='fridge'?APPL.fridgeAllow:t.dw);
+      if(chip&&!t.thin&&!t.window&&!t.appliance) document.getElementById('newWidth').value=chip.dataset.w;
+      setTool('select'); addCab(typeKey); if(k==='drawers'){ const c=cabs[cabs.length-1]; c.front='drawers'; c.drawers=3; render(); buildPanel(); } };
     grid.appendChild(b);
   });
 }
-buildPaletteGrid('typeGrid','cab');
-buildPaletteGrid('applGrid','appl');
-buildPaletteGrid('structGrid','struct');
+buildPaletteGrid('typeGrid'); buildPaletteGrid('applGrid'); buildPaletteGrid('structGrid');
 const qw=document.getElementById('quickWidths');
-COMMON_WIDTHS.forEach(w=>{const b=document.createElement('button');b.textContent=w;
-  b.onclick=()=>document.getElementById('newWidth').value=w; qw.appendChild(b);});
+[300,450,600,750,900,1200].forEach(w=>{const b=document.createElement('button');b.type='button';b.textContent=w;b.dataset.w=w; if(w===600) b.classList.add('on');
+  b.onclick=()=>{ document.getElementById('newWidth').value=w; qw.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); }; qw.appendChild(b);});
+document.getElementById('newWidth').addEventListener('input',()=>qw.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.w===document.getElementById('newWidth').value)));
+
 
 /* ---------- appliance list UI ---------- */
 function buildApplUI(){
@@ -574,11 +742,12 @@ function pushUndo(tag){
   // repeated keystrokes in the same field within 1.2 s count as one step
   if(tag&&tag===undoTag&&Date.now()-undoAt<1200){ undoAt=Date.now(); return; }
   undoTag=tag||null; undoAt=Date.now();
-  UNDO.push(JSON.stringify(cabs)); if(UNDO.length>60) UNDO.shift(); REDO.length=0; undoButtons();
+  UNDO.push(snapJSON()); if(UNDO.length>60) UNDO.shift(); REDO.length=0; undoButtons();
 }
-function restoreSnap(json){ cabs=JSON.parse(json); if(!cabs.some(c=>c.id===selId)) selId=null; render(); buildPanel(); }
-function undo(){ if(!UNDO.length) return; REDO.push(JSON.stringify(cabs)); restoreSnap(UNDO.pop()); undoTag=null; undoButtons(); }
-function redo(){ if(!REDO.length) return; UNDO.push(JSON.stringify(cabs)); restoreSnap(REDO.pop()); undoTag=null; undoButtons(); }
+function snapJSON(){ return JSON.stringify({cabs,walls,dims}); }
+function restoreSnap(json){ const o=JSON.parse(json); if(Array.isArray(o)) cabs=o; else { cabs=o.cabs||[]; walls=o.walls||[]; dims=o.dims||[]; } if(!cabs.some(c=>c.id===selId)) selId=null; if(!walls.some(w=>w.id===selWall)) selWall=null; if(!dims.some(d=>d.id===selDim)) selDim=null; render(); buildPanel(); }
+function undo(){ if(!UNDO.length) return; REDO.push(snapJSON()); restoreSnap(UNDO.pop()); undoTag=null; undoButtons(); }
+function redo(){ if(!REDO.length) return; UNDO.push(snapJSON()); restoreSnap(REDO.pop()); undoTag=null; undoButtons(); }
 function undoButtons(){ document.getElementById('btnUndo').disabled=!UNDO.length; document.getElementById('btnRedo').disabled=!REDO.length; }
 document.getElementById('btnUndo').onclick=undo; document.getElementById('btnRedo').onclick=redo;
 
@@ -595,7 +764,7 @@ function addCab(type){
   cabs.push({id:nextId++,type,width,depth,height:t.eh,bottom,x:snap(ox),y:snap(oy),rot:0,front:(noDoor?'none':'doors'),hinge:(width>600?'D':'L'),drawers:3,label:'',door:null,price:null});
   selId=nextId-1; render(); buildPanel();
 }
-function snap(v){return Math.round(v/SNAP)*SNAP;}
+function snap(v){return snapOn?Math.round(v/SNAP)*SNAP:Math.round(v);}
 // sizes in mm: ignore blanks (keep the old value) and clamp to sensible limits
 function clampMM(v,min,max,fallback){ v=parseFloat(v); return isNaN(v)?fallback:Math.max(min,Math.min(max,Math.round(v*2)/2)); }
 const mm=v=>(Math.round(v*2)/2).toString(); // prints 672.5 as 672.5 and 600 as 600
@@ -653,9 +822,13 @@ function render(){
     text(9500,6488,'QUOTE TOTAL','#eafff4',70,700,'start');
     text(11940,6488,total,'#ffffff',100,800,'end');
   }
+  rect(0,TITLE_H+20,12000,6950-TITLE_H-20,'#ffffff',null,0);
   // grid
-  for(let x=0;x<=12000;x+=500){line(x,TITLE_H+20,x,6580,x%1000?'#eef1ea':'#e0e6d8',x%1000?2:4);}
-  for(let y=TITLE_H+20;y<=6580;y+=500){line(0,y,12000,y,(y-TITLE_H-20)%1000?'#eef1ea':'#e0e6d8',(y-TITLE_H-20)%1000?2:4);}
+  if(showGrid){
+  for(let x=0;x<=12000;x+=500){line(x,TITLE_H+20,x,6580,x%1000?'#eef1ea':'#dfe5d7',x%1000?2:4);}
+  for(let y=TITLE_H+20;y<=6580;y+=500){line(0,y,12000,y,(y-TITLE_H-20)%1000?'#eef1ea':'#dfe5d7',(y-TITLE_H-20)%1000?2:4);}
+  }
+  drawWalls(); drawDims();
   cabs.forEach(keepOnBoard);
   // cabinets (overlapping pieces are outlined red)
   OVERLAP=overlapIds();
@@ -669,6 +842,7 @@ function render(){
   line(60,6475,60,6525,'#566b4b',8); line(1060,6475,1060,6525,'#566b4b',8);
   text(560,6470,'1 metre','#566b4b',76,600,'middle');
   updateSubtotal();
+  updateEmptyState(); renderRightPanel();
 }
 function swatchLegend(x,y,color,labelTxt){
   rect(x,y,70,70,color,'#cdd9c1',3,8);
@@ -1046,7 +1220,8 @@ function localISO(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear
 let drag=null;
 function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
 function startDrag(e){
-  const id=+e.currentTarget.dataset.id; selId=id; buildPanel(); render(); setSideTab('selected',false);
+  if(tool!=='select') return;
+  const id=+e.currentTarget.dataset.id; selId=id; selWall=null; selDim=null; buildPanel(); render(); showPiece();
   const c=cabs.find(x=>x.id===id); const p=svgPt(e);
   pushUndo();
   drag={id,dx:p.x-c.x,dy:p.y-c.y,pid:e.pointerId};
@@ -1059,7 +1234,7 @@ function startDrag(e){
 function onDrag(e){
   if(!drag)return; const c=cabs.find(x=>x.id===drag.id); const p=svgPt(e);
   let nx=snap(p.x-drag.dx), ny=snap(p.y-drag.dy); const f=footprint(c);
-  cabs.forEach(o=>{ if(o.id===c.id)return; const fo=footprint(o);
+  if(snapOn) cabs.forEach(o=>{ if(o.id===c.id)return; const fo=footprint(o);
     if(Math.abs(nx-(o.x+fo.w))<MAGNET) nx=o.x+fo.w;
     if(Math.abs(nx+f.w-o.x)<MAGNET) nx=o.x-f.w;
     if(Math.abs(nx-o.x)<MAGNET) nx=o.x;
@@ -1077,13 +1252,24 @@ function endDrag(){
   drag=null; svg.removeEventListener('pointermove',onDrag); svg.removeEventListener('pointerup',endDrag); svg.removeEventListener('pointercancel',endDrag);
 }
 window.addEventListener('pointerup',endDrag); window.addEventListener('pointercancel',endDrag); window.addEventListener('blur',endDrag);
-svg.addEventListener('pointerdown',e=>{ if(e.target===svg){selId=null;buildPanel();render(); if(sideTab==='selected') setSideTab(prevSideTab);} });
+svg.addEventListener('pointerdown',e=>{
+  if(tool==='wall'){ const p=svgPointSnap(e); draft={kind:'wall',x1:p.x,y1:p.y,x2:p.x,y2:p.y}; try{ svg.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); render(); return; }
+  if(tool==='dim'){ const p=svgPointSnap(e);
+    if(!draft){ draft={kind:'dim',x1:p.x,y1:p.y,x2:null,y2:null}; }
+    else { if(Math.hypot(p.x-draft.x1,p.y-draft.y1)>=50){ pushUndo(); dims.push({id:'d'+Date.now().toString(36),x1:draft.x1,y1:draft.y1,x2:p.x,y2:p.y}); } draft=null; }
+    e.preventDefault(); render(); return; }
+  if(e.target===svg||(e.target.parentNode===svg&&e.target.tagName!=='g')){ selId=null; selWall=null; selDim=null; buildPanel(); render(); if(sideTab==='selected') setSideTab(prevSideTab); }
+});
+svg.addEventListener('pointermove',e=>{ if(!draft) return; const p=svgPointSnap(e);
+  if(draft.kind==='wall'){ const dx=p.x-draft.x1, dy=p.y-draft.y1; if(Math.abs(dx)>=Math.abs(dy)){ draft.x2=p.x; draft.y2=draft.y1; } else { draft.x2=draft.x1; draft.y2=p.y; } render(); }
+  else if(draft.kind==='dim'){ draft.x2=p.x; draft.y2=p.y; render(); } });
+svg.addEventListener('pointerup',e=>{ if(draft&&draft.kind==='wall'){ if(Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1)>=100){ pushUndo(); walls.push({id:'w'+Date.now().toString(36),x1:draft.x1,y1:draft.y1,x2:draft.x2,y2:draft.y2}); } draft=null; try{ svg.releasePointerCapture(e.pointerId); }catch(err){} render(); } });
 
 /* ---------- selected panel ---------- */
 function buildPanel(){
   const p=document.getElementById('selPanel');
   const c=cabs.find(x=>x.id===selId);
-  if(!c){p.className='panel empty';p.textContent='Nothing selected. Click a piece on the plan.';return;}
+  if(!c){p.className='panel empty';p.textContent='Nothing selected. Click a piece on the plan.';renderRightPanel();return;}
   const t=TYPES[c.type];
   const ft=c.front||'doors';
   const mt=t.mount||'floor';
@@ -1146,6 +1332,7 @@ function buildPanel(){
   document.getElementById('bRot').onclick=()=>{pushUndo();c.rot=((c.rot||0)+90)%360;render();};
   document.getElementById('bDup').onclick=()=>{pushUndo();const n={...c,id:nextId++,x:c.x+150,y:c.y+150};cabs.push(n);selId=n.id;render();buildPanel();};
   if(isMobile()) openDrawer(); // on a phone the panel lives in the bottom drawer
+  renderRightPanel();
   document.getElementById('bDel').onclick=()=>{pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();};
 }
 
@@ -1296,7 +1483,7 @@ document.getElementById('btnPrint').onclick=()=>{
 document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear everything in '+roomName(curRoom)+'? (Undo can bring it back)')){pushUndo();cabs=[];selId=null;dropN=0;render();buildPanel();} };
 
 /* ---------- rooms ---------- */
-function syncRoom(){ const r=rooms[curRoom]; r.cabs=cabs; r.nextId=nextId; r.dropN=dropN; }
+function syncRoom(){ const r=rooms[curRoom]; r.cabs=cabs; r.walls=walls; r.dims=dims; r.nextId=nextId; r.dropN=dropN; }
 function roomName(i){ return rooms[i].name||('Room '+(i+1)); }
 function buildRoomUI(){
   const sel=document.getElementById('roomSel'); sel.innerHTML='';
@@ -1306,7 +1493,7 @@ function buildRoomUI(){
   const tp=document.getElementById('tbPage'); if(tp&&document.activeElement!==tp) tp.value=(curRoom+1)+'/'+rooms.length;
 }
 function loadRoom(i,quiet){
-  curRoom=i; const r=rooms[i]; cabs=r.cabs||[]; nextId=r.nextId||1; dropN=r.dropN||0; selId=null;
+  curRoom=i; const r=rooms[i]; cabs=r.cabs||[]; walls=r.walls||(r.walls=[]); dims=r.dims||(r.dims=[]); nextId=r.nextId||1; dropN=r.dropN||0; selId=null; selWall=null; selDim=null; draft=null;
   UNDO.length=0; REDO.length=0; undoButtons(); buildRoomUI();
   if(!quiet){ render(); buildPanel(); if(currentView==='elev') renderElev(); if(currentView==='3d') rebuild3D(); fitToCabinets(true); }
 }
@@ -1315,8 +1502,89 @@ function switchRoom(i,quiet){
   syncRoom(); loadRoom(i,quiet);
 }
 document.getElementById('roomSel').onchange=e=>switchRoom(+e.target.value);
-document.getElementById('roomAdd').onclick=()=>{ const name=prompt('Room name','Laundry'); if(name===null) return; syncRoom(); rooms.push({name:name.trim()||('Room '+(rooms.length+1)),cabs:[],nextId:1,dropN:0}); switchRoom(rooms.length-1); setSideTab('build'); };
+document.getElementById('roomAdd').onclick=()=>{ const name=prompt('Room name','Laundry'); if(name===null) return; syncRoom(); rooms.push({name:name.trim()||('Room '+(rooms.length+1)),cabs:[],walls:[],dims:[],nextId:1,dropN:0}); switchRoom(rooms.length-1); setSideTab('walls'); };
 document.getElementById('roomDel').onclick=()=>{ if(rooms.length<2) return; if(!confirm('Remove the room "'+roomName(curRoom)+'" and everything in it?')) return; rooms.splice(curRoom,1); loadRoom(Math.min(curRoom,rooms.length-1)); };
+
+
+/* ---------- walls, manual dimensions, canvas tools ---------- */
+let walls=[], dims=[], selWall=null, selDim=null, tool='select', draft=null, snapOn=true, showGrid=true;
+const WALL_T=90;
+function svgPointSnap(e){ const p=svgPt(e); return {x:Math.max(BOARD.x0,Math.min(BOARD.x1,snap(p.x))),y:Math.max(BOARD.y0,Math.min(BOARD.y1,snap(p.y)))}; }
+function setTool(t){ if(tool===t&&!draft) { document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); return; } tool=t; draft=null; document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); svg.style.cursor=t==='select'?'':'crosshair'; if(t!=='select'){ selId=null; buildPanel(); } render(); }
+document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+document.getElementById('btnDrawWall').onclick=()=>{ setTab('plan'); setTool('wall'); if(isMobile()) asideEl.classList.add('collapsed'); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(draft){ draft=null; render(); } else if(tool!=='select') setTool('select'); } });
+function wallLen(w){ return Math.hypot(w.x2-w.x1,w.y2-w.y1); }
+function contentBBox(){ if(!cabs.length&&!walls.length) return null; let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  cabs.forEach(c=>{ const f=footprint(c); x0=Math.min(x0,c.x); y0=Math.min(y0,c.y); x1=Math.max(x1,c.x+f.w); y1=Math.max(y1,c.y+f.h); });
+  walls.forEach(w=>{ x0=Math.min(x0,w.x1,w.x2); y0=Math.min(y0,w.y1,w.y2); x1=Math.max(x1,w.x1,w.x2); y1=Math.max(y1,w.y1,w.y2); });
+  return {x0,y0,x1,y1}; }
+function mkLine(x1,y1,x2,y2,col,w,extra){ const l=document.createElementNS(SVGNS,'line'); l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('stroke',col);l.setAttribute('stroke-width',w); if(extra) for(const k in extra) l.setAttribute(k,extra[k]); return l; }
+function drawWalls(){
+  walls.forEach(w=>{ const g=document.createElementNS(SVGNS,'g'); g.style.cursor='pointer'; g.style.touchAction='none';
+    g.appendChild(mkLine(w.x1,w.y1,w.x2,w.y2,w.id===selWall?'#c9614b':'#3a3f33',WALL_T,{'stroke-linecap':'square'}));
+    const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1), mx=(w.x1+w.x2)/2, my=(w.y1+w.y2)/2;
+    const t=mkText(0,0,mm(wallLen(w)),'#2f3a2a',66,700,'middle'); t.setAttribute('transform',horiz?`translate(${mx},${my-WALL_T-16})`:`translate(${mx-WALL_T-16},${my}) rotate(-90)`); g.appendChild(t);
+    g.addEventListener('pointerdown',e=>{ if(tool!=='select') return; e.stopPropagation(); selWall=w.id; selDim=null; selId=null; buildPanel(); render(); });
+    svg.appendChild(g); });
+  if(draft&&draft.kind==='wall'){ svg.appendChild(mkLine(draft.x1,draft.y1,draft.x2,draft.y2,'#8a917f',WALL_T,{'stroke-dasharray':'80 50','stroke-linecap':'square'}));
+    const len=Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1); if(len>0) svg.appendChild(mkText((draft.x1+draft.x2)/2,(draft.y1+draft.y2)/2-WALL_T-16,mm(len),'#566b4b',72,800,'middle')); }
+}
+function drawDims(){
+  const col='#2f3a2a';
+  const one=(d,sel,dash)=>{ const g=document.createElementNS(SVGNS,'g'); g.style.cursor='pointer';
+    const horiz=Math.abs(d.x2-d.x1)>=Math.abs(d.y2-d.y1), ang=Math.atan2(d.y2-d.y1,d.x2-d.x1), nx=-Math.sin(ang)*40, ny=Math.cos(ang)*40;
+    g.appendChild(mkLine(d.x1,d.y1,d.x2,d.y2,sel?'#c9614b':col,4,dash?{'stroke-dasharray':'60 40'}:null));
+    g.appendChild(mkLine(d.x1+nx,d.y1+ny,d.x1-nx,d.y1-ny,col,4)); g.appendChild(mkLine(d.x2+nx,d.y2+ny,d.x2-nx,d.y2-ny,col,4));
+    const mx=(d.x1+d.x2)/2, my=(d.y1+d.y2)/2, t=mkText(0,0,mm(Math.hypot(d.x2-d.x1,d.y2-d.y1)),sel?'#c9614b':col,68,700,'middle');
+    t.setAttribute('transform',`translate(${mx-nx*1.4},${my-ny*1.4}) rotate(${horiz?0:-90})`); g.appendChild(t);
+    if(!dash) g.addEventListener('pointerdown',e=>{ if(tool!=='select') return; e.stopPropagation(); selDim=d.id; selWall=null; selId=null; buildPanel(); render(); });
+    svg.appendChild(g); };
+  dims.forEach(d=>one(d,d.id===selDim,false));
+  if(draft&&draft.kind==='dim'&&draft.x2!=null) one(draft,false,true);
+  else if(draft&&draft.kind==='dim'){ const c=document.createElementNS(SVGNS,'circle'); c.setAttribute('cx',draft.x1); c.setAttribute('cy',draft.y1); c.setAttribute('r',30); c.setAttribute('fill','#c9614b'); svg.appendChild(c); }
+}
+function setWallLength(w,len){ len=Math.max(100,Math.min(12000,Math.round(len*2)/2)); const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1); const sx=Math.sign(w.x2-w.x1)||1, sy=Math.sign(w.y2-w.y1)||1; if(horiz){ w.x2=w.x1+sx*len; w.y2=w.y1; } else { w.y2=w.y1+sy*len; w.x2=w.x1; } }
+function wallsBBox(){ let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity; walls.forEach(w=>{ x0=Math.min(x0,w.x1,w.x2); y0=Math.min(y0,w.y1,w.y2); x1=Math.max(x1,w.x1,w.x2); y1=Math.max(y1,w.y1,w.y2); }); return {x0,y0,x1,y1}; }
+function roomSizeText(){ if(!walls.length) return ''; const b=wallsBBox(); const w=b.x1-b.x0, d=b.y1-b.y0; return (w>0&&d>0)?(mm(w)+' × '+mm(d)+' mm (wall to wall)'):(mm(Math.max(w,d))+' mm of wall so far'); }
+function updateEmptyState(){ const es=document.getElementById('emptyState'); if(es) es.hidden=!(currentView==='plan'&&!cabs.length&&!walls.length&&!dims.length); }
+/* right-hand panel: Room Details, or the selected piece / wall / dimension */
+const selPanelEl=document.getElementById('selPanel');
+function placePanels(){
+  const mobile=isMobile();
+  const pieceHost=mobile?document.querySelector('.stab[data-tab="selected"]'):document.getElementById('rpPiece');
+  if(selPanelEl.parentNode!==pieceHost) pieceHost.appendChild(selPanelEl);
+  const rp=document.getElementById('rightPanel'), host=mobile?document.getElementById('mobileRoomHost'):document.querySelector('main');
+  if(rp.parentNode!==host){ host.appendChild(rp); rp.classList.toggle('mobileRoom',mobile); rp.style.cssText=mobile?'display:block;position:static;width:auto;box-shadow:none;max-height:none;':''; }
+}
+function showPiece(){ if(isMobile()) setSideTab('selected',false); else renderRightPanel(); }
+function renderRightPanel(){
+  const rp=document.getElementById('rightPanel'); if(!rp) return;
+  const title=document.getElementById('rpTitle'), room=document.getElementById('rpRoom'), piece=document.getElementById('rpPiece'), wallB=document.getElementById('rpWall');
+  const c=cabs.find(x=>x.id===selId), w=walls.find(x=>x.id===selWall), d=dims.find(x=>x.id===selDim);
+  const setTitle=(icon,txt)=>{ title.innerHTML='<svg class="ic" aria-hidden="true"><use href="#i-'+icon+'"/></svg><span>'+txt+'</span>'; };
+  room.hidden=!!(c||w||d); piece.hidden=!c; wallB.hidden=!(w||d);
+  if(c){ setTitle('piece','Piece details'); return; }
+  if(w||d){ setTitle(w?'wall':'dim',w?'Wall':'Dimension'); const len=w?wallLen(w):Math.hypot(d.x2-d.x1,d.y2-d.y1);
+    wallB.innerHTML='<div class="field"><label>Length (mm)</label><input id="rpLen" type="number" step="0.5" min="100" value="'+mm(len)+'"'+(d?' disabled':'')+'></div><div style="display:flex;gap:6px;"><button class="rpbtn" id="rpDone" style="background:#e7ece1;color:#2f3a2a;">Done</button><button class="rpbtn" id="rpDel" style="background:#c9614b;">Delete</button></div>';
+    if(w){ document.getElementById('rpLen').oninput=e=>{ pushUndo('rpLen'); setWallLength(w,parseFloat(e.target.value)||wallLen(w)); render(); }; }
+    document.getElementById('rpDone').onclick=()=>{ selWall=null; selDim=null; render(); };
+    document.getElementById('rpDel').onclick=()=>{ pushUndo(); if(w) walls=walls.filter(x=>x!==w); else dims=dims.filter(x=>x!==d); selWall=null; selDim=null; render(); };
+    return; }
+  setTitle('info','Room Details');
+  const wl=document.getElementById('wallList');
+  if(!walls.length){ wl.innerHTML='<div class="empty"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><div><b>No room defined</b>Add walls to set your room size and measurements.</div></div><button class="rpbtn" id="rpDraw"><svg class="ic" aria-hidden="true" style="width:14px;height:14px;"><use href="#i-pen"/></svg>Draw walls</button>'; }
+  else { wl.innerHTML='<div style="font-weight:700;margin-bottom:4px;">Room '+roomSizeText()+'</div>'+walls.map((x,i)=>'<div class="wallrow"><span style="flex:1;">Wall '+(i+1)+'</span><input type="number" step="0.5" min="100" data-wid="'+x.id+'" value="'+mm(wallLen(x))+'"><span>mm</span><button data-del="'+x.id+'" title="Remove wall">&times;</button></div>').join('')+'<button class="rpbtn" id="rpDraw"><svg class="ic" aria-hidden="true" style="width:14px;height:14px;"><use href="#i-pen"/></svg>Add a wall</button>';
+    wl.querySelectorAll('input[data-wid]').forEach(inp=>inp.oninput=e=>{ const x=walls.find(y=>y.id===inp.dataset.wid); if(!x) return; pushUndo('wl'+x.id); setWallLength(x,parseFloat(e.target.value)||wallLen(x)); render(); });
+    wl.querySelectorAll('button[data-del]').forEach(b=>b.onclick=()=>{ pushUndo(); walls=walls.filter(y=>y.id!==b.dataset.del); render(); }); }
+  const dr=document.getElementById('rpDraw'); if(dr) dr.onclick=()=>{ setTab('plan'); setTool('wall'); };
+}
+document.getElementById('gridToggle').onchange=e=>{ showGrid=e.target.checked; render(); };
+document.getElementById('snapToggle').onchange=e=>{ snapOn=e.target.checked; };
+document.querySelectorAll('header nav.steps button').forEach(b=>b.onclick=()=>{ const st=b.dataset.step; document.querySelectorAll('header nav.steps button').forEach(x=>x.classList.toggle('on',x===b));
+  if(st==='plan'){ setTab('plan'); setSideTab('walls'); } else if(st==='design'){ setTab('plan'); setSideTab('build'); } else if(st==='visualise'){ setTab('3d'); } else { document.getElementById('btnSend').click(); } });
+document.getElementById('btnAdvice').onclick=()=>document.getElementById('btnSend').click();
+window.addEventListener('resize',placePanels);
 
 /* ---------- sidebar tabs ---------- */
 const asideEl=document.getElementById('palette');
@@ -1330,7 +1598,7 @@ function setSideTab(t,remember){
 }
 document.querySelectorAll('#sideTabs button').forEach(b=>b.onclick=()=>setSideTab(b.dataset.tab));
 function openDrawer(){ asideEl.classList.remove('collapsed'); document.getElementById('asideArrow').innerHTML='&#9660;'; }
-document.getElementById('btnAdd').onclick=()=>{ setTab('plan'); setSideTab('build'); openDrawer(); };
+
 
 /* ---------- toolbar overflow menu ---------- */
 const moreMenu=document.getElementById('moreMenu');
@@ -1360,7 +1628,7 @@ document.getElementById('asideHandle').onclick=()=>{
 /* ---------- zoom: a working scale by default, fit to what is placed ---------- */
 const WORK_SCALE=0.2;            // px per mm: a 600 mm cabinet is 120 px wide on screen
 const SHEET_PAD=18;              // #planWrap / #viewElev padding
-const mainEl=document.querySelector('main');
+const mainEl=document.getElementById('canvasScroll'); // the scrolling part of the work area (overlays sit outside it)
 let scale=WORK_SCALE; const viewScales={plan:WORK_SCALE,elev:null};
 function applyZoom(){
   document.getElementById('planSvg').style.width=Math.round(12000*scale)+'px';
@@ -1381,9 +1649,9 @@ function setScale(ns,anchor){
 function fitToCabinets(keepScale){
   const rect=mainEl.getBoundingClientRect(), vw=Math.max(100,rect.width-2*SHEET_PAD), vh=Math.max(100,rect.height-2*SHEET_PAD);
   const y0=sheetY0(); let bx0,by0,bx1,by1;
-  if(cabs.length&&currentView==='plan'){
-    bx0=Math.min(...cabs.map(c=>c.x))-450; by0=Math.max(y0,Math.min(...cabs.map(c=>c.y))-450);
-    bx1=Math.max(...cabs.map(c=>c.x+footprint(c).w))+450; by1=Math.max(...cabs.map(c=>c.y+footprint(c).h))+500;
+  const cb=contentBBox();
+  if(cb&&currentView==='plan'){
+    bx0=cb.x0-450; by0=Math.max(y0,cb.y0-450); bx1=cb.x1+450; by1=cb.y1+500;
   } else { bx0=0; by0=y0; bx1=12000; by1=currentView==='elev'?(+E.getAttribute('viewBox').split(' ')[3]+y0):6950; }
   if(!keepScale){ scale=Math.max(0.05,Math.min(0.8,Math.min(vw/(bx1-bx0),vh/(by1-by0)))); applyZoom(); }
   mainEl.scrollLeft=SHEET_PAD+bx0*scale-(vw-(bx1-bx0)*scale)/2;
@@ -1424,7 +1692,9 @@ function setTab(t){
   document.getElementById('viewElev').style.display=t==='elev'?'block':'none';
   document.getElementById('view3d').style.display=t==='3d'?'block':'none';
   document.getElementById('palette').style.display=t==='plan'?'block':'none';
-  const hints={plan:'Tip: arrow keys nudge the selected piece (Shift = 100 mm), R rotates, Delete removes it. Ctrl + scroll zooms.',
+  ['floatTools','rightPanel','canvasOpts'].forEach(id=>{ const el=document.getElementById(id); if(el&&el.parentNode.tagName==='MAIN') el.style.display=t==='plan'?'':'none'; });
+  if(t!=='plan'){ const es=document.getElementById('emptyState'); if(es) es.hidden=true; }
+  const hints={plan:'Arrow keys nudge (Shift = 100 mm) \u00b7 R rotates \u00b7 Delete removes \u00b7 Esc = select tool',
     elev:'Front-on elevation, projected by position. Edit on the Plan tab.',
     '3d':'Drag to orbit · scroll to zoom · doors & drawers shown on the fronts.'};
   document.getElementById('hint').textContent=hints[t];
@@ -1566,8 +1836,9 @@ function buildSheet(){
   const x0=200, leftW=TB_X-400, top=420, availH=SHEET_H-top-260;
   // plan panel: cropped to the pieces (with room for dimension strings), never smaller than 4 x 3 m
   let planVB=[0,TITLE_H+20,12000,6950-TITLE_H-20];
-  if(cabs.length){
-    let bx0=Math.min(...cabs.map(c=>c.x))-700, by0=Math.min(...cabs.map(c=>c.y))-700, bx1=Math.max(...cabs.map(c=>c.x+footprint(c).w))+700, by1=Math.max(...cabs.map(c=>c.y+footprint(c).h))+900;
+  const cb=contentBBox();
+  if(cb){
+    let bx0=cb.x0-700, by0=cb.y0-700, bx1=cb.x1+700, by1=cb.y1+900;
     if(bx1-bx0<4000){ const m=(4000-(bx1-bx0))/2; bx0-=m; bx1+=m; } if(by1-by0<3000){ const m=(3000-(by1-by0))/2; by0-=m; by1+=m; }
     bx0=Math.max(0,bx0); by0=Math.max(TITLE_H+20,by0); bx1=Math.min(12000,bx1); by1=Math.min(6950,by1);
     planVB=[bx0,by0,bx1-bx0,by1-by0];
@@ -1784,14 +2055,14 @@ const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling'
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
   syncRoom(); if(!jobId) jobId='j'+Date.now().toString(36);
-  return {v:5,jobId,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,prices:PRICES,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,nextId:r.nextId,dropN:r.dropN})),curRoom};
+  return {v:5,jobId,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,prices:PRICES,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,walls:r.walls||[],dims:r.dims||[],nextId:r.nextId,dropN:r.dropN})),curRoom};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
   jobId=(typeof s.jobId==='string'&&s.jobId)||('j'+Date.now().toString(36));
-  if(Array.isArray(s.rooms)&&s.rooms.length){ rooms=s.rooms.map(r=>({name:r.name||'Kitchen',cabs:(r.cabs||[]).filter(c=>c&&TYPES[c.type]),nextId:parseInt(r.nextId)||1,dropN:parseInt(r.dropN)||0})); curRoom=Math.min(Math.max(0,parseInt(s.curRoom)||0),rooms.length-1); }
-  else rooms=[{name:(s.tb&&s.tb.tbRoom)||'Kitchen',cabs:s.cabs.filter(c=>c&&TYPES[c.type]),nextId:parseInt(s.nextId)||1,dropN:parseInt(s.dropN)||0}], curRoom=0;
-  cabs=rooms[curRoom].cabs;
+  if(Array.isArray(s.rooms)&&s.rooms.length){ rooms=s.rooms.map(r=>({name:r.name||'Kitchen',cabs:(r.cabs||[]).filter(c=>c&&TYPES[c.type]),walls:Array.isArray(r.walls)?r.walls:[],dims:Array.isArray(r.dims)?r.dims:[],nextId:parseInt(r.nextId)||1,dropN:parseInt(r.dropN)||0})); curRoom=Math.min(Math.max(0,parseInt(s.curRoom)||0),rooms.length-1); }
+  else rooms=[{name:(s.tb&&s.tb.tbRoom)||'Kitchen',cabs:s.cabs.filter(c=>c&&TYPES[c.type]),walls:[],dims:[],nextId:parseInt(s.nextId)||1,dropN:parseInt(s.dropN)||0}], curRoom=0;
+  cabs=rooms[curRoom].cabs; walls=rooms[curRoom].walls; dims=rooms[curRoom].dims; selWall=null; selDim=null; draft=null;
   if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme={drawerProfile:s.scheme.profile,...s.scheme};
   benchH=parseInt(s.benchH)||870;
   if(s.std&&typeof s.std==='object') STD={...STD,...s.std};
@@ -1819,7 +2090,7 @@ function saveJobNow(){
 }
 function newJob(){
   saveJobNow(); jobId='j'+Date.now().toString(36);
-  rooms=[{name:'Kitchen',cabs:[],nextId:1,dropN:0}]; curRoom=0; cabs=rooms[0].cabs; nextId=1; dropN=0; selId=null; UNDO.length=0; REDO.length=0;
+  rooms=[{name:'Kitchen',cabs:[],walls:[],dims:[],nextId:1,dropN:0}]; curRoom=0; cabs=rooms[0].cabs; walls=rooms[0].walls; dims=rooms[0].dims; nextId=1; dropN=0; selId=null; selWall=null; selDim=null; draft=null; UNDO.length=0; REDO.length=0;
   TB_IDS.forEach(id=>{ const el=document.getElementById(id); if(el.type==='checkbox') el.checked=false; else el.value=''; });
   document.getElementById('tbDate').value=localISO(new Date()); document.getElementById('tbRoom').value='Kitchen';
   APPL={hoodMode:'',fridgeAllow:APPL.fridgeAllow||900,items:{}}; contact={name:'',phone:'',email:'',suburb:''};
@@ -1865,6 +2136,7 @@ document.getElementById('fileOpen').onchange=e=>{
 document.getElementById('tbDate').value=localISO(new Date());
 const restored=loadState();
 wireTitleBlock();
+placePanels();
 buildFinishUI();
 buildApplUI();
 buildRoomUI();
