@@ -1249,8 +1249,19 @@ function composite3D(cb){
   tbImg.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(xml)));
 }
 function export3D(){ composite3D(cv=>{ const a=document.createElement('a');a.download=safeName(val('tbJob'))+'-3d.png';a.href=cv.toDataURL('image/png');a.click(); }); }
-function printImage(url,title){ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print/save the PDF.');return;}
-  win.document.write('<html><head><title>'+title.replace(/[<>]/g,'')+'</title><style>@page{margin:8mm}body{margin:0}img{width:100%;display:block}</style></head><body><img src="'+url+'" onload="setTimeout(function(){window.focus();window.print();},250)">'+(withGuide?guidePageHTML():'')+'</body></html>'); win.document.close(); }
+/* print a document through a hidden frame on this page (no pop-up window, so nothing for a blocker to stop) */
+function printHTML(title,bodyHTML,headHTML){
+  document.querySelectorAll('iframe.printframe').forEach(f=>f.remove());
+  const fr=document.createElement('iframe'); fr.className='printframe'; fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;'; document.body.appendChild(fr);
+  const d=fr.contentDocument; d.open();
+  d.write('<html><head><title>'+String(title).replace(/[<>]/g,'')+'</title>'+(headHTML||'')+'</head><body>'+bodyHTML+'</body></html>'); d.close();
+  const go=()=>{ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ alert('Printing is blocked in this browser. Use Download sheet and print the image instead.'); } };
+  const imgs=[...d.images]; let left=imgs.filter(i=>!i.complete).length;
+  if(!left) setTimeout(go,250); else imgs.forEach(i=>{ if(!i.complete){ i.onload=i.onerror=()=>{ if(--left===0) setTimeout(go,250); }; } });
+  fr.contentWindow.addEventListener('afterprint',()=>setTimeout(()=>fr.remove(),500)); setTimeout(()=>fr.remove(),120000);
+}
+const PRINT_CSS='<style>@page{margin:8mm}body{margin:0}img{width:100%;display:block}</style>';
+function printImage(url,title){ printHTML(title,'<img src="'+url+'">'+(withGuide?guidePageHTML():''),PRINT_CSS); }
 function printSvg(node,title){ const vb=fullViewBox(node).split(/\s+/).map(Number);
   const clone=node.cloneNode(true); clone.setAttribute('viewBox',fullViewBox(node)); clone.setAttribute('width',3000); clone.setAttribute('height',Math.round(3000*vb[3]/vb[2]));
   const bg=document.createElementNS(SVGNS,'rect');bg.setAttribute('width',vb[2]);bg.setAttribute('height',vb[3]);bg.setAttribute('fill','#fff');clone.insertBefore(bg,clone.firstChild);
@@ -1603,9 +1614,9 @@ function allSheets(){
   for(let i=0;i<rooms.length;i++){ switchRoom(i,true); out.push({name:roomName(i),svg:buildSheet()}); }
   switchRoom(orig,true); render(); buildPanel(); return out;
 }
-function printImages(urls,title){ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print/save the PDF.');return;}
+function printImages(urls,title){
   const imgs=urls.map((u,i)=>'<img src="'+u+'" style="page-break-after:'+(i<urls.length-1||withGuide?'always':'auto')+'">').join('');
-  win.document.write('<html><head><title>'+title.replace(/[<>]/g,'')+'</title><style>@page{margin:8mm}body{margin:0}img{width:100%;display:block}</style></head><body>'+imgs+(withGuide?guidePageHTML():'')+'<script>var n=document.images.length,d=0;for(var i=0;i<n;i++){document.images[i].onload=function(){if(++d===n)setTimeout(function(){window.focus();window.print();},250);};}<\/script></body></html>'); win.document.close(); }
+  printHTML(title,imgs+(withGuide?guidePageHTML():''),PRINT_CSS); }
 
 /* ---------- check-measure checklist (printable, per job, for the installer) ---------- */
 function checklistHTML(){
@@ -1642,8 +1653,7 @@ function checklistHTML(){
    +'<h2>6. Anything else</h2><table>'+row('Out by &gt; 5 mm',box+' marked on the plan &nbsp; '+box+' photographed &nbsp; '+box+' nothing out')+row('Notes',line(560)+'<br>'+line(560)+'<br>'+line(560))+'</table>'
    +'<div class="rule"><b>Sign-off.</b> Measured by '+line(160)+' &nbsp; Signature '+line(160)+' &nbsp; Date '+line(100)+'<br><span class="small">Questions on site: Jess 0411 330 905. No appliance form, no final plan.</span></div>';
 }
-document.getElementById('btnChecklist').onclick=()=>{ const win=window.open(''); if(!win){alert('Allow pop-ups for this site to print the checklist.');return;}
-  win.document.write('<html><head><title>'+(val('tbJob')||'Hambos').replace(/[<>]/g,'')+' \u2014 check-measure checklist</title></head><body>'+checklistHTML()+'<script>setTimeout(function(){window.focus();window.print();},300);<\/script></body></html>'); win.document.close(); };
+document.getElementById('btnChecklist').onclick=()=>{ printHTML((val('tbJob')||'Hambos')+' \u2014 check-measure checklist',checklistHTML()); };
 
 /* ---------- customer guide (K-CG1) appended to prints and emails ---------- */
 const GUIDE_URL='https://hambos.goask.com.au/customer-guide-K-CG1.pdf';
