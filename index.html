@@ -674,9 +674,9 @@ function computeRuns(level){
       else{ if(chain.length>=2)addRun('h',chain); chain=[row[i]]; } }
     if(chain.length>=2)addRun('h',chain);
   });
-  // vertical runs among unclaimed
+  // vertical runs among unclaimed (a corner unit turns the corner, so it can be in both)
   const cols=[];
-  boxes.filter(b=>!claimed.has(b.c.id)).sort((a,b)=>a.l-b.l||a.t-b.t).forEach(bx=>{
+  boxes.filter(b=>!claimed.has(b.c.id)||b.c.type==='corner').sort((a,b)=>a.l-b.l||a.t-b.t).forEach(bx=>{
     let col=cols.find(c=>hov(c[0],bx)>0.6*Math.min(c[0].w,bx.w)); if(col)col.push(bx); else cols.push([bx]);
   });
   cols.forEach(col=>{ col.sort((a,b)=>a.t-b.t); let chain=[col[0]];
