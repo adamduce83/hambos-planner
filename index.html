@@ -57,7 +57,8 @@
   .quick button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:4px;padding:6px 9px;min-height:32px;font-size:12px;}
   .quick button:hover{background:var(--sage-lt);}
   .sw-row{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
-  .sw{flex:0 0 auto;width:34px;height:34px;border-radius:7px;border:2px solid #fff;box-shadow:0 0 0 1px #cfd6c6;cursor:pointer;}
+  .sw{flex:0 0 auto;width:34px;height:34px;padding:0;border-radius:7px;border:2px solid #fff;box-shadow:0 0 0 1px #cfd6c6;cursor:pointer;font:inherit;}
+  .sw:focus-visible{outline:none;box-shadow:0 0 0 3px var(--green);}
   .sw:hover{box-shadow:0 0 0 2px var(--sage);}
   .sw.on{box-shadow:0 0 0 3px var(--green);}
   .sw.def{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#6a7361;background:#f4f6f1;width:auto;padding:0 8px;height:34px;}
@@ -506,8 +507,8 @@ function doorSwatches(row,current,onPick){
   let grp=null;
   DOORS.forEach(o=>{
     if(o.group&&o.group!==grp){ grp=o.group; const h=document.createElement('div'); h.className='sw-grp'; h.textContent=grp; row.appendChild(h); }
-    const s=document.createElement('div'); s.className='sw'+(current&&o.color===current.color?' on':'');
-    s.style.background=o.color; s.title=o.name; s.onclick=()=>onPick(o); row.appendChild(s);
+    const s=document.createElement('button'); s.type='button'; s.className='sw'+(current&&o.color===current.color?' on':'');
+    s.style.background=o.color; s.title=o.name; s.setAttribute('aria-label',o.name); s.setAttribute('aria-pressed',current&&o.color===current.color?'true':'false'); s.onclick=()=>onPick(o); row.appendChild(s);
   });
 }
 function buildFinishUI(){
@@ -517,8 +518,8 @@ function buildFinishUI(){
   dc.oninput=e=>{scheme.door={name:'Custom',color:e.target.value}; refreshFinish(); render();}; dRow.appendChild(dc);
 
   const bRow=document.getElementById('benchSw'); bRow.innerHTML='';
-  BENCH.forEach(o=>{const s=document.createElement('div');s.className='sw'+(o.color===scheme.bench.color?' on':'');
-    s.style.background=o.color; s.title=o.name;
+  BENCH.forEach(o=>{const s=document.createElement('button');s.type='button';s.className='sw'+(o.color===scheme.bench.color?' on':'');
+    s.style.background=o.color; s.title=o.name; s.setAttribute('aria-label',o.name); s.setAttribute('aria-pressed',o.color===scheme.bench.color?'true':'false');
     s.onclick=()=>{scheme.bench={...o}; refreshFinish(); render(); };
     bRow.appendChild(s);});
   const bc=document.createElement('input'); bc.type='color'; bc.className='cpick'; bc.title='Custom benchtop colour';
@@ -1106,7 +1107,7 @@ function buildPanel(){
     p.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>{ pushUndo(); document.getElementById('edN').value=b.dataset.dl; setDL(b.dataset.dl); }); }
   // per-cabinet front colour override
   const dr=document.getElementById('edDoor');
-  const def=document.createElement('div'); def.className='sw def'+(c.door?'':' on'); def.textContent='Default';
+  const def=document.createElement('button'); def.type='button'; def.className='sw def'+(c.door?'':' on'); def.textContent='Default'; def.title='Use the job default colour';
   def.onclick=()=>{pushUndo();c.door=null;buildPanel();render();}; dr.appendChild(def);
   doorSwatches(dr,c.door,o=>{ pushUndo(); c.door={...o}; buildPanel(); render(); });
   const cc=document.createElement('input'); cc.type='color'; cc.className='cpick'; cc.title='Custom colour for this unit';
