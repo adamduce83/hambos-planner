@@ -44,6 +44,7 @@
   .sw.on{box-shadow:0 0 0 2px var(--charcoal);}
   .sw.def{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#6a7361;background:#f4f6f1;width:auto;padding:0 6px;height:24px;}
   .sw-name{font-size:12px;color:#3a3f33;margin-top:5px;font-weight:600;}
+  .sw-grp{flex-basis:100%;font-size:10px;color:#6a7361;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
   .cpick{width:28px;height:24px;border:1px solid var(--line);border-radius:5px;padding:0;cursor:pointer;background:none;}
   .panel{background:#f7f9f4;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:6px;}
   .panel.empty{color:#9aa392;font-size:12px;text-align:center;}
@@ -283,17 +284,42 @@ function cabBand(c){ // returns [bottomMM, topMM]
 const COMMON_WIDTHS = [300,400,450,500,600,800,900,1000,1200];
 
 /* ---------- finishes ---------- */
+// Hambo's SKB range, transcribed from the showroom sample boards (Sep 2026).
+// Hex values are approximations from photos of the samples; check against the real boards.
 const DOORS = [
-  {name:'Polar White',  color:'#f2f0ea'},
-  {name:'Matt White',   color:'#e7e5dd'},
-  {name:'Stone Grey',   color:'#b6b3a8'},
-  {name:'Sage Green',   color:'#8b9c80'},
-  {name:'Forest Green', color:'#3f5545'},
-  {name:'Navy',         color:'#2d3a4d'},
-  {name:'Charcoal',     color:'#3a3c3f'},
-  {name:'Black',        color:'#262626'},
-  {name:'Natural Oak',  color:'#c79c63'},
-  {name:'Walnut',       color:'#6e4a2e'},
+  // SKB Poly colours (painted)
+  {group:'SKB poly colours', name:'White',                   color:'#f6f6f2'},
+  {group:'SKB poly colours', name:'Vivid White',             color:'#fafaf7'},
+  {group:'SKB poly colours', name:'Lexicon Half',            color:'#f0f1ec'},
+  {group:'SKB poly colours', name:'Natural White',           color:'#efede4'},
+  {group:'SKB poly colours', name:'Pearly White 7009',       color:'#e9e4d8'},
+  {group:'SKB poly colours', name:'Canvas Tan 7531',         color:'#e8ddc3'},
+  {group:'SKB poly colours', name:'Wombat Forest',           color:'#e2e3d6'},
+  {group:'SKB poly colours', name:'Intellectual Gray 7045',  color:'#c2c0ad'},
+  {group:'SKB poly colours', name:'Black of Night 6993',     color:'#35383c'},
+  {group:'SKB poly colours', name:'Black',                   color:'#1e1e1e'},
+  {group:'SKB poly colours', name:'Rockwood Blue Green 2811',color:'#8ca898'},
+  {group:'SKB poly colours', name:'Moorland',                color:'#c6cbae'},
+  {group:'SKB poly colours', name:'Attitude Gray 7060',      color:'#a3a99c'},
+  {group:'SKB poly colours', name:'Acacia Haze 9132',        color:'#a8b6a0'},
+  {group:'SKB poly colours', name:'Dried Thyme 6186',        color:'#8fa088'},
+  {group:'SKB poly colours', name:'Uncertain Gray 6234',     color:'#c6cdd0'},
+  {group:'SKB poly colours', name:'Serious Gray 6256',       color:'#9ea9b5'},
+  {group:'SKB poly colours', name:'Gibraltar 6257',          color:'#72808d'},
+  {group:'SKB poly colours', name:'Mount Etna 7625',         color:'#3e4c57'},
+  // SKB Decorative doors (woodgrain, 18 mm)
+  {group:'SKB woodgrain', name:'Clear Oak',        color:'#d9a96a'},
+  {group:'SKB woodgrain', name:'Black Oak',        color:'#3a3634'},
+  {group:'SKB woodgrain', name:'Bronzed Oak',      color:'#6b5d52'},
+  {group:'SKB woodgrain', name:'Light Teak',       color:'#ddc49c'},
+  {group:'SKB woodgrain', name:'Clear Walnut',     color:'#d6a067'},
+  {group:'SKB woodgrain', name:'Nordic Oak',       color:'#d8b07e'},
+  {group:'SKB woodgrain', name:'Maryland Walnut',  color:'#a8826a'},
+  {group:'SKB woodgrain', name:'Letsch Wood',      color:'#8e8a82'},
+  {group:'SKB woodgrain', name:'Bronzed Walnut',   color:'#5a4a42'},
+  {group:'SKB woodgrain', name:'Chalky Milan',     color:'#d2cdc4'},
+  {group:'SKB woodgrain', name:'Pure Oak',         color:'#e0b872'},
+  {group:'SKB woodgrain', name:'Cafe Oak',         color:'#5e5650'},
 ];
 const BENCH = [
   {name:'White Stone',     color:'#eef0ed'},
@@ -303,9 +329,12 @@ const BENCH = [
   {name:'Black Stone',     color:'#27282a'},
   {name:'Timber',          color:'#b07d4e'},
 ];
-const PROFILES = ['Slab / flat','Shaker','V-groove','Profiled'];
+// SKB door profiles from the showroom boards
+const PROFILES = ['Flat','Finger Pull','J Pull','Slim Shaker','Ascot Shaker','Shaker','VJ Groove 100','Traditional Square','Tamworth','Ballarat','Heritage','Bolection','SKB Rib','SKB Flute','SKB Batten'];
+// profiles drawn with a framed panel on the elevation / 3D fronts
+const FRAMED=/shaker|square|tamworth|ballarat|heritage|bolection/i;
 const FINISH_TYPES = ['2-pac','Polyurethane','Melamine','Laminate','Timber veneer'];
-let scheme = {door:{...DOORS[1]}, bench:{...BENCH[0]}, profile:'Shaker', finishType:'2-pac'};
+let scheme = {door:{...DOORS[0]}, bench:{...BENCH[0]}, profile:'Shaker', finishType:'2-pac'};
 
 /* ---------- state ---------- */
 let cabs = [];
@@ -354,12 +383,17 @@ COMMON_WIDTHS.forEach(w=>{const b=document.createElement('button');b.textContent
   b.onclick=()=>document.getElementById('newWidth').value=w; qw.appendChild(b);});
 
 /* ---------- finishes UI ---------- */
+function doorSwatches(row,current,onPick){
+  let grp=null;
+  DOORS.forEach(o=>{
+    if(o.group&&o.group!==grp){ grp=o.group; const h=document.createElement('div'); h.className='sw-grp'; h.textContent=grp; row.appendChild(h); }
+    const s=document.createElement('div'); s.className='sw'+(current&&o.color===current.color?' on':'');
+    s.style.background=o.color; s.title=o.name; s.onclick=()=>onPick(o); row.appendChild(s);
+  });
+}
 function buildFinishUI(){
   const dRow=document.getElementById('doorSw'); dRow.innerHTML='';
-  DOORS.forEach(o=>{const s=document.createElement('div');s.className='sw'+(o.color===scheme.door.color?' on':'');
-    s.style.background=o.color; s.title=o.name;
-    s.onclick=()=>{scheme.door={...o}; refreshFinish(); render(); };
-    dRow.appendChild(s);});
+  doorSwatches(dRow,scheme.door,o=>{ scheme.door={...o}; refreshFinish(); render(); });
   const dc=document.createElement('input'); dc.type='color'; dc.className='cpick'; dc.title='Custom door colour';
   dc.oninput=e=>{scheme.door={name:'Custom',color:e.target.value}; refreshFinish(); render();}; dRow.appendChild(dc);
 
@@ -766,7 +800,7 @@ function eDetail(x,y,w,h,c,tc){
 }
 function eFront(x,y,w,h,c,tc){
   const ft=c.front||'doors';
-  const shaker=scheme.profile==='Shaker';
+  const shaker=FRAMED.test(scheme.profile);
   const frame=(fx,fy,fw,fh)=>{ if(!shaker)return; const ins=Math.min(70,fw*0.16,fh*0.16); if(fw-2*ins>20&&fh-2*ins>20) eR(fx+ins,fy+ins,fw-2*ins,fh-2*ins,'none',tc,1.3); };
   if(ft==='doors'){
     const hg=c.hinge||(c.width>600?'D':'L');
@@ -883,9 +917,7 @@ function buildPanel(){
   const dr=document.getElementById('edDoor');
   const def=document.createElement('div'); def.className='sw def'+(c.door?'':' on'); def.textContent='Default';
   def.onclick=()=>{c.door=null;buildPanel();render();}; dr.appendChild(def);
-  DOORS.forEach(o=>{const s=document.createElement('div');s.className='sw'+(c.door&&c.door.color===o.color?' on':'');
-    s.style.background=o.color;s.title=o.name;
-    s.onclick=()=>{c.door={...o};buildPanel();render();}; dr.appendChild(s);});
+  doorSwatches(dr,c.door,o=>{ c.door={...o}; buildPanel(); render(); });
   const cc=document.createElement('input'); cc.type='color'; cc.className='cpick'; cc.title='Custom colour for this unit';
   if(c.door&&c.door.color) cc.value=c.door.color;
   cc.oninput=e=>{c.door={name:'Custom',color:e.target.value};render();}; dr.appendChild(cc);
@@ -1127,7 +1159,7 @@ function addFrontDetail3D(c,f,by,hh,px,pz){
     return new THREE.Vector3(px+fw/2+off,y,pz+(u-0.5)*fh);
   }
   const pts=[]; const seg=(u1,v1,u2,v2)=>{pts.push(P(u1,v1),P(u2,v2));};
-  const shaker=scheme.profile==='Shaker';
+  const shaker=FRAMED.test(scheme.profile);
   const frame=(u0,v0,u1,v1)=>{ if(!shaker)return; const iu=Math.min(0.16,(u1-u0)*0.22), iv=Math.min(0.12,(v1-v0)*0.22);
     const a=u0+iu,b=u1-iu,p=v0+iv,q=v1-iv; if(b<=a||q<=p)return; seg(a,p,b,p); seg(b,p,b,q); seg(b,q,a,q); seg(a,q,a,p); };
   if(ft==='doors'){
