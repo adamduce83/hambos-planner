@@ -229,8 +229,18 @@
       </div>
       <div class="field">
         <label>Benchtop height off floor (mm)</label>
-        <input id="schBench" type="number" step="10" min="500" max="1500" value="900">
+        <input id="schBench" type="number" step="10" min="500" max="1500" value="870">
+        <div class="quick"><button id="benchStd" title="Kickboard + carcass">Standard (kick + carcass)</button></div>
       </div>
+      <h3>Manufacturer standards <span style="font-weight:500;text-transform:none;letter-spacing:0;">(editable per job)</span></h3>
+      <div class="field"><label>Kickboard height (mm) — 150 kitchen / 100 wardrobe</label><input id="stdKick" type="number" step="10" min="0" max="300"></div>
+      <div class="field"><label>Carcass height (mm)</label><input id="stdCarcass" type="number" step="10" min="300" max="1200"></div>
+      <div class="field"><label>Cooktop — sets the gap above the bench for overheads</label>
+        <select id="stdCooktop"><option value="electric">Electric (600 mm clearance)</option><option value="gas">Gas (700 mm clearance)</option></select></div>
+      <div class="field"><label>Fillers &amp; end panels — minimum (mm)</label><input id="stdPanel" type="number" step="1" min="10" max="100"></div>
+      <div class="field"><label>Bulkhead (mm) and shadow line</label>
+        <div style="display:flex;gap:6px;"><input id="stdBulk" type="number" step="10" min="0" max="600" style="flex:1;"><select id="stdShadow" style="flex:1;"><option value="0">No shadow line</option><option value="20">20 mm shadow line</option><option value="40">40 mm shadow line</option></select></div></div>
+      <div class="field"><label>Blind corner — minimum depth (mm)</label><input id="stdBlind" type="number" step="10" min="300" max="1500"></div>
     </div>
 
     <div class="stab" data-tab="selected" hidden>
@@ -286,8 +296,11 @@ const TYPES = {
   wall:     {name:'Wall (overhead)',depth:350,code:'W',  eh:720, mount:'wall', bottom:1450, dashed:true, dw:600},
   shelf:    {name:'Open shelves', depth:300, code:'SHELF',  eh:900, mount:'wall', bottom:1200, sym:'shelves', dw:900},
   floating: {name:'Floating shelf',depth:250,code:'F/SHELF',eh:40, mount:'wall', bottom:1500, sym:'shelves', dw:900},
-  filler:   {name:'Filler',       depth:600, code:'FILLER',  eh:900, mount:'floor', thin:true, dw:50},
-  endpanel: {name:'End panel',    depth:600, code:'END PANEL',eh:900,mount:'floor', thin:true, dw:18},
+  filler:   {name:'Filler',       depth:600, code:'F',       eh:900, mount:'floor', thin:true, dw:20},
+  endpanel: {name:'End panel',    depth:600, code:'P',       eh:900, mount:'floor', thin:true, dw:20},
+  halfpanel:{name:'\u00bd pantry panel',depth:600,code:'\u00bd P',eh:1400,mount:'floor', thin:true, dw:20},
+  pole:     {name:'Pole',         depth:50,  code:'POLE',    eh:2400,mount:'floor', thin:true, dw:50},
+  bbar:     {name:'Breakfast bar',depth:300, code:'B/BAR',   eh:900, mount:'floor', bench:true, benchOnly:true, dw:1200},
   window:   {name:'Window',       depth:120, code:'WINDOW',  eh:1200,mount:'sill', bottom:900, window:true, dw:1200},
   cooktop:   {name:'Cooktop',    depth:600, code:'COOKTOP',eh:900, mount:'floor', bench:true, appliance:true, sym:'cooktop',    dw:600},
   oven:      {name:'Oven',       depth:600, code:'OVEN',   eh:900, mount:'floor', bench:true, appliance:true, sym:'oven',       dw:600},
@@ -297,13 +310,18 @@ const TYPES = {
   rangehood: {name:'Rangehood',  depth:300, code:'R/HOOD', eh:150, mount:'wall', bottom:1500,  appliance:true, sym:'rangehood', dashed:true, dw:900},
   appliance: {name:'Other appl.',depth:600, code:'APPL',   eh:900, mount:'floor', appliance:true},
 };
-let benchH=900; // benchtop height off floor (mm), editable in Finishes
+let benchH=870; // benchtop height off floor (mm), editable in Finishes (kick + carcass)
+// manufacturer standards (editable per job; saved with the design)
+let STD={kick:150,carcass:720,panelMin:20,cooktop:'electric',clearElectric:600,clearGas:700,bulkhead:100,shadow:0,blindMin:800};
+const overheadClear=()=>STD.cooktop==='gas'?STD.clearGas:STD.clearElectric;
 function cabBand(c){ // returns [bottomMM, topMM]
   const t=TYPES[c.type], h=c.height||t.eh||900;
   const b=(c.bottom!=null)?c.bottom:(t.bottom||0);
   return [b,b+h];
 }
 const COMMON_WIDTHS = [300,400,450,500,600,800,900,1000,1200];
+// quick labels seen on real Hambo's plans
+const LABEL_PRESETS=['TOP DRAW','D/W','BUTLER SINK','PANTRY 3 INNERS','WALK-IN PANTRY','OPEN SHELF','APPLIANCE CUPBOARD','FRIDGE','RANGEHOOD','OVEN/MICRO STACK','CUTLERY','U/B WASHER','U/B DRYER','LINEN','BROOM','FREE-STANDING OVEN/COOKTOP','BREAKFAST BAR','POLE','\u00bd PANTRY PANEL'];
 
 /* ---------- finishes ---------- */
 // Hambo's SKB range, transcribed from the showroom sample boards (Sep 2026).
@@ -433,7 +451,13 @@ function buildFinishUI(){
   FINISH_TYPES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;fs.appendChild(o);});
   fs.value=scheme.finishType; fs.onchange=e=>{scheme.finishType=e.target.value;render();};
   const bh=document.getElementById('schBench'); bh.value=benchH;
-  bh.oninput=e=>{benchH=clampMM(e.target.value,500,1500,900); if(selId)buildPanel(); render();};
+  bh.oninput=e=>{benchH=clampMM(e.target.value,500,1500,870); if(selId)buildPanel(); render();};
+  document.getElementById('benchStd').onclick=()=>{ benchH=STD.kick+STD.carcass; bh.value=benchH; if(selId)buildPanel(); render(); };
+  // manufacturer standards
+  const bind=(id,key,min,max)=>{ const el=document.getElementById(id); el.value=STD[key]; el.oninput=e=>{ STD[key]=clampMM(e.target.value,min,max,STD[key]); render(); }; };
+  bind('stdKick','kick',0,300); bind('stdCarcass','carcass',300,1200); bind('stdPanel','panelMin',10,100); bind('stdBulk','bulkhead',0,600); bind('stdBlind','blindMin',300,1500);
+  const ck=document.getElementById('stdCooktop'); ck.value=STD.cooktop; ck.onchange=e=>{ STD.cooktop=e.target.value; render(); };
+  const sh=document.getElementById('stdShadow'); sh.value=String(STD.shadow); sh.onchange=e=>{ STD.shadow=parseInt(e.target.value)||0; render(); };
   refreshFinish();
 }
 function refreshFinish(){
@@ -460,12 +484,13 @@ document.getElementById('btnUndo').onclick=undo; document.getElementById('btnRed
 function addCab(type){
   pushUndo();
   const t=TYPES[type];
-  const width=clampMM(document.getElementById('newWidth').value,50,4000,600);
+  const width=clampMM(document.getElementById('newWidth').value,t.thin?10:50,4000,600);
   const depth=clampMM(document.getElementById('newDepth').value,50,1500,t.depth);
   const dp=dropPoint(); const ox=dp.x+(dropN%6)*120, oy=dp.y+(dropN%6)*120;
   dropN++;
-  const noDoor=t.appliance||t.thin||t.window||t.sym;
-  cabs.push({id:nextId++,type,width,depth,height:t.eh,bottom:(t.bottom||0),x:snap(ox),y:snap(oy),rot:0,front:(noDoor?'none':'doors'),hinge:(width>600?'D':'L'),drawers:3,label:'',door:null,price:null});
+  const noDoor=t.appliance||t.thin||t.window||t.sym||t.benchOnly;
+  const bottom=(t.mount==='wall'&&(type==='wall'||type==='rangehood'||type==='microwave'))?benchH+overheadClear():(t.bottom||0);
+  cabs.push({id:nextId++,type,width,depth,height:t.eh,bottom,x:snap(ox),y:snap(oy),rot:0,front:(noDoor?'none':'doors'),hinge:(width>600?'D':'L'),drawers:3,label:'',door:null,price:null});
   selId=nextId-1; render(); buildPanel();
 }
 function snap(v){return Math.round(v/SNAP)*SNAP;}
@@ -547,7 +572,7 @@ function swatchLegend(x,y,color,labelTxt){
   text(x+86,y+50,labelTxt,'#ffffff',72,600,'start');
 }
 function drawCab(c){
-  const f=footprint(c), t=TYPES[c.type], fill=t.appliance?'#e6e9ec':(t.window?'#eef4f7':doorColor(c)), tc=textOn(fill);
+  const f=footprint(c), t=TYPES[c.type], fill=t.appliance?'#e6e9ec':(t.window?'#eef4f7':(t.benchOnly?scheme.bench.color:doorColor(c))), tc=textOn(fill);
   const g=document.createElementNS(SVGNS,'g');
   g.setAttribute('transform',`translate(${c.x},${c.y})`);
   g.style.cursor='move'; g.style.touchAction='none'; g.dataset.id=c.id; // touch-action:none so a finger drag moves the cabinet instead of scrolling
@@ -573,6 +598,9 @@ function drawCab(c){
   } else if(t.thin){
     drawHatch(g,f.w,f.h,tc);
     g.appendChild(mkText(f.w/2,f.h/2+18,(c.label||t.code),tc,52,700,'middle'));
+  } else if(t.benchOnly){
+    g.appendChild(mkText(f.w/2,f.h/2+20,(c.label||t.code),tc,60,700,'middle'));
+    g.appendChild(mkText(f.w/2,f.h-22,c.width+'\u00d7'+c.depth,tc,44,400,'middle',0.65));
   } else {
     drawFront(g,f.w,f.h,c,tc);
     const big=Math.min(150,Math.min(f.w,f.h)/3+30);
@@ -794,10 +822,15 @@ function drawElevCab(c,xLeft,floorYp){
   const t=TYPES[c.type], w=c.width, bd=cabBand(c), hh=bd[1]-bd[0];
   const fill=t.appliance?'#e6e9ec':(t.window?'#eef4f7':doorColor(c)), tc=textOn(fill);
   const y=floorYp-bd[1];
+  if(t.benchOnly){
+    eR(xLeft-15,y,w+30,45,scheme.bench.color,'#33372e',1.2,3);
+    eT(xLeft+w/2,y+hh/2,(c.label||t.code),'#6a7361',48,600,'middle'); return;
+  }
   if(t.bench){
     eR(xLeft,y+45,w,hh-45,fill,'#33372e',1.5,6);
     eR(xLeft-15,y,w+30,45,scheme.bench.color,'#33372e',1.2,3);
     eDetail(xLeft,y+45,w,hh-45,c,tc);
+    if(bd[0]===0&&STD.kick>0&&STD.kick<hh-45) eR(xLeft+10,floorYp-STD.kick,w-20,STD.kick,'#2f3a2a',null,0,0); // kickboard
   } else {
     eR(xLeft,y,w,hh,fill,'#33372e',t.thin?1.2:1.5,t.thin?2:6);
     eDetail(xLeft,y,w,hh,c,tc);
@@ -966,7 +999,10 @@ function buildPanel(){
       <input id="edB" type="number" step="10" value="${c.bottom!=null?c.bottom:(t.bottom||0)}">
       ${mt==='wall'?'<div class="sw-name" id="edBhint"></div>':''}</div>
     ${frontUI}
-    <div class="field"><label>Label (optional)</label><input id="edL" placeholder="${t.code}"></div>
+    <div class="field"><label>Label (optional)</label>
+      <select id="edLP"><option value="">Quick label\u2026</option>${LABEL_PRESETS.map(l=>`<option>${l}</option>`).join('')}</select>
+      <input id="edL" placeholder="${t.code}" style="margin-top:4px;"></div>
+    ${c.type==='corner'&&c.depth<STD.blindMin?`<div class="sw-name" style="color:#b3392a;">Blind corner needs at least ${STD.blindMin} mm depth (manufacturer standard).</div>`:''}
     <div class="field"><label>Price $ (optional)</label><input id="edP" type="number" step="1" value="${c.price!=null?c.price:''}" placeholder="ex. 480"></div>
     <div class="field"><label>Front colour (this unit)</label><div class="sw-row" id="edDoor"></div></div>
     <div class="rowbtns">
@@ -985,7 +1021,7 @@ function buildPanel(){
   const cc=document.createElement('input'); cc.type='color'; cc.className='cpick'; cc.title='Custom colour for this unit';
   if(c.door&&c.door.color) cc.value=c.door.color;
   cc.oninput=e=>{pushUndo('cc');c.door={name:'Custom',color:e.target.value};render();}; dr.appendChild(cc);
-  document.getElementById('edW').oninput=e=>{pushUndo('edW');c.width=clampMM(e.target.value,50,4000,c.width);render();};
+  document.getElementById('edW').oninput=e=>{pushUndo('edW');c.width=clampMM(e.target.value,t.thin?10:50,4000,c.width);render();};
   document.getElementById('edD').oninput=e=>{pushUndo('edD');c.depth=clampMM(e.target.value,50,1500,c.depth);render();};
   document.getElementById('edHt').oninput=e=>{pushUndo('edHt');c.height=clampMM(e.target.value,10,3000,c.height);render();};
   const updHint=()=>{const hn=document.getElementById('edBhint'); if(hn){const gap=(c.bottom!=null?c.bottom:(t.bottom||0))-benchH; hn.textContent='Gap above benchtop: '+gap+' mm';}};
@@ -993,6 +1029,7 @@ function buildPanel(){
   updHint();
   if(document.getElementById('edF')) document.getElementById('edF').onchange=e=>{pushUndo();c.front=e.target.value; if(c.front==='doors'&&!c.hinge)c.hinge=(c.width>600?'D':'L'); buildPanel(); render();};
   document.getElementById('edL').value=c.label||''; // set as a value so quotes and symbols in a label survive
+  document.getElementById('edLP').onchange=e=>{ if(!e.target.value) return; pushUndo(); c.label=e.target.value; document.getElementById('edL').value=c.label; e.target.value=''; render(); };
   document.getElementById('edL').oninput=e=>{pushUndo('edL');c.label=e.target.value;render();};
   document.getElementById('edP').oninput=e=>{pushUndo('edP');c.price=e.target.value===''?null:(parseFloat(e.target.value)||0);updateSubtotal();};
   document.getElementById('bRot').onclick=()=>{pushUndo();c.rot=((c.rot||0)+90)%360;render();};
@@ -1271,7 +1308,7 @@ function rebuild3D(){
   cabs.forEach(c=>{
     const f=footprint(c),t=TYPES[c.type];
     const band=cabBand(c), by=band[0]/1000, hh=(band[1]-band[0])/1000;
-    const bodyH=t.bench?Math.max(0.04,hh-0.04):hh;
+    const bodyH=t.benchOnly?0.001:(t.bench?Math.max(0.04,hh-0.04):hh);
     const geo=new THREE.BoxGeometry(f.w/1000,bodyH,f.h/1000);
     const col3=t.appliance?'#c9ced3':(t.window?'#cfe2ea':doorColor(c));
     const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(col3)});
@@ -1336,7 +1373,7 @@ function designSummary(){
   const L=[];
   L.push('Job: '+(val('tbJob')||'-'),'Customer: '+(val('tbCust')||'-'),'Date: '+fmtDate(val('tbDate')));
   L.push('Doors: '+finishesUsed().map(f=>f.name).join(', ')+' | '+scheme.profile+' profile | '+scheme.finishType);
-  L.push('Benchtop: '+scheme.bench.name+' | bench height '+benchH+' mm');
+  L.push('Benchtop: '+scheme.bench.name+' | bench height '+benchH+' mm | kick '+STD.kick+' | carcass '+STD.carcass+' | '+STD.cooktop+' cooktop ('+overheadClear()+' mm clearance)');
   computeRuns('floor').forEach((r,i)=>{ const h=r.axis==='h', it=r.items;
     const start=h?it[0].x:it[0].y, end=Math.max(...it.map(c=>h?c.x+footprint(c).w:c.y+footprint(c).h));
     L.push('Wall run '+(i+1)+': '+(end-start)+' mm ('+it.length+' pieces)'); });
@@ -1387,13 +1424,14 @@ const STORE_KEY='hambosLayout';
 const TB_IDS=['tbJob','tbCust','tbBy','tbDate','tbTotal'];
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>tb[id]=val(id));
-  return {v:1,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact};
+  return {v:2,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
   cabs=s.cabs.filter(c=>c&&TYPES[c.type]);
   if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme=s.scheme;
-  benchH=parseInt(s.benchH)||900;
+  benchH=parseInt(s.benchH)||870;
+  if(s.std&&typeof s.std==='object') STD={...STD,...s.std};
   nextId=Math.max(parseInt(s.nextId)||1,...cabs.map(c=>(c.id||0)+1));
   dropN=parseInt(s.dropN)||0;
   if(s.tb) TB_IDS.forEach(id=>{ if(typeof s.tb[id]==='string') document.getElementById(id).value=s.tb[id]; });
