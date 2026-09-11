@@ -48,7 +48,7 @@
   .swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle;}
   .field{margin-bottom:10px;}
   .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#6a7361;margin-bottom:4px;}
-  .field input,.field select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:5px;font-size:13px;}
+  .field input,.field select,.field textarea{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:5px;font-size:13px;font-family:inherit;}
   .quick{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
   .quick button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:4px;padding:6px 9px;min-height:32px;font-size:12px;}
   .quick button:hover{background:var(--sage-lt);}
@@ -160,7 +160,7 @@
   </span>
   <span class="tsep"></span>
   <span class="tgroup">
-    <button class="toolbtn alt" id="btnPng">Download PNG</button>
+    <button class="toolbtn alt" id="btnPng" title="Plan + elevations + title block on one sheet">Download sheet</button>
     <button class="toolbtn alt" id="btnPrint">Print / PDF</button>
   </span>
   <span class="tsep"></span>
@@ -176,6 +176,7 @@
     <label><input type="checkbox" id="dimToggle" checked> Running dimensions</label>
     <label><input type="checkbox" id="bandToggle"> Show title band on screen</label>
     <label><input type="checkbox" id="guideToggle" checked> Add the customer guide page to prints and emails</label>
+    <button id="btnPngView">Download just this view (PNG)</button>
     <button id="btnClear" class="danger">Clear all</button>
   </div>
 </div>
@@ -220,9 +221,11 @@
         <div class="sw-row" id="benchSw"></div>
         <div class="sw-name" id="benchName"></div>
       </div>
-      <div class="field">
+      <div class="field" style="display:flex;gap:6px;"><div style="flex:1;">
         <label>Door profile</label>
-        <select id="schProfile"></select>
+        <select id="schProfile"></select></div><div style="flex:1;">
+        <label>Drawer profile</label>
+        <select id="schDrawerProfile"></select></div>
       </div>
       <div class="field">
         <label>Finish (2-pac etc.)</label>
@@ -250,13 +253,25 @@
     </div>
 
     <div class="stab" data-tab="job" hidden>
-      <h3>Job details <span style="font-weight:500;text-transform:none;letter-spacing:0;">(print on every sheet)</span></h3>
-      <div class="field"><label>Job / Reference</label><input id="tbJob" placeholder="e.g. Smith kitchen"></div>
+      <h3>Title block <span style="font-weight:500;text-transform:none;letter-spacing:0;">(prints down the right of the sheet)</span></h3>
+      <div class="field"><label>Order / Ref number</label><input id="tbJob" placeholder="e.g. 2026-041"></div>
+      <div class="field" style="display:flex;gap:6px;"><div style="flex:2;"><label>Room</label><input id="tbRoom" placeholder="Kitchen" list="roomList"><datalist id="roomList"><option>Kitchen</option><option>Laundry</option><option>Linen</option><option>Wardrobe</option><option>Bathroom vanity</option><option>Butler's pantry</option></datalist></div><div style="flex:1;"><label>Page</label><input id="tbPage" placeholder="1/1"></div></div>
       <div class="field"><label>Customer</label><input id="tbCust" placeholder="Customer name"></div>
-      <div class="field"><label>Designed by</label><input id="tbBy" placeholder="Designer name"></div>
-      <div class="field"><label>Date</label><input id="tbDate" type="date"></div>
-      <div class="field"><label>Quote total</label><input id="tbTotal" placeholder="$ total"></div>
+      <div class="field"><label>Site address</label><input id="tbAddr" placeholder="Street, suburb"></div>
+      <div class="field"><label>Mobile</label><input id="tbMobile" type="tel" placeholder="04.."></div>
+      <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Ceiling height (mm)</label><input id="tbCeiling" type="number" step="10" placeholder="2400"></div><div style="flex:1;"><label>Cabinet height (mm)</label><input id="tbCabH" type="number" step="10" placeholder="e.g. 2100"></div></div>
+      <div class="field"><label>Door finish</label><input id="tbDoorFinish" list="finishList" placeholder="Satin"><datalist id="finishList"><option>Satin</option><option>Matt</option><option>Gloss</option><option>Woodmatt</option></datalist></div>
+      <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Handle</label><input id="tbHandle" placeholder="TBC"></div><div style="flex:1;"><label>Drawers</label><input id="tbDrawers" placeholder="S/C"></div><div style="flex:1;"><label>Hinges</label><input id="tbHinges" placeholder="S/C"></div></div>
+      <div class="field"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--ink);cursor:pointer;"><input type="checkbox" id="tbBlum"> Blum hinge/drawer upgrade (+30%)</label></div>
+      <div class="field"><label>Benchtop — material + supplier</label><input id="tbBenchtop" placeholder="e.g. 20mm Stone by Hambos / Polytec Boston Oak Woodmatt"></div>
+      <div class="field"><label>Edge finish</label><input id="tbEdge" list="edgeList" placeholder="Pencil Edge"><datalist id="edgeList"><option>Pencil Edge</option><option>Square Edge</option><option>Bullnose</option><option>Waterfall</option></datalist></div>
+      <div class="sw-name" style="margin:-4px 0 10px;color:#6a7361;font-weight:500;">Door colour, door and drawer profiles come from the Finishes tab; kickboard from Manufacturer standards.</div>
+      <div class="field"><label>Notes (e.g. flooring)</label><textarea id="tbNotes" rows="2"></textarea></div>
+      <div class="field"><label>Quoting notes</label><textarea id="tbQuoteNotes" rows="2"></textarea></div>
+      <div class="field"><label>Special requests</label><textarea id="tbSpecial" rows="2"></textarea></div>
+      <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Designed by</label><input id="tbBy" placeholder="Jess"></div><div style="flex:1;"><label>Date</label><input id="tbDate" type="date"></div></div>
       <h3>Pricing</h3>
+      <div class="field"><label>Quote total</label><input id="tbTotal" placeholder="$ total"></div>
       <div class="field" style="margin-bottom:6px;">Items subtotal: <b id="subTot">$0</b></div>
       <button class="toolbtn alt" id="useSub" style="width:100%;">Use subtotal as quote total</button>
     </div>
@@ -375,7 +390,7 @@ const PROFILES = ['Flat','Finger Pull','J Pull','Slim Shaker','Ascot Shaker','Sh
 // profiles drawn with a framed panel on the elevation / 3D fronts
 const FRAMED=/shaker|square|tamworth|ballarat|heritage|bolection/i;
 const FINISH_TYPES = ['2-pac','Polyurethane','Melamine','Laminate','Timber veneer'];
-let scheme = {door:{...DOORS[0]}, bench:{...BENCH[0]}, profile:'Shaker', finishType:'2-pac'};
+let scheme = {door:{...DOORS[0]}, bench:{...BENCH[0]}, profile:'Shaker', drawerProfile:'Shaker', finishType:'2-pac'};
 
 /* ---------- state ---------- */
 let cabs = [];
@@ -442,6 +457,9 @@ function buildFinishUI(){
   const ps=document.getElementById('schProfile'); ps.innerHTML='';
   PROFILES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;ps.appendChild(o);});
   ps.value=scheme.profile; ps.onchange=e=>{scheme.profile=e.target.value;render();};
+  const dps=document.getElementById('schDrawerProfile'); dps.innerHTML='';
+  PROFILES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;dps.appendChild(o);});
+  dps.value=scheme.drawerProfile||scheme.profile; dps.onchange=e=>{scheme.drawerProfile=e.target.value;render();};
   const fs=document.getElementById('schFinish'); fs.innerHTML='';
   FINISH_TYPES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;fs.appendChild(o);});
   fs.value=scheme.finishType; fs.onchange=e=>{scheme.finishType=e.target.value;render();};
@@ -514,7 +532,7 @@ function drawSchedule(rfn,tfn,x,y,fill,swStroke){
   tfn(x,L2+SW*0.74,'Benchtop:',fill,FS,700,'start');
   rfn(x+440,L2,SW,SW,scheme.bench.color,swStroke,3,12);
   tfn(x+440+SW+22,L2+SW*0.74,scheme.bench.name,fill,NS,500,'start');
-  tfn(x,L3+SW*0.74,'Finish:  '+scheme.finishType+'   ·   '+scheme.profile+' profile',fill,NS,600,'start');
+  tfn(x,L3+SW*0.74,'Finish:  '+scheme.finishType+'   ·   Doors: '+scheme.profile+'   ·   Drawers: '+(scheme.drawerProfile||scheme.profile),fill,NS,600,'start');
 }
 
 /* ---------- render 2D ---------- */
@@ -533,14 +551,14 @@ function render(){
   text(45,440,'Kitchen Cabinet Layout','#ffffff',112,700,'start');
   drawSchedule(rect,text,45,500,'#ffffff','#cdd9c1');
   const job=val('tbJob'),cust=val('tbCust'),date=val('tbDate'),by=val('tbBy');
-  const hj=document.getElementById('hdrJob'); if(hj) hj.textContent=[job?('Job: '+job):'',cust?('Customer: '+cust):''].filter(Boolean).join('  ·  ');
-  text(11940,200,job?('Job: '+job):'','#ffffff',118,700,'end');
+  const hj=document.getElementById('hdrJob'); if(hj) hj.textContent=[job?('Order: '+job):'',val('tbRoom')?val('tbRoom'):'',cust?('Customer: '+cust):''].filter(Boolean).join('  ·  ');
+  text(11940,200,job?('Order: '+job+(val('tbRoom')?' · '+val('tbRoom'):'')):'','#ffffff',118,700,'end');
   text(11940,360,cust?('Customer: '+cust):'','#e3e9dc',98,400,'end');
   text(11940,510,by?('Designed by: '+by):'','#e3e9dc',98,400,'end');
   text(11940,660,date?('Date: '+fmtDate(date)):'','#e3e9dc',98,400,'end');
   // quote total chip (bottom-right)
   const total=val('tbTotal').trim();
-  if(total){
+  if(total&&!COMPOSING){
     rect(9450,6380,2520,160,'#00a357',null,0,16);
     text(9500,6488,'QUOTE TOTAL','#eafff4',70,700,'start');
     text(11940,6488,total,'#ffffff',100,800,'end');
@@ -845,7 +863,7 @@ function renderElev(){
   eT(45,440,'Kitchen Elevations','#ffffff',112,700,'start');
   drawSchedule(eR,eT,45,500,'#ffffff','#cdd9c1');
   const job=val('tbJob'),cust=val('tbCust'),date=val('tbDate'),by=val('tbBy');
-  eT(11940,200,job?('Job: '+job):'','#ffffff',118,700,'end');
+  eT(11940,200,job?('Order: '+job+(val('tbRoom')?' · '+val('tbRoom'):'')):'','#ffffff',118,700,'end');
   eT(11940,360,cust?('Customer: '+cust):'','#e3e9dc',98,400,'end');
   eT(11940,510,by?('Designed by: '+by):'','#e3e9dc',98,400,'end');
   eT(11940,660,date?('Date: '+fmtDate(date)):'','#e3e9dc',98,400,'end');
@@ -871,7 +889,7 @@ function renderElev(){
   ELEV_VB='0 0 12000 '+H; E.setAttribute('viewBox',ELEV_VB);
   // quote total chip (bottom-right, same as the plan sheet, clear of the job details)
   const total=val('tbTotal').trim();
-  if(total){ eR(9450,H-190,2520,160,'#00a357',null,0,16); eT(9500,H-82,'QUOTE TOTAL','#eafff4',70,700,'start'); eT(11940,H-82,total,'#ffffff',100,800,'end'); }
+  if(total&&!COMPOSING){ eR(9450,H-190,2520,160,'#00a357',null,0,16); eT(9500,H-82,'QUOTE TOTAL','#eafff4',70,700,'start'); eT(11940,H-82,total,'#ffffff',100,800,'end'); }
   if(typeof applySheetView==='function') applySheetView();
 }
 function eSwatch(x,y,color,labelTxt){ eR(x,y,70,70,color,'#cdd9c1',3,8); eT(x+86,y+50,labelTxt,'#ffffff',72,600,'start'); }
@@ -891,7 +909,7 @@ function eDetail(x,y,w,h,c,tc){
 }
 function eFront(x,y,w,h,c,tc){
   const ft=c.front||'doors';
-  const shaker=FRAMED.test(scheme.profile);
+  const shaker=FRAMED.test(ft==='drawers'?(scheme.drawerProfile||scheme.profile):scheme.profile);
   const frame=(fx,fy,fw,fh)=>{ if(!shaker)return; const ins=Math.min(70,fw*0.16,fh*0.16); if(fw-2*ins>20&&fh-2*ins>20) eR(fx+ins,fy+ins,fw-2*ins,fh-2*ins,'none',tc,1.3); };
   if(ft==='doors'){
     const hg=c.hinge||(c.width>600?'D':'L');
@@ -1046,8 +1064,8 @@ document.addEventListener('keydown',e=>{
   if(e.key.toLowerCase()==='r'){pushUndo();c.rot=((c.rot||0)+90)%360;render();}
 });
 
-/* ---------- title block live ---------- */
-['tbJob','tbCust','tbBy','tbDate','tbTotal'].forEach(id=>document.getElementById(id).addEventListener('input',render));
+/* ---------- title block live (TB_IDS is declared in the save/restore block; this runs at init) ---------- */
+function wireTitleBlock(){ TB_IDS.forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',render); el.addEventListener('change',render); }); }
 
 /* ---------- pricing ---------- */
 function money(n){return '$'+Math.round(n).toLocaleString('en-AU');}
@@ -1084,8 +1102,12 @@ function svgToPng(node,suffix){
 }
 document.getElementById('btnPng').onclick=()=>{
   if(currentView==='3d'){ export3D(); }
+  else { svgToPng(buildSheet(),'-plan-sheet'); }
+};
+document.getElementById('btnPngView').onclick=()=>{
+  if(currentView==='3d'){ export3D(); }
   else if(currentView==='elev'){ renderElev(); svgToPng(E,'-elevation'); }
-  else { svgToPng(svg,''); }
+  else { svgToPng(svg,'-plan'); }
 };
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function composite3D(cb){
@@ -1124,8 +1146,7 @@ function printSvg(node,title){ const vb=fullViewBox(node).split(/\s+/).map(Numbe
 document.getElementById('btnPrint').onclick=()=>{
   const title=(val('tbJob')||'Hambos kitchen');
   if(currentView==='3d'){ composite3D(cv=>printImage(cv.toDataURL('image/png'),title+' — 3D')); }
-  else if(currentView==='elev'){ renderElev(); printSvg(E,title+' — elevations'); }
-  else { printSvg(svg,title+' — plan'); }
+  else { printSvg(buildSheet(),title+' — plan sheet'); }
 };
 document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear the whole layout? (Undo can bring it back)')){pushUndo();cabs=[];selId=null;dropN=0;render();buildPanel();} };
 
@@ -1153,7 +1174,7 @@ const PLAN_VB='0 0 12000 6950'; let ELEV_VB='0 0 12000 3200';
 let showBand=false; try{ showBand=localStorage.getItem('hambosShowBand')==='1'; }catch(e){}
 document.getElementById('bandToggle').checked=showBand;
 document.getElementById('bandToggle').onchange=e=>{ showBand=e.target.checked; try{localStorage.setItem('hambosShowBand',showBand?'1':'0');}catch(err){} applySheetView(); };
-function fullViewBox(node){ return node===svg?PLAN_VB:ELEV_VB; }
+function fullViewBox(node){ return node===svg?PLAN_VB:(node===E?ELEV_VB:node.getAttribute('viewBox')); }
 function applySheetView(){
   [svg,E].forEach(n=>{ const vb=fullViewBox(n).split(' ').map(Number);
     n.setAttribute('viewBox',showBand?fullViewBox(n):('0 '+(TITLE_H+20)+' '+vb[2]+' '+(vb[3]-TITLE_H-20))); });
@@ -1333,7 +1354,7 @@ function addFrontDetail3D(c,f,by,hh,px,pz){
     return new THREE.Vector3(px+fw/2+off,y,pz+(u-0.5)*fh);
   }
   const pts=[]; const seg=(u1,v1,u2,v2)=>{pts.push(P(u1,v1),P(u2,v2));};
-  const shaker=FRAMED.test(scheme.profile);
+  const shaker=FRAMED.test(ft==='drawers'?(scheme.drawerProfile||scheme.profile):scheme.profile);
   const frame=(u0,v0,u1,v1)=>{ if(!shaker)return; const iu=Math.min(0.16,(u1-u0)*0.22), iv=Math.min(0.12,(v1-v0)*0.22);
     const a=u0+iu,b=u1-iu,p=v0+iv,q=v1-iv; if(b<=a||q<=p)return; seg(a,p,b,p); seg(b,p,b,q); seg(b,q,a,q); seg(a,q,a,p); };
   if(ft==='doors'){
@@ -1360,6 +1381,83 @@ function loop(){
   renderer.render(scene,camera);
 }
 window.addEventListener('resize',()=>{ if(document.getElementById('view3d').style.display!=='none') start3D(); });
+
+/* ---------- the branded plan sheet: plan + elevations on the left, title block down the right ---------- */
+const SHEET_W=16000, SHEET_H=11000, TB_X=11700, TB_W=4100;
+let COMPOSING=false; // true while the plan sheet is being built (per-view quote chips are left off)
+function tbv(id){ const el=document.getElementById(id); if(!el) return ''; return el.type==='checkbox'?(el.checked?'Yes':''):(el.value||'').trim(); }
+function wrapText(str,maxChars){ const out=[]; String(str||'').split(/\r?\n/).forEach(par=>{ let line=''; par.split(/\s+/).filter(Boolean).forEach(w=>{ if((line+' '+w).trim().length>maxChars&&line){ out.push(line.trim()); line=w; } else line=line+' '+w; }); out.push(line.trim()); }); return out; }
+function benchtopText(){ return tbv('tbBenchtop')||(scheme.bench.name+' \u2014 20 mm stone by Hambos'); }
+function buildSheet(){
+  const keepSel=selId; selId=null; COMPOSING=true; render(); renderElev();
+  const S=document.createElementNS(SVGNS,'svg'); S.setAttribute('xmlns',SVGNS); S.setAttribute('viewBox',`0 0 ${SHEET_W} ${SHEET_H}`);
+  const R=(x,y,w,h,fill,stroke,sw,rx)=>{const r=document.createElementNS(SVGNS,'rect');r.setAttribute('x',x);r.setAttribute('y',y);r.setAttribute('width',w);r.setAttribute('height',h);if(rx)r.setAttribute('rx',rx);r.setAttribute('fill',fill||'none');if(stroke){r.setAttribute('stroke',stroke);r.setAttribute('stroke-width',sw||2);}S.appendChild(r);return r;};
+  const T=(x,y,str,fill,size,weight,anchor)=>{const t=mkText(x,y,str,fill,size,weight,anchor);S.appendChild(t);return t;};
+  const L=(x1,y1,x2,y2,col,w)=>{const l=document.createElementNS(SVGNS,'line');l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('stroke',col);l.setAttribute('stroke-width',w||2);S.appendChild(l);};
+  R(0,0,SHEET_W,SHEET_H,'#ffffff');
+  const nest=(node,vb,x,y,w,h)=>{ const n=node.cloneNode(true); n.removeAttribute('id'); n.removeAttribute('style'); n.setAttribute('viewBox',vb.join(' ')); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('width',w); n.setAttribute('height',h); n.setAttribute('preserveAspectRatio','xMinYMin meet'); S.appendChild(n); };
+  const x0=200, leftW=TB_X-400, top=420, availH=SHEET_H-top-260;
+  // plan panel: cropped to the pieces (with room for dimension strings), never smaller than 4 x 3 m
+  let planVB=[0,TITLE_H+20,12000,6950-TITLE_H-20];
+  if(cabs.length){
+    let bx0=Math.min(...cabs.map(c=>c.x))-700, by0=Math.min(...cabs.map(c=>c.y))-700, bx1=Math.max(...cabs.map(c=>c.x+footprint(c).w))+700, by1=Math.max(...cabs.map(c=>c.y+footprint(c).h))+900;
+    if(bx1-bx0<4000){ const m=(4000-(bx1-bx0))/2; bx0-=m; bx1+=m; } if(by1-by0<3000){ const m=(3000-(by1-by0))/2; by0-=m; by1+=m; }
+    bx0=Math.max(0,bx0); by0=Math.max(TITLE_H+20,by0); bx1=Math.min(12000,bx1); by1=Math.min(6950,by1);
+    planVB=[bx0,by0,bx1-bx0,by1-by0];
+  }
+  const fitBox=(vb,maxW,maxH)=>{ const ar=vb[2]/vb[3]; let w=maxW, h=w/ar; if(h>maxH){ h=maxH; w=h*ar; } return [w,h]; };
+  T(x0,300,'PLAN','#566b4b',100,800,'start'); T(x0+420,300,'1 grid square = 500 mm  \u00b7  sizes in mm','#8a917f',60,500,'start');
+  const [pw,ph]=fitBox(planVB,leftW,availH*(cabs.length?0.55:1));
+  nest(svg,planVB,x0,top,pw,ph); R(x0,top,pw,ph,null,'#c9d1bf',3);
+  if(cabs.length){
+    // elevation panel: cropped to the longest wall
+    const elevH=+ELEV_VB.split(' ')[3];
+    const along=c=>{const r=((c.rot||0)%360+360)%360; return (r===0||r===180)?c.x:c.y;};
+    let maxX=3000; elevWalls().forEach(wl=>{ const a0=Math.min(...wl.items.map(along)); maxX=Math.max(maxX,320+Math.max(...wl.items.map(c=>along(c)+c.width-a0))); });
+    const elevVB=[0,TITLE_H+20,Math.min(12000,maxX+700),elevH-TITLE_H-20];
+    const ey=top+ph+300; T(x0,ey-90,'ELEVATIONS','#566b4b',100,800,'start');
+    const [ew,eh]=fitBox(elevVB,leftW,availH-ph-300);
+    nest(E,elevVB,x0,ey,ew,eh); R(x0,ey,ew,eh,null,'#c9d1bf',3);
+  }
+  drawTitleBlock(S,R,T,L);
+  T(x0,SHEET_H-90,"Hambo's Homemaker Centre \u00b7 Unit 2, 15 Freighter Ave, Wilsonton QLD 4350 \u00b7 0411 330 905 \u00b7 admin@hambos.com.au \u00b7 Supply only: fillers (F) go against walls, end panels (P) on exposed ends. Nothing is to be cut, trimmed or drilled on site.",'#8a917f',52,500,'start');
+  COMPOSING=false; selId=keepSel; render(); return S;
+}
+function drawTitleBlock(S,R,T,L){
+  const x=TB_X, w=TB_W, pad=110, xr=x+w-pad; let y=200;
+  const bg=R(x,y,w,SHEET_H-400,'#f7f9f4','#2f3a2a',5,24);
+  const lh=520, lw=lh*LOGO_RATIO; const im=document.createElementNS(SVGNS,'image'); im.setAttributeNS('http://www.w3.org/1999/xlink','href',LOGO); im.setAttribute('href',LOGO); im.setAttribute('x',x+pad); im.setAttribute('y',y+pad); im.setAttribute('width',lw); im.setAttribute('height',lh); S.appendChild(im);
+  T(x+pad,y+pad+lh+130,'WE DESIGN IT \u00b7 WE QUOTE IT \u00b7 WE SUPPLY IT','#566b4b',56,700,'start');
+  y+=pad+lh+220; L(x,y,x+w,y,'#2f3a2a',5);
+  const row=(label,value,big,lines)=>{
+    const vals=lines||[value||'\u2014']; const fs=big?88:70; const hgt=(big?150:110)+vals.length*(fs+16);
+    if(big) R(x,y,w,hgt,'#eaf0e4'); T(x+pad,y+(big?84:66),label.toUpperCase(),'#566b4b',big?54:50,700,'start');
+    vals.forEach((v,i)=>T(xr,y+(big?84:66)+(i+1)*(fs+16)-6,v,'#2a2f28',fs,big?800:600,'end'));
+    y+=hgt; L(x,y,x+w,y,'#d6ddcd',2);
+  };
+  const fin=finishesUsed().map(f=>f.name).join(', ');
+  row('Order / Ref number',tbv('tbJob'),true);
+  row('Room',tbv('tbRoom')||'Kitchen'); row('Page',tbv('tbPage')||'1/1');
+  row('Customer',tbv('tbCust')); row('Site address','',false,tbv('tbAddr')?wrapText(tbv('tbAddr'),34):['\u2014']); row('Mobile',tbv('tbMobile'));
+  row('Ceiling height',tbv('tbCeiling')?tbv('tbCeiling')+' mm':'',true); row('Cabinet height',tbv('tbCabH')?tbv('tbCabH')+' mm':'');
+  row('Door colour','',true,wrapText(fin,26)); row('Door finish',tbv('tbDoorFinish')||'Satin');
+  row('Door profile','',true,['Doors \u2013 '+scheme.profile,'Drawers \u2013 '+(scheme.drawerProfile||scheme.profile)]);
+  row('Handle',tbv('tbHandle')||'TBC'); row('Drawers',(tbv('tbDrawers')||'S/C')+(tbv('tbBlum')?' \u00b7 Blum':'')); row('Hinges',(tbv('tbHinges')||'S/C')+(tbv('tbBlum')?' \u00b7 Blum upgrade':''));
+  row('Kickboard',STD.kick+' mm',true);
+  row('Benchtop','',true,wrapText(benchtopText(),26)); row('Edge finish',tbv('tbEdge')||'Pencil Edge');
+  const box=(label,text,minLines)=>{ const lines=wrapText(text,52); while(lines.length<minLines) lines.push(''); const hgt=90+lines.length*66+40;
+    T(x+pad,y+66,label.toUpperCase(),'#566b4b',50,700,'start'); lines.forEach((ln,i)=>T(x+pad,y+66+(i+1)*66,ln,'#2a2f28',56,500,'start')); y+=hgt; L(x,y,x+w,y,'#d6ddcd',2); };
+  box('Notes',tbv('tbNotes'),2); box('Quoting notes',tbv('tbQuoteNotes'),2); box('Special requests',tbv('tbSpecial'),2);
+  // signature + date
+  y+=60; T(x+pad,y+60,'SIGNATURE','#566b4b',50,700,'start'); L(x+pad+420,y+70,x+w/2+520,y+70,'#2f3a2a',3);
+  T(x+w/2+600,y+60,'DATE','#566b4b',50,700,'start'); L(x+w/2+820,y+70,xr,y+70,'#2f3a2a',3);
+  y+=170; T(x+pad,y+40,'I approve this plan for production. Sizes checked on site.','#6a7361',46,500,'start');
+  y+=110; L(x,y,x+w,y,'#2f3a2a',4);
+  const by=tbv('tbBy'), dt=fmtDate(tbv('tbDate')), tot=tbv('tbTotal');
+  T(x+pad,y+90,(by?('Designed by '+by+'  \u00b7  '):'')+(dt||''),'#3a3f33',54,500,'start');
+  if(tot){ R(x+pad,y+150,w-2*pad,150,'#00a357',null,0,16); T(x+pad+50,y+252,'QUOTE TOTAL','#eafff4',60,700,'start'); T(xr-50,y+256,tot,'#ffffff',96,800,'end'); y+=180; }
+  bg.setAttribute('height',Math.min(SHEET_H-400,y+200-200)); // box hugs its content
+}
 
 /* ---------- customer guide (K-CG1) appended to prints and emails ---------- */
 const GUIDE_URL='https://hambos.goask.com.au/customer-guide-K-CG1.pdf';
@@ -1390,8 +1488,12 @@ const HAMBOS={name:"Hambo's Homemaker Centre",email:'admin@hambos.com.au',phone:
 let contact={name:'',phone:'',email:'',suburb:''};
 function designSummary(){
   const L=[];
-  L.push('Job: '+(val('tbJob')||'-'),'Customer: '+(val('tbCust')||'-'),'Date: '+fmtDate(val('tbDate')));
-  L.push('Doors: '+finishesUsed().map(f=>f.name).join(', ')+' | '+scheme.profile+' profile | '+scheme.finishType);
+  L.push('Order/Ref: '+(val('tbJob')||'-')+' | Room: '+(tbv('tbRoom')||'Kitchen')+' | Page '+(tbv('tbPage')||'1/1'),'Customer: '+(val('tbCust')||'-')+(tbv('tbMobile')?' | '+tbv('tbMobile'):''),'Site: '+(tbv('tbAddr')||'-'),'Date: '+fmtDate(val('tbDate')));
+  L.push('Ceiling: '+(tbv('tbCeiling')?tbv('tbCeiling')+' mm':'-')+' | Cabinet height: '+(tbv('tbCabH')?tbv('tbCabH')+' mm':'-')+' | Kickboard: '+STD.kick+' mm');
+  L.push('Door finish: '+(tbv('tbDoorFinish')||'Satin')+' | Handle: '+(tbv('tbHandle')||'TBC')+' | Drawers: '+(tbv('tbDrawers')||'S/C')+' | Hinges: '+(tbv('tbHinges')||'S/C')+(tbv('tbBlum')?' | Blum upgrade':''));
+  L.push('Benchtop: '+benchtopText()+' | Edge: '+(tbv('tbEdge')||'Pencil Edge'));
+  if(tbv('tbNotes')) L.push('Notes: '+tbv('tbNotes')); if(tbv('tbQuoteNotes')) L.push('Quoting notes: '+tbv('tbQuoteNotes')); if(tbv('tbSpecial')) L.push('Special requests: '+tbv('tbSpecial'));
+  L.push('Doors: '+finishesUsed().map(f=>f.name).join(', ')+' | doors '+scheme.profile+' / drawers '+(scheme.drawerProfile||scheme.profile)+' | '+scheme.finishType);
   L.push('Benchtop: '+scheme.bench.name+' | bench height '+benchH+' mm | kick '+STD.kick+' | carcass '+STD.carcass+' | '+STD.cooktop+' cooktop ('+overheadClear()+' mm clearance)');
   computeRuns('floor').forEach((r,i)=>{ const h=r.axis==='h', it=r.items;
     const start=h?it[0].x:it[0].y, end=Math.max(...it.map(c=>h?c.x+footprint(c).w:c.y+footprint(c).h));
@@ -1423,8 +1525,8 @@ async function sendDesign(){
     'Name: '+name,'Phone: '+(phone||'-'),'Email: '+(email||'-'),'Suburb: '+(contact.suburb||'-'),
     val('sdMsg').trim()?('','Notes: '+val('sdMsg').trim()):'',
     '',designSummary(),'','(The plan image is attached.)',withGuide?['',guideText()]:[]].flat().join('\n');
-  let cv; try{ cv=await svgToCanvas(svg); }catch(e){ sdNote('Could not build the plan image. Try Download PNG and email it to '+HAMBOS.email+'.'); return; }
-  const fname=safeName(val('tbJob')||name)+'-plan.png';
+  let cv; try{ cv=await svgToCanvas(buildSheet()); }catch(e){ sdNote('Could not build the plan image. Try Download PNG and email it to '+HAMBOS.email+'.'); return; }
+  const fname=safeName(val('tbJob')||name)+'-plan-sheet.png';
   // phones and tablets: hand the image straight to Mail / Messages / WhatsApp
   if(navigator.share&&navigator.canShare){
     try{ const blob=await new Promise(r=>cv.toBlob(r,'image/png')); const file=new File([blob],fname,{type:'image/png'});
@@ -1440,20 +1542,20 @@ document.getElementById('sdGo').onclick=sendDesign;
 
 /* ---------- save / restore (browser storage + file) ---------- */
 const STORE_KEY='hambosLayout';
-const TB_IDS=['tbJob','tbCust','tbBy','tbDate','tbTotal'];
+const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling','tbCabH','tbDoorFinish','tbHandle','tbDrawers','tbHinges','tbBlum','tbBenchtop','tbEdge','tbNotes','tbQuoteNotes','tbSpecial','tbBy','tbDate','tbTotal'];
 function stateObj(){
-  const tb={}; TB_IDS.forEach(id=>tb[id]=val(id));
+  const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
   return {v:2,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
   cabs=s.cabs.filter(c=>c&&TYPES[c.type]);
-  if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme=s.scheme;
+  if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme={drawerProfile:s.scheme.profile,...s.scheme};
   benchH=parseInt(s.benchH)||870;
   if(s.std&&typeof s.std==='object') STD={...STD,...s.std};
   nextId=Math.max(parseInt(s.nextId)||1,...cabs.map(c=>(c.id||0)+1));
   dropN=parseInt(s.dropN)||0;
-  if(s.tb) TB_IDS.forEach(id=>{ if(typeof s.tb[id]==='string') document.getElementById(id).value=s.tb[id]; });
+  if(s.tb) TB_IDS.forEach(id=>{ const el=document.getElementById(id); if(el.type==='checkbox') el.checked=!!s.tb[id]; else if(typeof s.tb[id]==='string') el.value=s.tb[id]; });
   if(s.contact&&typeof s.contact==='object') contact={...contact,...s.contact};
   selId=null;
   return true;
@@ -1480,6 +1582,7 @@ document.getElementById('fileOpen').onchange=e=>{
 /* ---------- init ---------- */
 document.getElementById('tbDate').value=localISO(new Date());
 const restored=loadState();
+wireTitleBlock();
 buildFinishUI();
 render();
 applySheetView();
