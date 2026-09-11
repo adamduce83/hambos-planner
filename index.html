@@ -198,19 +198,19 @@
     </div>
     <div class="field">
       <label>Benchtop height off floor (mm)</label>
-      <input id="schBench" type="number" step="10" value="900">
+      <input id="schBench" type="number" step="10" min="500" max="1500" value="900">
     </div>
 
     <h3>Add a cabinet</h3>
     <div class="typegrid" id="typeGrid"></div>
     <div class="field">
       <label>Width (mm) — standard or custom</label>
-      <input id="newWidth" type="number" value="600" min="100" step="10">
+      <input id="newWidth" type="number" value="600" min="50" max="4000" step="10">
       <div class="quick" id="quickWidths"></div>
     </div>
     <div class="field">
       <label>Depth (mm)</label>
-      <input id="newDepth" type="number" value="560" min="100" step="10">
+      <input id="newDepth" type="number" value="560" min="50" max="1500" step="10">
     </div>
 
     <h3>Add an appliance</h3>
@@ -411,7 +411,7 @@ function buildFinishUI(){
   FINISH_TYPES.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;fs.appendChild(o);});
   fs.value=scheme.finishType; fs.onchange=e=>{scheme.finishType=e.target.value;render();};
   const bh=document.getElementById('schBench'); bh.value=benchH;
-  bh.oninput=e=>{benchH=parseInt(e.target.value)||900; if(selId)buildPanel(); render();};
+  bh.oninput=e=>{benchH=clampMM(e.target.value,500,1500,900); if(selId)buildPanel(); render();};
   refreshFinish();
 }
 function refreshFinish(){
@@ -423,8 +423,8 @@ function refreshFinish(){
 /* ---------- add / model ---------- */
 function addCab(type){
   const t=TYPES[type];
-  const width=parseInt(document.getElementById('newWidth').value)||600;
-  const depth=parseInt(document.getElementById('newDepth').value)||t.depth;
+  const width=clampMM(document.getElementById('newWidth').value,50,4000,600);
+  const depth=clampMM(document.getElementById('newDepth').value,50,1500,t.depth);
   const ox=BOARD.x0+300+(dropN%8)*150, oy=BOARD.y0+150+(dropN%8)*150;
   dropN++;
   const noDoor=t.appliance||t.thin||t.window||t.sym;
@@ -432,6 +432,9 @@ function addCab(type){
   selId=nextId-1; render(); buildPanel();
 }
 function snap(v){return Math.round(v/SNAP)*SNAP;}
+// sizes in mm: ignore blanks (keep the old value) and clamp to sensible limits
+function clampMM(v,min,max,fallback){ v=parseInt(v); return isNaN(v)?fallback:Math.max(min,Math.min(max,v)); }
+function keepOnBoard(c){ const f=footprint(c); c.x=Math.max(BOARD.x0,Math.min(BOARD.x1-f.w,c.x)); c.y=Math.max(BOARD.y0,Math.min(BOARD.y1-f.h,c.y)); }
 function footprint(c){const r=((c.rot||0)%360+360)%360;return (r===90||r===270)?{w:c.depth,h:c.width}:{w:c.width,h:c.depth};}
 
 /* ---------- finishes schedule (lists every colour in use) ---------- */
@@ -487,6 +490,7 @@ function render(){
   // grid
   for(let x=0;x<=12000;x+=500){line(x,TITLE_H+20,x,6580,x%1000?'#eef1ea':'#e0e6d8',x%1000?2:4);}
   for(let y=TITLE_H+20;y<=6580;y+=500){line(0,y,12000,y,(y-TITLE_H-20)%1000?'#eef1ea':'#e0e6d8',(y-TITLE_H-20)%1000?2:4);}
+  cabs.forEach(keepOnBoard);
   // cabinets (overlapping pieces are outlined red)
   OVERLAP=overlapIds();
   cabs.forEach(drawCab);
@@ -921,11 +925,11 @@ function buildPanel(){
   const cc=document.createElement('input'); cc.type='color'; cc.className='cpick'; cc.title='Custom colour for this unit';
   if(c.door&&c.door.color) cc.value=c.door.color;
   cc.oninput=e=>{c.door={name:'Custom',color:e.target.value};render();}; dr.appendChild(cc);
-  document.getElementById('edW').oninput=e=>{c.width=parseInt(e.target.value)||c.width;render();};
-  document.getElementById('edD').oninput=e=>{c.depth=parseInt(e.target.value)||c.depth;render();};
-  document.getElementById('edHt').oninput=e=>{c.height=parseInt(e.target.value)||c.height;render();};
+  document.getElementById('edW').oninput=e=>{c.width=clampMM(e.target.value,50,4000,c.width);render();};
+  document.getElementById('edD').oninput=e=>{c.depth=clampMM(e.target.value,50,1500,c.depth);render();};
+  document.getElementById('edHt').oninput=e=>{c.height=clampMM(e.target.value,10,3000,c.height);render();};
   const updHint=()=>{const hn=document.getElementById('edBhint'); if(hn){const gap=(c.bottom!=null?c.bottom:(t.bottom||0))-benchH; hn.textContent='Gap above benchtop: '+gap+' mm';}};
-  document.getElementById('edB').oninput=e=>{c.bottom=parseInt(e.target.value); if(isNaN(c.bottom))c.bottom=0; updHint(); render();};
+  document.getElementById('edB').oninput=e=>{c.bottom=clampMM(e.target.value,0,3000,0); updHint(); render();};
   updHint();
   if(document.getElementById('edF')) document.getElementById('edF').onchange=e=>{c.front=e.target.value; if(c.front==='doors'&&!c.hinge)c.hinge=(c.width>600?'D':'L'); buildPanel(); render();};
   document.getElementById('edL').oninput=e=>{c.label=e.target.value;render();};
