@@ -188,6 +188,7 @@
       <button data-tab="build" class="active">Build</button>
       <button data-tab="finishes">Finishes</button>
       <button data-tab="selected">Selected</button>
+      <button data-tab="appl">Appliances</button>
       <button data-tab="job">Job</button>
     </div>
 
@@ -250,6 +251,17 @@
     <div class="stab" data-tab="selected" hidden>
       <h3>Selected piece</h3>
       <div id="selPanel" class="panel empty">Nothing selected. Click a piece on the plan.</div>
+    </div>
+
+    <div class="stab" data-tab="appl" hidden>
+      <h3>Appliance list <span style="font-weight:500;text-transform:none;letter-spacing:0;">(prints with the plan)</span></h3>
+      <div class="field"><label>Cooktop type — sets the overhead clearance</label>
+        <select id="apCooktop"><option value="electric">Electric (600 mm above bench)</option><option value="gas">Gas (700 mm above bench)</option></select></div>
+      <div class="field"><label>Rangehood</label><select id="apHoodMode"><option value="">—</option><option value="Duct">Ducted</option><option value="Recirculate">Recirculating</option></select></div>
+      <div class="field"><label>Fridge allowance (mm) — width used when you add a fridge</label>
+        <div class="quick"><button data-fa="800">800</button><button data-fa="900">900</button><button data-fa="1000">1000</button></div>
+        <input id="apFridgeAllow" type="number" step="10" min="500" max="1500" style="margin-top:4px;"></div>
+      <div id="apRows"></div>
     </div>
 
     <div class="stab" data-tab="job" hidden>
@@ -330,6 +342,9 @@ let benchH=870; // benchtop height off floor (mm), editable in Finishes (kick + 
 // manufacturer standards (editable per job; saved with the design)
 let STD={kick:150,carcass:720,panelMin:20,cooktop:'electric',clearElectric:600,clearGas:700,bulkhead:100,shadow:0,blindMin:800};
 const overheadClear=()=>STD.cooktop==='gas'?STD.clearGas:STD.clearElectric;
+// appliance list (their Appliance Form): brand / model / notes per item
+const APPL_ITEMS=[['oven','Oven'],['cooktop','Cooktop'],['rangehood','Rangehood'],['dishwasher','Dishwasher'],['microwave','Microwave'],['fridge','Fridge'],['sink','Sink'],['other','Other']];
+let APPL={hoodMode:'',fridgeAllow:900,items:{}};
 function cabBand(c){ // returns [bottomMM, topMM]
   const t=TYPES[c.type], h=c.height||t.eh||900;
   const b=(c.bottom!=null)?c.bottom:(t.bottom||0);
@@ -421,7 +436,7 @@ function buildPaletteGrid(gridId,cat){
     const sw=cat==='cab'?scheme.door.color:(t.window?'#cfe2ea':'#dfe3e7');
     b.innerHTML=`<span class="swatch" style="background:${sw};border:1px solid #889"></span>${t.name}`;
     b.onclick=()=>{ document.getElementById('newDepth').value=t.depth;
-      if(t.dw) document.getElementById('newWidth').value=t.dw; addCab(k); };
+      if(t.dw) document.getElementById('newWidth').value=(k==='fridge'?APPL.fridgeAllow:t.dw); addCab(k); };
     grid.appendChild(b);
   });
 }
@@ -431,6 +446,26 @@ buildPaletteGrid('structGrid','struct');
 const qw=document.getElementById('quickWidths');
 COMMON_WIDTHS.forEach(w=>{const b=document.createElement('button');b.textContent=w;
   b.onclick=()=>document.getElementById('newWidth').value=w; qw.appendChild(b);});
+
+/* ---------- appliance list UI ---------- */
+function buildApplUI(){
+  const rows=document.getElementById('apRows'); rows.innerHTML='';
+  APPL_ITEMS.forEach(([k,name])=>{
+    const it=APPL.items[k]||(APPL.items[k]={brand:'',model:'',notes:''});
+    const d=document.createElement('div'); d.className='field';
+    d.innerHTML=`<label>${name}</label><div style="display:flex;gap:4px;"><input placeholder="Brand" data-k="${k}" data-f="brand" style="flex:1;"><input placeholder="Model no." data-k="${k}" data-f="model" style="flex:1;"></div><input placeholder="Notes (size, supplied by, ...)" data-k="${k}" data-f="notes" style="margin-top:4px;">`;
+    d.querySelectorAll('input').forEach(inp=>{ inp.value=it[inp.dataset.f]||''; inp.oninput=e=>{ APPL.items[k][inp.dataset.f]=e.target.value; saveState(); }; });
+    rows.appendChild(d);
+  });
+  const ck=document.getElementById('apCooktop'); ck.value=STD.cooktop; ck.onchange=e=>{ STD.cooktop=e.target.value; const f=document.getElementById('stdCooktop'); if(f) f.value=STD.cooktop; render(); };
+  const hm=document.getElementById('apHoodMode'); hm.value=APPL.hoodMode||''; hm.onchange=e=>{ APPL.hoodMode=e.target.value; saveState(); };
+  const fa=document.getElementById('apFridgeAllow'); fa.value=APPL.fridgeAllow; fa.oninput=e=>{ APPL.fridgeAllow=clampMM(e.target.value,500,1500,900); saveState(); };
+  document.querySelectorAll('[data-fa]').forEach(b=>b.onclick=()=>{ APPL.fridgeAllow=+b.dataset.fa; fa.value=APPL.fridgeAllow; saveState(); });
+}
+function applianceLines(){
+  const L=[]; APPL_ITEMS.forEach(([k,name])=>{ const it=APPL.items[k]; if(!it) return; const bits=[it.brand,it.model].filter(Boolean).join(' '); const extra=[k==='cooktop'?(STD.cooktop==='gas'?'Gas':'Electric'):'',k==='rangehood'?APPL.hoodMode:'',k==='fridge'?(APPL.fridgeAllow+' mm allowance'):'',it.notes].filter(Boolean).join(', '); if(bits||it.notes) L.push([name,(bits+(extra?' ('+extra+')':'')).trim()]); });
+  return L;
+}
 
 /* ---------- finishes UI ---------- */
 function doorSwatches(row,current,onPick){
@@ -469,7 +504,7 @@ function buildFinishUI(){
   // manufacturer standards
   const bind=(id,key,min,max)=>{ const el=document.getElementById(id); el.value=STD[key]; el.oninput=e=>{ STD[key]=clampMM(e.target.value,min,max,STD[key]); render(); }; };
   bind('stdKick','kick',0,300); bind('stdCarcass','carcass',300,1200); bind('stdPanel','panelMin',10,100); bind('stdBulk','bulkhead',0,600); bind('stdBlind','blindMin',300,1500);
-  const ck=document.getElementById('stdCooktop'); ck.value=STD.cooktop; ck.onchange=e=>{ STD.cooktop=e.target.value; render(); };
+  const ck=document.getElementById('stdCooktop'); ck.value=STD.cooktop; ck.onchange=e=>{ STD.cooktop=e.target.value; const a=document.getElementById('apCooktop'); if(a) a.value=STD.cooktop; render(); };
   const sh=document.getElementById('stdShadow'); sh.value=String(STD.shadow); sh.onchange=e=>{ STD.shadow=parseInt(e.target.value)||0; render(); };
   refreshFinish();
 }
@@ -1448,6 +1483,8 @@ function drawTitleBlock(S,R,T,L){
   const box=(label,text,minLines)=>{ const lines=wrapText(text,52); while(lines.length<minLines) lines.push(''); const hgt=90+lines.length*66+40;
     T(x+pad,y+66,label.toUpperCase(),'#566b4b',50,700,'start'); lines.forEach((ln,i)=>T(x+pad,y+66+(i+1)*66,ln,'#2a2f28',56,500,'start')); y+=hgt; L(x,y,x+w,y,'#d6ddcd',2); };
   box('Notes',tbv('tbNotes'),2); box('Quoting notes',tbv('tbQuoteNotes'),2); box('Special requests',tbv('tbSpecial'),2);
+  const ap=applianceLines();
+  if(ap.length){ T(x+pad,y+66,'APPLIANCES','#566b4b',50,700,'start'); let yy=y+66; ap.forEach(([n,v])=>{ const ls=wrapText(v,40); T(x+pad,yy+64,n,'#566b4b',52,700,'start'); ls.forEach((l,i)=>T(xr,yy+64+i*58,l,'#2a2f28',52,500,'end')); yy+=64+Math.max(0,ls.length-1)*58; }); y=yy+40; L(x,y,x+w,y,'#d6ddcd',2); }
   // signature + date
   y+=60; T(x+pad,y+60,'SIGNATURE','#566b4b',50,700,'start'); L(x+pad+420,y+70,x+w/2+520,y+70,'#2f3a2a',3);
   T(x+w/2+600,y+60,'DATE','#566b4b',50,700,'start'); L(x+w/2+820,y+70,xr,y+70,'#2f3a2a',3);
@@ -1492,6 +1529,7 @@ function designSummary(){
   L.push('Ceiling: '+(tbv('tbCeiling')?tbv('tbCeiling')+' mm':'-')+' | Cabinet height: '+(tbv('tbCabH')?tbv('tbCabH')+' mm':'-')+' | Kickboard: '+STD.kick+' mm');
   L.push('Door finish: '+(tbv('tbDoorFinish')||'Satin')+' | Handle: '+(tbv('tbHandle')||'TBC')+' | Drawers: '+(tbv('tbDrawers')||'S/C')+' | Hinges: '+(tbv('tbHinges')||'S/C')+(tbv('tbBlum')?' | Blum upgrade':''));
   L.push('Benchtop: '+benchtopText()+' | Edge: '+(tbv('tbEdge')||'Pencil Edge'));
+  applianceLines().forEach(([n,v])=>L.push('Appliance - '+n+': '+v));
   if(tbv('tbNotes')) L.push('Notes: '+tbv('tbNotes')); if(tbv('tbQuoteNotes')) L.push('Quoting notes: '+tbv('tbQuoteNotes')); if(tbv('tbSpecial')) L.push('Special requests: '+tbv('tbSpecial'));
   L.push('Doors: '+finishesUsed().map(f=>f.name).join(', ')+' | doors '+scheme.profile+' / drawers '+(scheme.drawerProfile||scheme.profile)+' | '+scheme.finishType);
   L.push('Benchtop: '+scheme.bench.name+' | bench height '+benchH+' mm | kick '+STD.kick+' | carcass '+STD.carcass+' | '+STD.cooktop+' cooktop ('+overheadClear()+' mm clearance)');
@@ -1545,7 +1583,7 @@ const STORE_KEY='hambosLayout';
 const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling','tbCabH','tbDoorFinish','tbHandle','tbDrawers','tbHinges','tbBlum','tbBenchtop','tbEdge','tbNotes','tbQuoteNotes','tbSpecial','tbBy','tbDate','tbTotal'];
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
-  return {v:2,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD};
+  return {v:3,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
@@ -1553,6 +1591,7 @@ function applyState(s){
   if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme={drawerProfile:s.scheme.profile,...s.scheme};
   benchH=parseInt(s.benchH)||870;
   if(s.std&&typeof s.std==='object') STD={...STD,...s.std};
+  if(s.appl&&typeof s.appl==='object') APPL={...APPL,...s.appl,items:{...(s.appl.items||{})}};
   nextId=Math.max(parseInt(s.nextId)||1,...cabs.map(c=>(c.id||0)+1));
   dropN=parseInt(s.dropN)||0;
   if(s.tb) TB_IDS.forEach(id=>{ const el=document.getElementById(id); if(el.type==='checkbox') el.checked=!!s.tb[id]; else if(typeof s.tb[id]==='string') el.value=s.tb[id]; });
@@ -1575,7 +1614,7 @@ document.getElementById('fileOpen').onchange=e=>{
   fr.onload=()=>{ let st=null; try{ st=JSON.parse(fr.result); }catch(err){}
     if(!st){ alert("That file is not a saved Hambo's design."); return; }
     pushUndo(); if(!applyState(st)){ alert("That file is not a saved Hambo's design."); UNDO.pop(); undoButtons(); return; }
-    buildFinishUI(); render(); buildPanel(); setTab('plan'); };
+    buildFinishUI(); buildApplUI(); render(); buildPanel(); setTab('plan'); };
   fr.readAsText(f); e.target.value='';
 };
 
@@ -1584,6 +1623,7 @@ document.getElementById('tbDate').value=localISO(new Date());
 const restored=loadState();
 wireTitleBlock();
 buildFinishUI();
+buildApplUI();
 render();
 applySheetView();
 fitToCabinets(true);
