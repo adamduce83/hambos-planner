@@ -85,6 +85,35 @@
   #coach .skip{background:transparent;color:#6a7361;padding-left:0;}
   #coach .back{background:#e7ece1;color:#3a3f33;}
   #coach .next{background:#00a357;color:#fff;}
+  #btnJob{display:none;cursor:pointer;border:none;border-radius:6px;padding:7px 10px;font-size:12px;font-weight:600;background:#46553c;color:#dfe7d6;}
+  #asideHandle{display:none;position:sticky;top:-10px;z-index:1;background:#fff;align-items:center;justify-content:space-between;cursor:pointer;font-size:12px;font-weight:700;color:var(--sage-dk);text-transform:uppercase;letter-spacing:.5px;padding:8px 0;margin-top:-10px;}
+  #asideHandle+h3{margin-top:0;}
+  /* phones and small tablets: sidebar becomes a bottom drawer, sheet fits the width */
+  @media (max-width:820px){
+    header.bar{gap:8px;padding:8px 10px;}
+    header.bar #hdrLogo{height:26px;}
+    header.bar .logo{font-size:13px;flex:1;}
+    #btnJob{display:inline-block;}
+    .titleblock{display:none;width:100%;order:3;}
+    header.bar.open .titleblock{display:flex;}
+    .titleblock label{flex:1 1 45%;}
+    .titleblock input{min-width:0;width:100%;}
+    .tabs{order:2;width:100%;}
+    .tabs button{flex:1;padding:8px 6px;}
+    .toprow{flex-wrap:nowrap;overflow-x:auto;padding:6px 10px;gap:6px;-webkit-overflow-scrolling:touch;}
+    .toprow>*{flex:0 0 auto;}
+    .scaleNote{display:none;}
+    .layout{flex-direction:column;}
+    aside{width:100%;order:2;border-right:none;border-top:2px solid var(--line);height:42vh;flex:0 0 auto;padding:10px 12px;}
+    aside.collapsed{height:auto;overflow:hidden;}
+    aside.collapsed>*:not(#asideHandle){display:none;}
+    #asideHandle{display:flex;}
+    main{flex:1;min-height:0;}
+    .hint{display:none;}
+    #planWrap,#viewElev{padding:8px;}
+    #coach .card{bottom:12px;padding:14px 16px;}
+    #coach.welcome-on .card{width:92vw;}
+  }
   @media print{
     body{display:block;height:auto;}
     #coach,#btnGuide{display:none!important;}
@@ -100,6 +129,7 @@
 <header class="bar">
   <img id="hdrLogo" alt="Hambo's" style="display:none">
   <div class="logo">Kitchen <span>Layout Tool</span></div>
+  <button id="btnJob" title="Job, customer, date and quote total">Job details</button>
   <div class="titleblock">
     <label>Job / Reference<input id="tbJob" placeholder="e.g. Smith kitchen"></label>
     <label>Customer<input id="tbCust" placeholder="Customer name"></label>
@@ -131,6 +161,7 @@
 
 <div class="layout">
   <aside id="palette">
+    <div id="asideHandle"><span>Cabinets &amp; finishes</span><span id="asideArrow">&#9660;</span></div>
     <h3>Finishes (defaults)</h3>
     <div class="field">
       <label>Door / drawer fronts</label>
@@ -843,6 +874,9 @@ function buildPanel(){
   document.getElementById('edP').oninput=e=>{c.price=e.target.value===''?null:(parseFloat(e.target.value)||0);updateSubtotal();};
   document.getElementById('bRot').onclick=()=>{c.rot=((c.rot||0)+90)%360;render();};
   document.getElementById('bDup').onclick=()=>{const n={...c,id:nextId++,x:c.x+150,y:c.y+150};cabs.push(n);selId=n.id;render();buildPanel();};
+  // on a phone the panel lives in the bottom drawer: open it and scroll it into view
+  if(isMobile()){ asideEl.classList.remove('collapsed'); document.getElementById('asideArrow').innerHTML='&#9660;';
+    asideEl.scrollTop=p.getBoundingClientRect().top-asideEl.getBoundingClientRect().top+asideEl.scrollTop-12; }
   document.getElementById('bDel').onclick=()=>{cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();};
 }
 
@@ -931,6 +965,16 @@ document.getElementById('btnPrint').onclick=()=>{
   else { printSvg(svg,title+' — plan'); }
 };
 document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear the whole layout?')){cabs=[];selId=null;dropN=0;render();buildPanel();} };
+
+/* ---------- phone layout helpers ---------- */
+const isMobile=()=>window.matchMedia('(max-width:820px)').matches;
+const asideEl=document.getElementById('palette');
+document.getElementById('btnJob').onclick=()=>document.querySelector('header.bar').classList.toggle('open');
+document.getElementById('asideHandle').onclick=()=>{
+  asideEl.classList.toggle('collapsed');
+  document.getElementById('asideArrow').innerHTML=asideEl.classList.contains('collapsed')?'&#9650;':'&#9660;';
+  applyZoom();
+};
 
 /* ---------- zoom / fit to screen ---------- */
 let zoom=1; // 1 = the whole sheet fits the work area
