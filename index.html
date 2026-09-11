@@ -40,22 +40,23 @@
   aside h3{margin:14px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--sage-dk);}
   aside h3:first-child{margin-top:0;}
   .typegrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
-  .typegrid button{cursor:pointer;border:1px solid var(--line);background:#fbfcf9;border-radius:6px;padding:8px 4px;font-size:12px;font-weight:600;color:var(--ink);}
+  .typegrid button{cursor:pointer;border:1px solid var(--line);background:#fbfcf9;border-radius:6px;padding:8px 6px;min-height:44px;font-size:13px;font-weight:600;color:var(--ink);}
   .typegrid button:hover{border-color:var(--sage);}
   .swatch{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle;}
   .field{margin-bottom:10px;}
   .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#6a7361;margin-bottom:4px;}
   .field input,.field select{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:5px;font-size:13px;}
   .quick{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
-  .quick button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:4px;padding:4px 7px;font-size:11px;}
+  .quick button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:4px;padding:6px 9px;min-height:32px;font-size:12px;}
   .quick button:hover{background:var(--sage-lt);}
-  .sw-row{display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
-  .sw{width:24px;height:24px;border-radius:5px;border:2px solid #fff;box-shadow:0 0 0 1px #cfd6c6;cursor:pointer;}
-  .sw.on{box-shadow:0 0 0 2px var(--charcoal);}
-  .sw.def{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#6a7361;background:#f4f6f1;width:auto;padding:0 6px;height:24px;}
+  .sw-row{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
+  .sw{width:34px;height:34px;border-radius:7px;border:2px solid #fff;box-shadow:0 0 0 1px #cfd6c6;cursor:pointer;}
+  .sw:hover{box-shadow:0 0 0 2px var(--sage);}
+  .sw.on{box-shadow:0 0 0 3px var(--green);}
+  .sw.def{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#6a7361;background:#f4f6f1;width:auto;padding:0 8px;height:34px;}
   .sw-name{font-size:12px;color:#3a3f33;margin-top:5px;font-weight:600;}
   .sw-grp{flex-basis:100%;font-size:10px;color:#6a7361;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
-  .cpick{width:28px;height:24px;border:1px solid var(--line);border-radius:5px;padding:0;cursor:pointer;background:none;}
+  .cpick{width:38px;height:34px;border:1px solid var(--line);border-radius:7px;padding:0;cursor:pointer;background:none;}
   .panel{background:#f7f9f4;border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:6px;}
   .panel.empty{color:#9aa392;font-size:12px;text-align:center;}
   .bigbtn{width:100%;cursor:pointer;border:none;border-radius:7px;padding:11px;font-size:14px;font-weight:700;background:var(--sage);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0;}
@@ -192,7 +193,7 @@
       <input id="schBench" type="number" step="10" min="500" max="1500" value="900">
     </div>
 
-    <h3>Add a cabinet</h3>
+    <h3>Add a cabinet <span style="font-weight:500;text-transform:none;letter-spacing:0;">(click to place it on the plan)</span></h3>
     <div class="typegrid" id="typeGrid"></div>
     <div class="field">
       <label>Width (mm) — standard or custom</label>
