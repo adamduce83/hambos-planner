@@ -34,6 +34,7 @@
   .tabs button.active{background:var(--sage-lt);color:var(--charcoal);}
   .toolbtn{background:var(--sage);color:#fff;}
   .toolbtn.alt{background:#46553c;color:#dfe7d6;}
+  .toolbtn:disabled{opacity:.45;cursor:default;}
   .layout{display:flex;flex:1;min-height:0;}
   aside{width:262px;background:#fff;border-right:1px solid var(--line);padding:14px;overflow-y:auto;}
   aside h3{margin:14px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--sage-dk);}
@@ -172,6 +173,8 @@
   <button class="toolbtn" id="btnSend" style="background:#00a357;" title="Email your design to Hambo's for a free quote">&#9993; Send to Hambo's</button>
   <button class="toolbtn" id="btnPng">Download PNG</button>
   <button class="toolbtn alt" id="btnPrint">Print / Save PDF</button>
+  <button class="toolbtn alt" id="btnUndo" title="Undo (Ctrl+Z)">&#8630; Undo</button>
+  <button class="toolbtn alt" id="btnRedo" title="Redo (Ctrl+Shift+Z)">&#8631; Redo</button>
   <button class="toolbtn alt" id="btnClear">Clear all</button>
   <button class="toolbtn alt" id="btnSave" title="Download this design as a file you can open again later">Save design</button>
   <button class="toolbtn alt" id="btnOpen" title="Open a design file saved earlier">Open design</button>
@@ -429,8 +432,23 @@ function refreshFinish(){
   document.querySelectorAll('#typeGrid .swatch').forEach(s=>s.style.background=scheme.door.color);
 }
 
+/* ---------- undo / redo (snapshots of the pieces) ---------- */
+const UNDO=[], REDO=[]; let undoTag=null, undoAt=0;
+function pushUndo(tag){
+  // repeated keystrokes in the same field within 1.2 s count as one step
+  if(tag&&tag===undoTag&&Date.now()-undoAt<1200){ undoAt=Date.now(); return; }
+  undoTag=tag||null; undoAt=Date.now();
+  UNDO.push(JSON.stringify(cabs)); if(UNDO.length>60) UNDO.shift(); REDO.length=0; undoButtons();
+}
+function restoreSnap(json){ cabs=JSON.parse(json); if(!cabs.some(c=>c.id===selId)) selId=null; render(); buildPanel(); }
+function undo(){ if(!UNDO.length) return; REDO.push(JSON.stringify(cabs)); restoreSnap(UNDO.pop()); undoTag=null; undoButtons(); }
+function redo(){ if(!REDO.length) return; UNDO.push(JSON.stringify(cabs)); restoreSnap(REDO.pop()); undoTag=null; undoButtons(); }
+function undoButtons(){ document.getElementById('btnUndo').disabled=!UNDO.length; document.getElementById('btnRedo').disabled=!REDO.length; }
+document.getElementById('btnUndo').onclick=undo; document.getElementById('btnRedo').onclick=redo;
+
 /* ---------- add / model ---------- */
 function addCab(type){
+  pushUndo();
   const t=TYPES[type];
   const width=clampMM(document.getElementById('newWidth').value,50,4000,600);
   const depth=clampMM(document.getElementById('newDepth').value,50,1500,t.depth);
@@ -856,6 +874,7 @@ function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;retur
 function startDrag(e){
   const id=+e.currentTarget.dataset.id; selId=id; buildPanel(); render();
   const c=cabs.find(x=>x.id===id); const p=svgPt(e);
+  pushUndo();
   drag={id,dx:p.x-c.x,dy:p.y-c.y,pid:e.pointerId};
   // capture on the sheet (not the cabinet, which is redrawn mid-drag) so the drag keeps
   // tracking when the pointer leaves the sheet, and always ends on release
@@ -924,40 +943,43 @@ function buildPanel(){
     </div>`;
   if(document.getElementById('edF')) document.getElementById('edF').value=ft;
   if(document.getElementById('edH')){ document.getElementById('edH').value=c.hinge||(c.width>600?'D':'L');
-    document.getElementById('edH').onchange=e=>{c.hinge=e.target.value;render();}; }
-  if(document.getElementById('edN')){ document.getElementById('edN').oninput=e=>{c.drawers=Math.max(1,Math.min(6,parseInt(e.target.value)||3));render();}; }
+    document.getElementById('edH').onchange=e=>{pushUndo();c.hinge=e.target.value;render();}; }
+  if(document.getElementById('edN')){ document.getElementById('edN').oninput=e=>{pushUndo('edN');c.drawers=Math.max(1,Math.min(6,parseInt(e.target.value)||3));render();}; }
   // per-cabinet front colour override
   const dr=document.getElementById('edDoor');
   const def=document.createElement('div'); def.className='sw def'+(c.door?'':' on'); def.textContent='Default';
-  def.onclick=()=>{c.door=null;buildPanel();render();}; dr.appendChild(def);
-  doorSwatches(dr,c.door,o=>{ c.door={...o}; buildPanel(); render(); });
+  def.onclick=()=>{pushUndo();c.door=null;buildPanel();render();}; dr.appendChild(def);
+  doorSwatches(dr,c.door,o=>{ pushUndo(); c.door={...o}; buildPanel(); render(); });
   const cc=document.createElement('input'); cc.type='color'; cc.className='cpick'; cc.title='Custom colour for this unit';
   if(c.door&&c.door.color) cc.value=c.door.color;
-  cc.oninput=e=>{c.door={name:'Custom',color:e.target.value};render();}; dr.appendChild(cc);
-  document.getElementById('edW').oninput=e=>{c.width=clampMM(e.target.value,50,4000,c.width);render();};
-  document.getElementById('edD').oninput=e=>{c.depth=clampMM(e.target.value,50,1500,c.depth);render();};
-  document.getElementById('edHt').oninput=e=>{c.height=clampMM(e.target.value,10,3000,c.height);render();};
+  cc.oninput=e=>{pushUndo('cc');c.door={name:'Custom',color:e.target.value};render();}; dr.appendChild(cc);
+  document.getElementById('edW').oninput=e=>{pushUndo('edW');c.width=clampMM(e.target.value,50,4000,c.width);render();};
+  document.getElementById('edD').oninput=e=>{pushUndo('edD');c.depth=clampMM(e.target.value,50,1500,c.depth);render();};
+  document.getElementById('edHt').oninput=e=>{pushUndo('edHt');c.height=clampMM(e.target.value,10,3000,c.height);render();};
   const updHint=()=>{const hn=document.getElementById('edBhint'); if(hn){const gap=(c.bottom!=null?c.bottom:(t.bottom||0))-benchH; hn.textContent='Gap above benchtop: '+gap+' mm';}};
-  document.getElementById('edB').oninput=e=>{c.bottom=clampMM(e.target.value,0,3000,0); updHint(); render();};
+  document.getElementById('edB').oninput=e=>{pushUndo('edB');c.bottom=clampMM(e.target.value,0,3000,0); updHint(); render();};
   updHint();
-  if(document.getElementById('edF')) document.getElementById('edF').onchange=e=>{c.front=e.target.value; if(c.front==='doors'&&!c.hinge)c.hinge=(c.width>600?'D':'L'); buildPanel(); render();};
+  if(document.getElementById('edF')) document.getElementById('edF').onchange=e=>{pushUndo();c.front=e.target.value; if(c.front==='doors'&&!c.hinge)c.hinge=(c.width>600?'D':'L'); buildPanel(); render();};
   document.getElementById('edL').value=c.label||''; // set as a value so quotes and symbols in a label survive
-  document.getElementById('edL').oninput=e=>{c.label=e.target.value;render();};
-  document.getElementById('edP').oninput=e=>{c.price=e.target.value===''?null:(parseFloat(e.target.value)||0);updateSubtotal();};
-  document.getElementById('bRot').onclick=()=>{c.rot=((c.rot||0)+90)%360;render();};
-  document.getElementById('bDup').onclick=()=>{const n={...c,id:nextId++,x:c.x+150,y:c.y+150};cabs.push(n);selId=n.id;render();buildPanel();};
+  document.getElementById('edL').oninput=e=>{pushUndo('edL');c.label=e.target.value;render();};
+  document.getElementById('edP').oninput=e=>{pushUndo('edP');c.price=e.target.value===''?null:(parseFloat(e.target.value)||0);updateSubtotal();};
+  document.getElementById('bRot').onclick=()=>{pushUndo();c.rot=((c.rot||0)+90)%360;render();};
+  document.getElementById('bDup').onclick=()=>{pushUndo();const n={...c,id:nextId++,x:c.x+150,y:c.y+150};cabs.push(n);selId=n.id;render();buildPanel();};
   // on a phone the panel lives in the bottom drawer: open it and scroll it into view
   if(isMobile()){ asideEl.classList.remove('collapsed'); document.getElementById('asideArrow').innerHTML='&#9660;';
     asideEl.scrollTop=p.getBoundingClientRect().top-asideEl.getBoundingClientRect().top+asideEl.scrollTop-12; }
-  document.getElementById('bDel').onclick=()=>{cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();};
+  document.getElementById('bDel').onclick=()=>{pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();};
 }
 
 /* ---------- keyboard ---------- */
 document.addEventListener('keydown',e=>{
+  const typing=['INPUT','SELECT','TEXTAREA'].includes((document.activeElement||{}).tagName);
+  if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='z'){ e.preventDefault(); if(e.shiftKey) redo(); else undo(); return; }
+  if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); return; }
   const c=cabs.find(x=>x.id===selId); if(!c)return;
-  if(['INPUT','SELECT','TEXTAREA'].includes((document.activeElement||{}).tagName))return;
-  if(e.key==='Delete'||e.key==='Backspace'){cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();}
-  if(e.key.toLowerCase()==='r'){c.rot=((c.rot||0)+90)%360;render();}
+  if(typing)return;
+  if(e.key==='Delete'||e.key==='Backspace'){pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();}
+  if(e.key.toLowerCase()==='r'){pushUndo();c.rot=((c.rot||0)+90)%360;render();}
 });
 
 /* ---------- title block live ---------- */
@@ -1041,7 +1063,7 @@ document.getElementById('btnPrint').onclick=()=>{
   else if(currentView==='elev'){ renderElev(); printSvg(E,title+' — elevations'); }
   else { printSvg(svg,title+' — plan'); }
 };
-document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear the whole layout?')){cabs=[];selId=null;dropN=0;render();buildPanel();} };
+document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear the whole layout? (Undo can bring it back)')){pushUndo();cabs=[];selId=null;dropN=0;render();buildPanel();} };
 
 /* ---------- phone layout helpers ---------- */
 const isMobile=()=>window.matchMedia('(max-width:820px)').matches;
@@ -1326,7 +1348,8 @@ document.getElementById('fileOpen').onchange=e=>{
   const f=e.target.files[0]; if(!f) return;
   const fr=new FileReader();
   fr.onload=()=>{ let st=null; try{ st=JSON.parse(fr.result); }catch(err){}
-    if(!st||!applyState(st)){ alert("That file is not a saved Hambo's design."); return; }
+    if(!st){ alert("That file is not a saved Hambo's design."); return; }
+    pushUndo(); if(!applyState(st)){ alert("That file is not a saved Hambo's design."); UNDO.pop(); undoButtons(); return; }
     buildFinishUI(); render(); buildPanel(); setTab('plan'); };
   fr.readAsText(f); e.target.value='';
 };
@@ -1337,6 +1360,7 @@ const restored=loadState();
 buildFinishUI();
 render();
 applyZoom();
+undoButtons();
 if(restored&&cabs.length) document.getElementById('hint').innerHTML='Restored your last design from this browser. <b>Clear all</b> starts fresh.';
 loadLogo();
 try{ if(!localStorage.getItem('hambosGuideSeen')) showWelcome(); }catch(e){}
