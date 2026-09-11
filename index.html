@@ -288,10 +288,20 @@
       <div class="field"><label>Quoting notes</label><textarea id="tbQuoteNotes" rows="2"></textarea></div>
       <div class="field"><label>Special requests</label><textarea id="tbSpecial" rows="2"></textarea></div>
       <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Designed by</label><input id="tbBy" placeholder="Jess"></div><div style="flex:1;"><label>Date</label><input id="tbDate" type="date"></div></div>
-      <h3>Pricing</h3>
-      <div class="field"><label>Quote total</label><input id="tbTotal" placeholder="$ total"></div>
-      <div class="field" style="margin-bottom:6px;">Items subtotal: <b id="subTot">$0</b></div>
-      <button class="toolbtn alt" id="useSub" style="width:100%;">Use subtotal as quote total</button>
+      <h3>Pricing <span style="font-weight:500;text-transform:none;letter-spacing:0;">(internal, never printed)</span></h3>
+      <div id="priceBreak" class="panel" style="font-size:13px;line-height:1.7;"></div>
+      <button class="toolbtn alt" id="useSub" style="width:100%;margin:6px 0;">Use ballpark as quote total</button>
+      <div class="field"><label>Quote total (prints on the sheet)</label><input id="tbTotal" placeholder="$ total"></div>
+      <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sage-dk);text-transform:uppercase;letter-spacing:.5px;">Price table &amp; settings</summary>
+        <div class="sw-name" style="font-weight:500;color:#6a7361;margin:6px 0;">Agreed manufacturer cost per standard size. A non-standard width is priced at the next standard size down plus the surcharge (e.g. 920 = 900 + surcharge). Saved on this device and in each design file.</div>
+        <div style="overflow-x:auto;"><table id="priceTable" style="border-collapse:collapse;font-size:11px;"></table></div>
+        <div class="field" style="margin-top:8px;"><label>Non-standard size surcharge ($)</label><input id="prSurcharge" type="number" step="1" min="0"></div>
+        <div class="field"><label>Cabinetry markup (%)</label><input id="prMargin" type="number" step="1" min="0"></div>
+        <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Stone $/m² builder's range</label><input id="prStone1" type="number" step="1" min="0"></div><div style="flex:1;"><label>Stone $/m² one step up</label><input id="prStone2" type="number" step="1" min="0"></div></div>
+        <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Stone range on this job</label><select id="prStoneSel"><option value="1">Builder's range</option><option value="2">One step up</option><option value="0">No stone (laminate / none)</option></select></div><div style="flex:1;"><label>Stone markup (%)</label><input id="prStoneMargin" type="number" step="1" min="0"></div></div>
+        <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Laminate benchtop $/m²</label><input id="prLam" type="number" step="1" min="0"></div><div style="flex:1;"><label>Freight per job ($, absorbed)</label><input id="prFreight" type="number" step="1" min="0"></div></div>
+        <div class="field"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--ink);cursor:pointer;"><input type="checkbox" id="prGst" checked> Show total including GST (10%)</label></div>
+      </details>
     </div>
   </aside>
 
@@ -1082,7 +1092,7 @@ function buildPanel(){
       <select id="edLP"><option value="">Quick label\u2026</option>${LABEL_PRESETS.map(l=>`<option>${l}</option>`).join('')}</select>
       <input id="edL" placeholder="${t.code}" style="margin-top:4px;"></div>
     ${c.type==='corner'&&c.depth<STD.blindMin?`<div class="sw-name" style="color:#b3392a;">Blind corner needs at least ${STD.blindMin} mm depth (manufacturer standard).</div>`:''}
-    <div class="field"><label>Price $ (optional)</label><input id="edP" type="number" step="1" value="${c.price!=null?c.price:''}" placeholder="ex. 480"></div>
+    <div class="field"><label>Cost $ (leave blank to use the price table)</label><input id="edP" type="number" step="1" value="${c.price!=null?c.price:''}" placeholder="${(()=>{const a=autoPrice(c); return a?('auto '+Math.round(a.cost)+' ('+a.basis+')'):(priceCat(c)?'no price set for this size':'not priced');})()}"><div class="sw-name" style="font-weight:500;color:#6a7361;">${(()=>{const a=autoPrice(c); return a?('Price table: '+money(a.cost)+' \u2014 '+a.basis):(priceCat(c)?'No price in the table for this type/size yet.':'');})()}</div></div>
     <div class="field"><label>Front colour (this unit)</label><div class="sw-row" id="edDoor"></div></div>
     <div class="rowbtns">
       <button class="dup" id="bDup">Duplicate</button>
@@ -1135,16 +1145,51 @@ document.addEventListener('keydown',e=>{
 /* ---------- title block live (TB_IDS is declared in the save/restore block; this runs at init) ---------- */
 function wireTitleBlock(){ document.getElementById('tbRoom').addEventListener('input',e=>{ rooms[curRoom].name=e.target.value.trim(); buildRoomUI(); }); TB_IDS.forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',render); el.addEventListener('change',render); }); }
 
-/* ---------- pricing ---------- */
+/* ---------- pricing engine: standard-size price table, round to standard + surcharge, markup, stone by m² ---------- */
 function money(n){return '$'+Math.round(n).toLocaleString('en-AU');}
+const PRICE_CATS=[['base','Base (doors)'],['drawers','Base drawer bank'],['sink','Sink base'],['corner','Corner'],['tall','Tall / pantry'],['wall','Overhead'],['island','Island']];
+const PRICE_WIDTHS=[300,400,450,500,600,800,900,1000,1200];
+let PRICES={table:{},surcharge:15,margin:100,stone1:0,stone2:0,stoneSel:'1',stoneMargin:100,lam:0,freight:750,gst:true};
+try{ const raw=localStorage.getItem('hambosPrices'); if(raw) PRICES={...PRICES,...JSON.parse(raw)}; }catch(e){}
+function savePrices(){ try{ localStorage.setItem('hambosPrices',JSON.stringify(PRICES)); }catch(e){} }
+function priceCat(c){ if(c.type==='base') return (c.front==='drawers')?'drawers':'base'; if(['sink','corner','tall','wall','island'].includes(c.type)) return c.type; return null; }
+// manufacturer cost for a piece from the table, or null when no price is set
+function autoPrice(c){
+  const cat=priceCat(c); if(!cat) return null; const row=PRICES.table[cat]||{};
+  const std=PRICE_WIDTHS.filter(w=>row[w]>0);
+  if(!std.length) return null;
+  const exact=std.find(w=>w===c.width); if(exact) return {cost:row[exact],basis:exact+' standard'};
+  const below=std.filter(w=>w<c.width).pop();
+  if(below==null) return {cost:row[std[0]],basis:'below smallest standard, priced as '+std[0]};
+  return {cost:row[below]+(+PRICES.surcharge||0),basis:below+' + non-standard surcharge'};
+}
+function pieceCost(c){ if(c.price!=null) return {cost:c.price,basis:'entered'}; return autoPrice(c); }
+function benchAreaM2(list){ return list.filter(c=>TYPES[c.type].bench).reduce((a,c)=>a+(c.width+30)*(c.depth+30),0)/1e6; }
+function priceBreakdown(){
+  syncRoom(); const all=rooms.flatMap(r=>r.cabs||[]);
+  let cost=0, unpriced=0; all.forEach(c=>{ const pc=pieceCost(c); if(pc) cost+=pc.cost; else if(priceCat(c)) unpriced++; });
+  const cabSell=cost*(1+(+PRICES.margin||0)/100);
+  const m2=benchAreaM2(all); const rate=PRICES.stoneSel==='2'?+PRICES.stone2:(PRICES.stoneSel==='1'?+PRICES.stone1:+PRICES.lam);
+  const stoneCost=m2*(rate||0); const stoneSell=stoneCost*(1+(PRICES.stoneSel==='0'?(+PRICES.margin||0):(+PRICES.stoneMargin||0))/100);
+  const freight=+PRICES.freight||0; const ex=cabSell+stoneSell+freight; const inc=ex*1.1;
+  return {pieces:all.length,unpriced,cost,cabSell,m2,rate,stoneCost,stoneSell,freight,ex,inc,total:PRICES.gst?inc:ex};
+}
+function buildPriceUI(){
+  const t=document.getElementById('priceTable'); if(!t) return; t.innerHTML='';
+  const hd=document.createElement('tr'); hd.innerHTML='<th style="text-align:left;padding:2px 4px;">Cost $</th>'+PRICE_WIDTHS.map(w=>'<th style="padding:2px 3px;font-weight:600;">'+w+'</th>').join(''); t.appendChild(hd);
+  PRICE_CATS.forEach(([k,name])=>{ const tr=document.createElement('tr'); tr.innerHTML='<td style="padding:2px 4px;white-space:nowrap;">'+name+'</td>'+PRICE_WIDTHS.map(w=>'<td style="padding:1px;"><input data-cat="'+k+'" data-w="'+w+'" type="number" min="0" step="1" style="width:50px;padding:3px;border:1px solid var(--line);border-radius:3px;font-size:11px;"></td>').join(''); t.appendChild(tr); });
+  t.querySelectorAll('input').forEach(inp=>{ const row=PRICES.table[inp.dataset.cat]||{}; inp.value=row[inp.dataset.w]||''; inp.oninput=e=>{ (PRICES.table[inp.dataset.cat]=PRICES.table[inp.dataset.cat]||{})[inp.dataset.w]=parseFloat(e.target.value)||0; savePrices(); updateSubtotal(); }; });
+  const bind=(id,key,num)=>{ const el=document.getElementById(id); if(!el) return; if(el.type==='checkbox'){ el.checked=!!PRICES[key]; el.onchange=e=>{ PRICES[key]=e.target.checked; savePrices(); updateSubtotal(); }; } else { el.value=PRICES[key]; el.oninput=e=>{ PRICES[key]=num?(parseFloat(e.target.value)||0):e.target.value; savePrices(); updateSubtotal(); }; el.onchange=el.oninput; } };
+  bind('prSurcharge','surcharge',true); bind('prMargin','margin',true); bind('prStone1','stone1',true); bind('prStone2','stone2',true); bind('prStoneSel','stoneSel',false); bind('prStoneMargin','stoneMargin',true); bind('prLam','lam',true); bind('prFreight','freight',true); bind('prGst','gst',false);
+}
 function updateSubtotal(){
-  syncRoom(); const sum=rooms.reduce((a,r)=>a+(r.cabs||[]).reduce((b,c)=>b+(c.price||0),0),0);
-  const el=document.getElementById('subTot'); if(el)el.textContent=money(sum);
+  const b=priceBreakdown(); const el=document.getElementById('priceBreak');
+  if(el){ const stoneLabel=PRICES.stoneSel==='0'?'Laminate bench':(PRICES.stoneSel==='2'?'Stone (one step up)':'Stone (builder\'s range)');
+    el.innerHTML='Cabinetry cost <b>'+money(b.cost)+'</b>'+(b.unpriced?' <span style="color:#b3392a;">('+b.unpriced+' piece'+(b.unpriced>1?'s':'')+' with no price set)</span>':'')+'<br>Cabinetry sell (+'+(+PRICES.margin||0)+'%) <b>'+money(b.cabSell)+'</b><br>'+stoneLabel+': '+b.m2.toFixed(2)+' m\u00b2 \u00d7 '+money(b.rate)+' = '+money(b.stoneCost)+' \u2192 sell <b>'+money(b.stoneSell)+'</b><br>Freight (absorbed) <b>'+money(b.freight)+'</b><br><span style="font-size:15px;">Ballpark <b>'+money(b.total)+'</b> '+(PRICES.gst?'inc GST':'ex GST')+'</span>'+(PRICES.gst?' <span style="color:#6a7361;">('+money(b.ex)+' ex)</span>':''); }
   saveState();
 }
 document.getElementById('useSub').onclick=()=>{
-  syncRoom(); const sum=rooms.reduce((a,r)=>a+(r.cabs||[]).reduce((b,c)=>b+(c.price||0),0),0);
-  document.getElementById('tbTotal').value=money(sum); render();
+  const b=priceBreakdown(); document.getElementById('tbTotal').value=money(Math.round(b.total/10)*10)+(PRICES.gst?' inc GST':' ex GST'); render();
 };
 
 /* ---------- export ---------- */
@@ -1634,6 +1679,7 @@ function designSummary(){
   L.push('Door finish: '+(tbv('tbDoorFinish')||'Satin')+' | Handle: '+(tbv('tbHandle')||'TBC')+' | Drawers: '+(tbv('tbDrawers')||'S/C')+' | Hinges: '+(tbv('tbHinges')||'S/C')+(tbv('tbBlum')?' | Blum upgrade':''));
   L.push('Benchtop: '+benchtopText()+' | Edge: '+(tbv('tbEdge')||'Pencil Edge'));
   applianceLines().forEach(([n,v])=>L.push('Appliance - '+n+': '+v));
+  const pb=priceBreakdown(); L.push('Ballpark (internal): cabinetry cost '+money(pb.cost)+' -> sell '+money(pb.cabSell)+' | bench '+pb.m2.toFixed(2)+' m2 -> '+money(pb.stoneSell)+' | freight '+money(pb.freight)+' | total '+money(pb.total)+(PRICES.gst?' inc GST':' ex GST')+(pb.unpriced?' | '+pb.unpriced+' unpriced':''));
   if(tbv('tbNotes')) L.push('Notes: '+tbv('tbNotes')); if(tbv('tbQuoteNotes')) L.push('Quoting notes: '+tbv('tbQuoteNotes')); if(tbv('tbSpecial')) L.push('Special requests: '+tbv('tbSpecial'));
   L.push('Doors: '+finishesUsed().map(f=>f.name).join(', ')+' | doors '+scheme.profile+' / drawers '+(scheme.drawerProfile||scheme.profile)+' | '+scheme.finishType);
   L.push('Benchtop: '+scheme.bench.name+' | bench height '+benchH+' mm | kick '+STD.kick+' | carcass '+STD.carcass+' | '+STD.cooktop+' cooktop ('+overheadClear()+' mm clearance)');
@@ -1689,7 +1735,7 @@ const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling'
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
   syncRoom();
-  return {v:4,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,nextId:r.nextId,dropN:r.dropN})),curRoom};
+  return {v:5,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,prices:PRICES,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,nextId:r.nextId,dropN:r.dropN})),curRoom};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
@@ -1700,6 +1746,7 @@ function applyState(s){
   benchH=parseInt(s.benchH)||870;
   if(s.std&&typeof s.std==='object') STD={...STD,...s.std};
   if(s.appl&&typeof s.appl==='object') APPL={...APPL,...s.appl,items:{...(s.appl.items||{})}};
+  if(s.prices&&typeof s.prices==='object'){ PRICES={...PRICES,...s.prices,table:{...(s.prices.table||{})}}; savePrices(); }
   nextId=Math.max(rooms[curRoom].nextId||1,...cabs.map(c=>(c.id||0)+1));
   dropN=rooms[curRoom].dropN||0;
   if(s.tb) TB_IDS.forEach(id=>{ const el=document.getElementById(id); if(el.type==='checkbox') el.checked=!!s.tb[id]; else if(typeof s.tb[id]==='string') el.value=s.tb[id]; });
@@ -1722,7 +1769,7 @@ document.getElementById('fileOpen').onchange=e=>{
   fr.onload=()=>{ let st=null; try{ st=JSON.parse(fr.result); }catch(err){}
     if(!st){ alert("That file is not a saved Hambo's design."); return; }
     pushUndo(); if(!applyState(st)){ alert("That file is not a saved Hambo's design."); UNDO.pop(); undoButtons(); return; }
-    buildFinishUI(); buildApplUI(); buildRoomUI(); render(); buildPanel(); setTab('plan'); fitToCabinets(true); };
+    buildFinishUI(); buildApplUI(); buildRoomUI(); buildPriceUI(); render(); buildPanel(); setTab('plan'); fitToCabinets(true); };
   fr.readAsText(f); e.target.value='';
 };
 
@@ -1733,6 +1780,7 @@ wireTitleBlock();
 buildFinishUI();
 buildApplUI();
 buildRoomUI();
+buildPriceUI();
 render();
 applySheetView();
 fitToCabinets(true);
