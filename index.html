@@ -290,6 +290,7 @@
       <div class="field"><label>Quoting notes</label><textarea id="tbQuoteNotes" rows="2"></textarea></div>
       <div class="field"><label>Special requests</label><textarea id="tbSpecial" rows="2"></textarea></div>
       <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Designed by</label><input id="tbBy" placeholder="Jess"></div><div style="flex:1;"><label>Date</label><input id="tbDate" type="date"></div></div>
+      <div class="field"><label>Deposit paid / order confirmed (adds the key dates to the customer guide)</label><input id="tbDeposit" type="date"></div>
       <h3>Pricing <span style="font-weight:500;text-transform:none;letter-spacing:0;">(internal, never printed)</span></h3>
       <div id="priceBreak" class="panel" style="font-size:13px;line-height:1.7;"></div>
       <button class="toolbtn alt" id="useSub" style="width:100%;margin:6px 0;">Use ballpark as quote total</button>
@@ -1677,13 +1678,31 @@ const GUIDE_POINTS=[
   ['Stone comes after the cabinetry.','Do not arrange stone yourself. Ring Jess the moment the cabinets are in and level; that call starts the templater, and the benchtop goes in about ten days later.'],
   ['Book your trades early: installer first, then plumber, electrician, splashback, and plasterer/painter if you have bulkheads.','Text, do not ring. Confirm two days out.'],
 ];
-function guideText(){ return ['BEFORE YOU FIT IT (from the Hambo\'s Customer Guide K-CG1)',...GUIDE_POINTS.map((g,i)=>(i+1)+'. '+g[0]+(g[1]?' '+g[1]:'')),'Full guide: '+GUIDE_URL,'Questions: Jess 0411 330 905 / admin@hambos.com.au'].join('\n'); }
+/* key dates from the deposit date, following the countdown in the customer guide (all estimates) */
+function keyDates(){
+  const iso=tbv('tbDeposit'); const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso); if(!m) return null;
+  const d0=new Date(+m[1],+m[2]-1,+m[3]); const add=days=>{ const d=new Date(d0); d.setDate(d.getDate()+days); return d; };
+  const f=d=>d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const wk=days=>{ const d=add(days); d.setDate(d.getDate()-((d.getDay()+6)%7)); return 'week of '+d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); };
+  return [
+    ['Deposit paid, kitchen into production',f(d0),'Ring your trades now and ask them to pencil the job in (7 to 8 weeks away).'],
+    ["Kitchen confirmed by Hambo's",wk(42),'We call you with the delivery date. Book your trades properly now, installer first.'],
+    ['Balance due',wk(49),'Pay the balance so we can deliver. Text your trades to confirm the dates.'],
+    ['Delivery and install',wk(52),"Clear somewhere dry. Old kitchen out, new one in. Plumber must be there; sparky too if the cooktop or oven is moving."],
+    ['Cabinets in: ring Jess the same day',wk(52),'That call starts the stone. We book the templater.'],
+    ['Stone benchtop in',wk(63),'About ten days after the template. Plumber back to reconnect the sink.'],
+    ['Splashback, then bulkheads painted',wk(66),'Have both trades booked before the stone goes in.'],
+  ];
+}
+function keyDatesHTML(){ const kd=keyDates(); if(!kd) return ''; return '<h2 style="font-size:20px;margin:22px 0 4px;">Your key dates.</h2><p style="margin:0 0 10px;font-size:13px;color:#6a7361;">Worked from your deposit date '+fmtDate(tbv('tbDeposit'))+'. Estimates: the delivery date is confirmed when the kitchen is on the truck.</p><table style="border-collapse:collapse;width:100%;font-size:14px;">'+kd.map(k=>'<tr><td style="padding:6px 8px 6px 0;border-bottom:1px solid #d6ddcd;font-weight:700;white-space:nowrap;vertical-align:top;">'+k[0]+'</td><td style="padding:6px 8px;border-bottom:1px solid #d6ddcd;white-space:nowrap;vertical-align:top;">'+k[1]+'</td><td style="padding:6px 0;border-bottom:1px solid #d6ddcd;color:#3a3f33;">'+k[2]+'</td></tr>').join('')+'</table>'; }
+function guideText(){ const kd=keyDates(); return ["BEFORE YOU FIT IT (from the Hambo's Customer Guide K-CG1)",...GUIDE_POINTS.map((g,i)=>(i+1)+'. '+g[0]+(g[1]?' '+g[1]:'')),...(kd?['','YOUR KEY DATES (estimates from the deposit date '+fmtDate(tbv('tbDeposit'))+'):',...kd.map(k=>'- '+k[0]+': '+k[1])]:[]),'Full guide: '+GUIDE_URL,'Questions: Jess 0411 330 905 / admin@hambos.com.au'].join('\n'); }
 function guidePageHTML(){
   return '<div style="page-break-before:always;font-family:Helvetica,Arial,sans-serif;color:#2a2f28;padding:28px 34px;max-width:960px;">'
    +'<div style="font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#566b4b;font-weight:700;">Hambo\'s Homemaker Centre &middot; Customer guide K-CG1</div>'
    +'<h1 style="font-size:30px;margin:6px 0 4px;">Before you fit it.</h1>'
    +'<p style="margin:0 0 18px;font-size:15px;color:#3a3f33;">The rules that stop a kitchen going wrong on install day. Keep this page with the plan.</p>'
    +'<ol style="font-size:15px;line-height:1.5;padding-left:22px;">'+GUIDE_POINTS.map(g=>'<li style="margin-bottom:10px;"><b>'+g[0]+'</b> '+g[1]+'</li>').join('')+'</ol>'
+   +keyDatesHTML()
    +'<div style="margin-top:22px;padding:14px 16px;border:2px solid #2f3a2a;border-radius:8px;font-size:15px;"><b>One number covers the lot.</b> Jess &mdash; 0411 330 905 &middot; admin@hambos.com.au &middot; Tue&ndash;Thu 9&ndash;4, Fri 8&ndash;12, first Saturday of the month.</div>'
    +'<p style="font-size:13px;color:#6a7361;margin-top:16px;">Full guide, with the countdown and the trades list: '+GUIDE_URL+'</p></div>';
 }
@@ -1751,7 +1770,7 @@ document.getElementById('sdGo').onclick=sendDesign;
 /* ---------- save / restore (browser storage + file) ---------- */
 const STORE_KEY='hambosLayout', JOBS_KEY='hambosJobs', JOBS_MAX=40;
 let jobId=null; // id of the job currently open (kept in the design state)
-const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling','tbCabH','tbDoorFinish','tbHandle','tbDrawers','tbHinges','tbBlum','tbBenchtop','tbEdge','tbNotes','tbQuoteNotes','tbSpecial','tbBy','tbDate','tbTotal'];
+const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling','tbCabH','tbDoorFinish','tbHandle','tbDrawers','tbHinges','tbBlum','tbBenchtop','tbEdge','tbNotes','tbQuoteNotes','tbSpecial','tbBy','tbDate','tbDeposit','tbTotal'];
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
   syncRoom(); if(!jobId) jobId='j'+Date.now().toString(36);
