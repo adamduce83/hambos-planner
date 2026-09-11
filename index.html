@@ -26,12 +26,17 @@
   header.bar .logo{font-weight:800;letter-spacing:1px;font-size:16px;text-transform:uppercase;}
   header.bar .logo span{color:var(--sage-lt);}
   .roomctl{display:flex;align-items:center;gap:4px;}
+  .roomctl .ic{color:#cdd9c1;margin-right:2px;}
   .roomctl select{border:none;border-radius:6px;padding:7px 8px;font-size:13px;font-weight:700;background:#46553c;color:#fff;max-width:160px;}
   .roomctl button{cursor:pointer;border:none;border-radius:6px;width:32px;height:32px;font-size:16px;font-weight:700;background:#46553c;color:#dfe7d6;}
   .roomctl button:hover{background:var(--sage);}
   #hdrJob{flex:1;font-size:13px;color:#cdd9c1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .tabs{display:flex;gap:2px;background:#46553c;border-radius:8px;padding:3px;}
-  .tabs button,.toolbtn{cursor:pointer;border:none;border-radius:6px;padding:9px 14px;font-size:14px;font-weight:600;}
+  .ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;}
+  .tabs button,.toolbtn{cursor:pointer;border:none;border-radius:6px;padding:8px 13px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:7px;line-height:1;}
+  .toolbtn{box-shadow:0 1px 0 rgba(0,0,0,.08);}
+  .toolbtn:hover{filter:brightness(1.06);}
+  .toolbtn.icon-only{padding:8px 10px;}
   .tabs button{background:transparent;color:#cdd9c1;min-height:38px;}
   .tabs button.active{background:var(--sage-lt);color:var(--charcoal);}
   .toolbtn{background:var(--sage);color:#fff;}
@@ -40,7 +45,8 @@
   .layout{display:flex;flex:1;min-height:0;}
   aside{width:320px;background:#fff;border-right:1px solid var(--line);padding:14px;overflow-y:auto;}
   #sideTabs{display:flex;gap:4px;position:sticky;top:-14px;z-index:2;background:#fff;padding:14px 0 10px;margin-top:-14px;}
-  #sideTabs button{flex:1;min-height:38px;cursor:pointer;border:1px solid var(--line);background:#f4f6f1;border-radius:6px;font-weight:700;font-size:12px;padding:0 2px;color:var(--ink);}
+  #sideTabs button{flex:1;min-height:52px;cursor:pointer;border:1px solid var(--line);background:#f4f6f1;border-radius:8px;font-weight:700;font-size:11px;padding:6px 2px 5px;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:3px;}
+  #sideTabs button .ic{width:20px;height:20px;}
   #sideTabs button.active{background:var(--charcoal);color:#fff;border-color:var(--charcoal);}
   .stab[hidden]{display:none;}
   .stab h3:first-child{margin-top:0;}
@@ -86,13 +92,15 @@
   .tsep{width:1px;height:26px;background:var(--line);margin:0 4px;}
   .menu{position:absolute;top:calc(100% + 4px);right:18px;z-index:50;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:8px;min-width:230px;display:flex;flex-direction:column;gap:4px;}
   .menu[hidden]{display:none;}
-  .menu label,.menu button{display:flex;align-items:center;gap:8px;font-size:14px;padding:9px 10px;border-radius:6px;cursor:pointer;border:none;background:none;text-align:left;color:var(--ink);width:100%;}
+  .menu label,.menu button{display:flex;align-items:center;gap:10px;font-size:14px;padding:9px 10px;border-radius:6px;cursor:pointer;border:none;background:none;text-align:left;color:var(--ink);width:100%;}
+  .menu .ic{color:var(--sage-dk);}
+  .menu label input{margin:0;}
   .menu label:hover,.menu button:hover{background:var(--paper);}
   .menu .danger{color:#b3392a;font-weight:600;}
   .toprow .grow{flex:1;}
   .scaleNote{font-size:11px;color:#6a7361;}
   .zoomctl{display:flex;align-items:center;gap:4px;font-size:12px;color:#6a7361;margin-left:6px;}
-  .zoomctl button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:6px;min-width:36px;min-height:36px;padding:4px 10px;font-size:15px;font-weight:700;color:var(--ink);}
+  .zoomctl button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:6px;min-width:36px;min-height:36px;padding:4px 10px;font-size:15px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:5px;}
   .zoomctl button:hover{background:var(--sage-lt);}
   .zoomctl #zPct{min-width:38px;text-align:center;}
   .modal{position:fixed;inset:0;z-index:9998;background:rgba(20,25,18,.45);display:flex;align-items:center;justify-content:center;padding:12px;}
@@ -120,6 +128,7 @@
     .tabs button{flex:1;padding:8px 6px;}
     .toprow{flex-wrap:nowrap;overflow-x:auto;padding:6px 10px;gap:6px;-webkit-overflow-scrolling:touch;}
     .toprow>*{flex:0 0 auto;}
+    .toprow .toolbtn{padding:8px 11px;}
     .menu{position:fixed;top:auto;right:10px;left:10px;bottom:10px;}
     #sideTabs{top:-10px;padding-top:10px;margin-top:-10px;}
     .zoomctl button{min-width:44px;min-height:44px;}
@@ -144,48 +153,49 @@
 </style>
 </head>
 <body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-add" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></symbol><symbol id="i-jobs" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol><symbol id="i-open" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 20h16"/></symbol><symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.5"/></symbol><symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3"/></symbol><symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol><symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2"/></symbol><symbol id="i-band" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M9 2h6v4H9zM9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 13l2 2 4-4"/></symbol><symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol><symbol id="i-build" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><path d="M17 14v6M14 17h6"/></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0 0 20c1.2 0 2-.9 2-2 0-.6-.3-1-.3-1.6 0-1.2 1-2.2 2.2-2.2H18a4 4 0 0 0 4-4c0-5.5-4.5-10.2-10-10.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="10" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="17" cy="11" r="1.2" fill="currentColor" stroke="none"/></symbol><symbol id="i-piece" viewBox="0 0 24 24"><path d="M4 4l7 16 2-7 7-2z"/></symbol><symbol id="i-appl" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="7" cy="6.5" r=".9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="6.5" r=".9" fill="currentColor" stroke="none"/><rect x="7" y="12" width="10" height="5" rx="1"/></symbol><symbol id="i-job" viewBox="0 0 24 24"><path d="M9 2h6v4H9zM9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 12h6M9 16h6"/></symbol><symbol id="i-plan" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol><symbol id="i-elev" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="1"/><path d="M3 12h18M9 6v12M15 6v12"/></symbol><symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7zM12 12l9-5M12 12v10M12 12L3 7"/></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/></symbol></svg>
 <header class="bar">
   <img id="hdrLogo" alt="Hambo's" style="display:none">
   <div class="logo">Kitchen <span>Layout Tool</span></div>
-  <span class="roomctl"><select id="roomSel" title="Room"></select><button id="roomAdd" title="Add a room (laundry, linen, wardrobe...)">+</button><button id="roomDel" title="Remove this room">&times;</button></span>
+  <span class="roomctl"><svg class="ic" aria-hidden="true"><use href="#i-house"/></svg><select id="roomSel" title="Room"></select><button id="roomAdd" title="Add a room (laundry, linen, wardrobe...)">+</button><button id="roomDel" title="Remove this room">&times;</button></span>
   <div id="hdrJob"></div>
   <div class="tabs" role="tablist">
-    <button id="tabPlan" class="active">Plan (2D)</button>
-    <button id="tabElev">Elevation</button>
-    <button id="tab3d">3D View</button>
+    <button id="tabPlan" class="active"><svg class="ic" aria-hidden="true"><use href="#i-plan"/></svg>Plan</button>
+    <button id="tabElev"><svg class="ic" aria-hidden="true"><use href="#i-elev"/></svg>Elevation</button>
+    <button id="tab3d"><svg class="ic" aria-hidden="true"><use href="#i-cube"/></svg>3D</button>
   </div>
 </header>
 
 <div class="toprow">
   <span class="tgroup">
-    <button class="toolbtn" id="btnAdd" title="Add cabinets, appliances, shelves and panels">&#43; Add</button>
-    <button class="toolbtn" id="btnSend" style="background:#00a357;" title="Email this design to Hambo's">&#9993; Send to Hambo's</button>
-    <button class="toolbtn alt" id="btnJobs" title="Saved jobs on this device">Jobs</button>
-    <button class="toolbtn alt" id="btnSave" title="Download this design as a file you can open again later">Save</button>
-    <button class="toolbtn alt" id="btnOpen" title="Open a design file saved earlier">Open</button>
+    <button class="toolbtn" id="btnAdd" title="Add cabinets, appliances, shelves and panels"><svg class="ic" aria-hidden="true"><use href="#i-add"/></svg>Add</button>
+    <button class="toolbtn" id="btnSend" style="background:#00a357;" title="Email this design to Hambo's"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>Send to Hambo's</button>
+    <button class="toolbtn alt" id="btnJobs" title="Saved jobs on this device"><svg class="ic" aria-hidden="true"><use href="#i-jobs"/></svg>Jobs</button>
+    <button class="toolbtn alt" id="btnSave" title="Download this design as a file you can open again later"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Save</button>
+    <button class="toolbtn alt" id="btnOpen" title="Open a design file saved earlier"><svg class="ic" aria-hidden="true"><use href="#i-open"/></svg>Open</button>
     <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
   </span>
   <span class="tsep"></span>
   <span class="tgroup">
-    <button class="toolbtn alt" id="btnPng" title="Plan + elevations + title block on one sheet">Download sheet</button>
-    <button class="toolbtn alt" id="btnPrint">Print / PDF</button>
+    <button class="toolbtn alt" id="btnPng" title="Plan + elevations + title block on one sheet"><svg class="ic" aria-hidden="true"><use href="#i-sheet"/></svg>Sheet</button>
+    <button class="toolbtn alt" id="btnPrint" title="Print, or save as PDF"><svg class="ic" aria-hidden="true"><use href="#i-print"/></svg>Print / PDF</button>
   </span>
   <span class="tsep"></span>
   <span class="tgroup">
-    <button class="toolbtn alt" id="btnUndo" title="Undo (Ctrl+Z)">&#8630;</button>
-    <button class="toolbtn alt" id="btnRedo" title="Redo (Ctrl+Shift+Z)">&#8631;</button>
-    <span class="zoomctl"><button id="zOut" title="Zoom out">&minus;</button><span id="zPct">100%</span><button id="zIn" title="Zoom in">+</button><button id="zFit" title="Fit the cabinets to the screen">Fit</button></span>
+    <button class="toolbtn alt icon-only" id="btnUndo" title="Undo (Ctrl+Z)" aria-label="Undo"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg></button>
+    <button class="toolbtn alt icon-only" id="btnRedo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><svg class="ic" aria-hidden="true"><use href="#i-redo"/></svg></button>
+    <span class="zoomctl"><button id="zOut" title="Zoom out" aria-label="Zoom out"><svg class="ic" aria-hidden="true"><use href="#i-minus"/></svg></button><span id="zPct">100%</span><button id="zIn" title="Zoom in" aria-label="Zoom in"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button><button id="zFit" title="Fit the cabinets to the screen"><svg class="ic" aria-hidden="true"><use href="#i-fit"/></svg>Fit</button></span>
   </span>
   <span id="warn" style="color:#c0392b;font-size:13px;font-weight:600;margin-left:8px;"></span>
   <span class="grow"></span>
-  <button class="toolbtn alt" id="btnMore" title="More options" aria-haspopup="true">&#8943;</button>
+  <button class="toolbtn alt icon-only" id="btnMore" title="More options" aria-haspopup="true" aria-label="More options"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
   <div class="menu" id="moreMenu" hidden>
-    <label><input type="checkbox" id="dimToggle" checked> Running dimensions</label>
-    <label><input type="checkbox" id="bandToggle"> Show title band on screen</label>
-    <label><input type="checkbox" id="guideToggle" checked> Add the customer guide page to prints and emails</label>
-    <button id="btnPngView">Download just this view (PNG)</button>
-    <button id="btnChecklist">Print check-measure checklist</button>
-    <button id="btnClear" class="danger">Clear all</button>
+    <label><input type="checkbox" id="dimToggle" checked><svg class="ic" aria-hidden="true"><use href="#i-ruler"/></svg>Running dimensions</label>
+    <label><input type="checkbox" id="bandToggle"><svg class="ic" aria-hidden="true"><use href="#i-band"/></svg>Show title band on screen</label>
+    <label><input type="checkbox" id="guideToggle" checked><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>Customer guide page on prints and emails</label>
+    <button id="btnPngView"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Download just this view (PNG)</button>
+    <button id="btnChecklist"><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg>Print check-measure checklist</button>
+    <button id="btnClear" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Clear this room</button>
   </div>
 </div>
 
@@ -193,11 +203,11 @@
   <aside id="palette">
     <div id="asideHandle"><span>Cabinets &amp; finishes</span><span id="asideArrow">&#9660;</span></div>
     <div id="sideTabs" role="tablist">
-      <button data-tab="build" class="active">Build</button>
-      <button data-tab="finishes">Finishes</button>
-      <button data-tab="selected">Piece</button>
-      <button data-tab="appl">Appl.</button>
-      <button data-tab="job">Job</button>
+      <button data-tab="build" class="active"><svg class="ic" aria-hidden="true"><use href="#i-build"/></svg>Build</button>
+      <button data-tab="finishes"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Finishes</button>
+      <button data-tab="selected"><svg class="ic" aria-hidden="true"><use href="#i-piece"/></svg>Piece</button>
+      <button data-tab="appl"><svg class="ic" aria-hidden="true"><use href="#i-appl"/></svg>Appliances</button>
+      <button data-tab="job"><svg class="ic" aria-hidden="true"><use href="#i-job"/></svg>Job</button>
     </div>
 
     <div class="stab" data-tab="build">
