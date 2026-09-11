@@ -11,7 +11,7 @@
     --charcoal:#2f3a2a; --ink:#2a2f28; --paper:#f4f6f1; --line:#d6ddcd; --green:#00a357;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--paper);}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--paper);display:flex;flex-direction:column;height:100vh;}
   header.bar{background:var(--charcoal);color:#fff;display:flex;align-items:center;gap:18px;padding:10px 18px;flex-wrap:wrap;}
   header.bar #hdrLogo{height:34px;background:#fff;border-radius:6px;padding:4px 8px;}
   header.bar .logo{font-weight:800;letter-spacing:1px;font-size:16px;text-transform:uppercase;}
@@ -25,7 +25,7 @@
   .tabs button.active{background:var(--sage-lt);color:var(--charcoal);}
   .toolbtn{background:var(--sage);color:#fff;}
   .toolbtn.alt{background:#46553c;color:#dfe7d6;}
-  .layout{display:flex;height:calc(100vh - 60px);}
+  .layout{display:flex;flex:1;min-height:0;}
   aside{width:262px;background:#fff;border-right:1px solid var(--line);padding:14px;overflow-y:auto;}
   aside h3{margin:14px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--sage-dk);}
   aside h3:first-child{margin-top:0;}
@@ -55,15 +55,19 @@
   .rowbtns .dup{background:#46553c;color:#fff;}
   main{flex:1;position:relative;overflow:auto;background:#eef1ea;}
   #planWrap{padding:18px;}
-  #planSvg{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.12);width:1500px;height:auto;}
+  #planSvg{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.12);width:100%;height:auto;}
   #viewElev{display:none;padding:18px;}
-  #elevSvg{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.12);width:1500px;height:auto;}
+  #elevSvg{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.12);width:100%;height:auto;}
   #view3d{display:none;width:100%;height:100%;}
   #c3d{display:block;width:100%;height:100%;}
   .hint{position:absolute;bottom:10px;left:18px;font-size:11px;color:#6a7361;background:rgba(255,255,255,.85);padding:5px 9px;border-radius:5px;}
   .toprow{display:flex;align-items:center;gap:8px;padding:8px 18px;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .toprow .grow{flex:1;}
   .scaleNote{font-size:11px;color:#6a7361;}
+  .zoomctl{display:flex;align-items:center;gap:4px;font-size:12px;color:#6a7361;margin-left:6px;}
+  .zoomctl button{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:4px;padding:4px 9px;font-size:13px;font-weight:700;color:var(--ink);}
+  .zoomctl button:hover{background:var(--sage-lt);}
+  .zoomctl #zPct{min-width:38px;text-align:center;}
   .coach-hl{outline:4px solid #00a357!important;outline-offset:3px;box-shadow:0 0 0 8px rgba(0,163,87,.22)!important;border-radius:8px;}
   #coach{position:fixed;inset:0;z-index:9999;display:none;pointer-events:none;}
   #coach.on{display:block;}
@@ -82,6 +86,7 @@
   #coach .back{background:#e7ece1;color:#3a3f33;}
   #coach .next{background:#00a357;color:#fff;}
   @media print{
+    body{display:block;height:auto;}
     #coach,#btnGuide{display:none!important;}
     header.bar,aside,.toprow,.hint,.tabs,#view3d{display:none!important;}
     .layout{height:auto;display:block;}
@@ -118,6 +123,7 @@
   <button class="toolbtn alt" id="btnOpen" title="Open a design file saved earlier">Open design</button>
   <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
   <label style="font-size:13px;display:flex;align-items:center;gap:6px;margin-left:6px;cursor:pointer;"><input type="checkbox" id="dimToggle" checked> Running dimensions</label>
+  <span class="zoomctl"><button id="zOut" title="Zoom out">&minus;</button><span id="zPct">100%</span><button id="zIn" title="Zoom in">+</button><button id="zFit" title="Fit the sheet to the screen">Fit</button></span>
   <span class="grow"></span>
   <span class="scaleNote">Board 12&nbsp;m × 6&nbsp;m &nbsp;·&nbsp; grid = 0.5&nbsp;m &nbsp;·&nbsp; drag to move &nbsp;·&nbsp; click a cabinet to edit</span>
 </div>
@@ -890,6 +896,19 @@ document.getElementById('btnPrint').onclick=()=>{
 };
 document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear the whole layout?')){cabs=[];selId=null;dropN=0;render();buildPanel();} };
 
+/* ---------- zoom / fit to screen ---------- */
+let zoom=1; // 1 = the whole sheet fits the work area
+function applyZoom(){
+  const m=document.querySelector('main'); const w=Math.max(240,m.clientWidth-36);
+  document.getElementById('planSvg').style.width=Math.round(w*zoom)+'px';
+  document.getElementById('elevSvg').style.width=Math.round(w*zoom)+'px';
+  document.getElementById('zPct').textContent=Math.round(zoom*100)+'%';
+}
+document.getElementById('zIn').onclick=()=>{ zoom=Math.min(4,zoom*1.25); applyZoom(); };
+document.getElementById('zOut').onclick=()=>{ zoom=Math.max(0.5,zoom/1.25); applyZoom(); };
+document.getElementById('zFit').onclick=()=>{ zoom=1; applyZoom(); };
+window.addEventListener('resize',applyZoom);
+
 /* ---------- tabs ---------- */
 let currentView='plan';
 function setTab(t){
@@ -907,6 +926,7 @@ function setTab(t){
   document.getElementById('hint').textContent=hints[t];
   if(t==='3d') start3D();
   if(t==='elev') renderElev();
+  applyZoom();
 }
 document.getElementById('tabPlan').onclick=()=>setTab('plan');
 document.getElementById('tabElev').onclick=()=>setTab('elev');
@@ -1103,6 +1123,7 @@ document.getElementById('tbDate').value=new Date().toISOString().slice(0,10);
 const restored=loadState();
 buildFinishUI();
 render();
+applyZoom();
 if(restored&&cabs.length) document.getElementById('hint').innerHTML='Restored your last design from this browser. <b>Clear all</b> starts fresh.';
 loadLogo();
 try{ if(!localStorage.getItem('hambosGuideSeen')) showWelcome(); }catch(e){}
