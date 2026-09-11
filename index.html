@@ -114,6 +114,9 @@
   <button class="toolbtn" id="btnPng">Download PNG</button>
   <button class="toolbtn alt" id="btnPrint">Print / Save PDF</button>
   <button class="toolbtn alt" id="btnClear">Clear all</button>
+  <button class="toolbtn alt" id="btnSave" title="Download this design as a file you can open again later">Save design</button>
+  <button class="toolbtn alt" id="btnOpen" title="Open a design file saved earlier">Open design</button>
+  <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
   <label style="font-size:13px;display:flex;align-items:center;gap:6px;margin-left:6px;cursor:pointer;"><input type="checkbox" id="dimToggle" checked> Running dimensions</label>
   <span class="grow"></span>
   <span class="scaleNote">Board 12&nbsp;m × 6&nbsp;m &nbsp;·&nbsp; grid = 0.5&nbsp;m &nbsp;·&nbsp; drag to move &nbsp;·&nbsp; click a cabinet to edit</span>
@@ -817,6 +820,7 @@ function money(n){return '$'+Math.round(n).toLocaleString('en-AU');}
 function updateSubtotal(){
   const sum=cabs.reduce((a,c)=>a+(c.price||0),0);
   const el=document.getElementById('subTot'); if(el)el.textContent=money(sum);
+  saveState();
 }
 document.getElementById('useSub').onclick=()=>{
   const sum=cabs.reduce((a,c)=>a+(c.price||0),0);
@@ -1058,10 +1062,48 @@ function showStep(){
 function endGuide(){ clearHL(); coach.classList.remove('on','welcome-on'); try{localStorage.setItem('hambosGuideSeen','1');}catch(e){} }
 document.getElementById('btnGuide').onclick=showWelcome;
 
+/* ---------- save / restore (browser storage + file) ---------- */
+const STORE_KEY='hambosLayout';
+const TB_IDS=['tbJob','tbCust','tbBy','tbDate','tbTotal'];
+function stateObj(){
+  const tb={}; TB_IDS.forEach(id=>tb[id]=val(id));
+  return {v:1,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb};
+}
+function applyState(s){
+  if(!s||!Array.isArray(s.cabs)) return false;
+  cabs=s.cabs.filter(c=>c&&TYPES[c.type]);
+  if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme=s.scheme;
+  benchH=parseInt(s.benchH)||900;
+  nextId=Math.max(parseInt(s.nextId)||1,...cabs.map(c=>(c.id||0)+1));
+  dropN=parseInt(s.dropN)||0;
+  if(s.tb) TB_IDS.forEach(id=>{ if(typeof s.tb[id]==='string') document.getElementById(id).value=s.tb[id]; });
+  selId=null;
+  return true;
+}
+function saveState(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(stateObj())); }catch(e){} }
+function loadState(){ try{ const raw=localStorage.getItem(STORE_KEY); if(!raw) return false; return applyState(JSON.parse(raw)); }catch(e){ return false; } }
+function safeName(s){ return ((s||'').replace(/[\\/:*?"<>|]+/g,'-').trim())||'hambos-kitchen'; }
+document.getElementById('btnSave').onclick=()=>{
+  const blob=new Blob([JSON.stringify(stateObj(),null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.download=safeName(val('tbJob'))+'.hambos.json'; a.href=URL.createObjectURL(blob); a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+};
+document.getElementById('btnOpen').onclick=()=>document.getElementById('fileOpen').click();
+document.getElementById('fileOpen').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const fr=new FileReader();
+  fr.onload=()=>{ let st=null; try{ st=JSON.parse(fr.result); }catch(err){}
+    if(!st||!applyState(st)){ alert("That file is not a saved Hambo's design."); return; }
+    buildFinishUI(); render(); buildPanel(); setTab('plan'); };
+  fr.readAsText(f); e.target.value='';
+};
+
 /* ---------- init ---------- */
 document.getElementById('tbDate').value=new Date().toISOString().slice(0,10);
+const restored=loadState();
 buildFinishUI();
 render();
+if(restored&&cabs.length) document.getElementById('hint').innerHTML='Restored your last design from this browser. <b>Clear all</b> starts fresh.';
 loadLogo();
 try{ if(!localStorage.getItem('hambosGuideSeen')) showWelcome(); }catch(e){}
 </script>
