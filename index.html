@@ -663,9 +663,11 @@ function renderElev(){
     if(wi===0){ eL(10500,floorYp+60,11500,floorYp+60,'#566b4b',5); eL(10500,floorYp+42,10500,floorYp+78,'#566b4b',5); eL(11500,floorYp+42,11500,floorYp+78,'#566b4b',5); eT(11000,floorYp+120,'1 metre','#566b4b',52,600,'middle'); }
     panelTop+=panelGap;
   });
-  E.setAttribute('viewBox','0 0 12000 '+Math.max(3200,panelTop+120));
+  const H=Math.max(3200,panelTop+220);
+  E.setAttribute('viewBox','0 0 12000 '+H);
+  // quote total chip (bottom-right, same as the plan sheet, clear of the job details)
   const total=val('tbTotal').trim();
-  if(total){ eR(10700,40,1260,150,'#00a357',null,0,16); eT(10760,108,'TOTAL','#eafff4',58,700,'start'); eT(11920,138,total,'#ffffff',86,800,'end'); }
+  if(total){ eR(9450,H-190,2520,160,'#00a357',null,0,16); eT(9500,H-82,'QUOTE TOTAL','#eafff4',70,700,'start'); eT(11940,H-82,total,'#ffffff',100,800,'end'); }
 }
 function eSwatch(x,y,color,labelTxt){ eR(x,y,70,70,color,'#cdd9c1',3,8); eT(x+86,y+50,labelTxt,'#ffffff',72,600,'start'); }
 function eDetail(x,y,w,h,c,tc){
