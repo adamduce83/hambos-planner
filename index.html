@@ -1060,6 +1060,8 @@ window.addEventListener('resize',applyZoom);
 /* ---------- tabs ---------- */
 let currentView='plan';
 function setTab(t){
+  if(t==='3d'&&typeof THREE==='undefined'){ alert('The 3D view could not load (is the internet connected?). The Plan and Elevation views still work.'); t='plan'; }
+  if(t!=='3d'&&raf){ cancelAnimationFrame(raf); raf=null; } // don't keep rendering 3D in the background
   currentView=t;
   document.getElementById('tabPlan').classList.toggle('active',t==='plan');
   document.getElementById('tabElev').classList.toggle('active',t==='elev');
