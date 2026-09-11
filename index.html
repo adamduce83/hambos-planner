@@ -160,6 +160,7 @@
   <span class="tgroup">
     <button class="toolbtn" id="btnAdd" title="Add cabinets, appliances, shelves and panels">&#43; Add</button>
     <button class="toolbtn" id="btnSend" style="background:#00a357;" title="Email this design to Hambo's">&#9993; Send to Hambo's</button>
+    <button class="toolbtn alt" id="btnJobs" title="Saved jobs on this device">Jobs</button>
     <button class="toolbtn alt" id="btnSave" title="Download this design as a file you can open again later">Save</button>
     <button class="toolbtn alt" id="btnOpen" title="Open a design file saved earlier">Open</button>
     <input type="file" id="fileOpen" accept=".json,application/json" style="display:none">
@@ -317,6 +318,13 @@
     <div class="hint" id="hint">Tip: arrow keys nudge the selected piece (Shift = 100 mm), <b>R</b> rotates, <b>Delete</b> removes it. Ctrl + scroll zooms.</div>
   </main>
 </div>
+
+<div id="jobsBox" class="modal" hidden><div class="mcard" style="width:640px;">
+  <h4>Jobs on this device</h4>
+  <p>Every job you work on is kept here automatically (newest first). Open one to keep working on it, or start a new job. Use <b>Save</b> for a file copy you can move to another computer.</p>
+  <div id="jobsList" style="max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:8px;"></div>
+  <div class="nav"><button class="skip" id="jobsClose">Close</button><span class="sp"></span><button class="next" id="jobsNew">+ New job</button></div>
+</div></div>
 
 <div id="sendBox" class="modal" hidden><div class="mcard">
   <h4>Send this design to Hambo's</h4>
@@ -1741,15 +1749,17 @@ async function sendDesign(){
 document.getElementById('sdGo').onclick=sendDesign;
 
 /* ---------- save / restore (browser storage + file) ---------- */
-const STORE_KEY='hambosLayout';
+const STORE_KEY='hambosLayout', JOBS_KEY='hambosJobs', JOBS_MAX=40;
+let jobId=null; // id of the job currently open (kept in the design state)
 const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling','tbCabH','tbDoorFinish','tbHandle','tbDrawers','tbHinges','tbBlum','tbBenchtop','tbEdge','tbNotes','tbQuoteNotes','tbSpecial','tbBy','tbDate','tbTotal'];
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
-  syncRoom();
-  return {v:5,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,prices:PRICES,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,nextId:r.nextId,dropN:r.dropN})),curRoom};
+  syncRoom(); if(!jobId) jobId='j'+Date.now().toString(36);
+  return {v:5,jobId,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,prices:PRICES,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,nextId:r.nextId,dropN:r.dropN})),curRoom};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
+  jobId=(typeof s.jobId==='string'&&s.jobId)||('j'+Date.now().toString(36));
   if(Array.isArray(s.rooms)&&s.rooms.length){ rooms=s.rooms.map(r=>({name:r.name||'Kitchen',cabs:(r.cabs||[]).filter(c=>c&&TYPES[c.type]),nextId:parseInt(r.nextId)||1,dropN:parseInt(r.dropN)||0})); curRoom=Math.min(Math.max(0,parseInt(s.curRoom)||0),rooms.length-1); }
   else rooms=[{name:(s.tb&&s.tb.tbRoom)||'Kitchen',cabs:s.cabs.filter(c=>c&&TYPES[c.type]),nextId:parseInt(s.nextId)||1,dropN:parseInt(s.dropN)||0}], curRoom=0;
   cabs=rooms[curRoom].cabs;
@@ -1765,7 +1775,45 @@ function applyState(s){
   selId=null;
   return true;
 }
-function saveState(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(stateObj())); }catch(e){} }
+function saveState(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(stateObj())); }catch(e){} queueJobSave(); }
+/* the jobs list: the current job is written into it a couple of seconds after the last change */
+function loadJobs(){ try{ const j=JSON.parse(localStorage.getItem(JOBS_KEY)||'[]'); return Array.isArray(j)?j:[]; }catch(e){ return []; } }
+function storeJobs(list){ try{ localStorage.setItem(JOBS_KEY,JSON.stringify(list.slice(0,JOBS_MAX))); return true; }catch(e){ return false; } }
+let jobSaveTimer=null;
+function queueJobSave(){ clearTimeout(jobSaveTimer); jobSaveTimer=setTimeout(saveJobNow,2000); }
+function jobIsWorthKeeping(st){ return (st.rooms||[]).some(r=>(r.cabs||[]).length)||(st.tb&&(st.tb.tbJob||st.tb.tbCust)); }
+function saveJobNow(){
+  const st=stateObj(); if(!jobIsWorthKeeping(st)) return;
+  const list=loadJobs().filter(j=>j.id!==st.jobId);
+  list.unshift({id:st.jobId,savedAt:st.savedAt,order:st.tb.tbJob||'',customer:st.tb.tbCust||'',rooms:(st.rooms||[]).map(r=>r.name+' ('+(r.cabs||[]).length+')').join(', '),state:st});
+  if(!storeJobs(list)){ const w=document.getElementById('warn'); if(w) w.textContent='\u26a0 Storage is full: this job could not be added to the Jobs list. Save it as a file.'; }
+}
+function newJob(){
+  saveJobNow(); jobId='j'+Date.now().toString(36);
+  rooms=[{name:'Kitchen',cabs:[],nextId:1,dropN:0}]; curRoom=0; cabs=rooms[0].cabs; nextId=1; dropN=0; selId=null; UNDO.length=0; REDO.length=0;
+  TB_IDS.forEach(id=>{ const el=document.getElementById(id); if(el.type==='checkbox') el.checked=false; else el.value=''; });
+  document.getElementById('tbDate').value=localISO(new Date()); document.getElementById('tbRoom').value='Kitchen';
+  APPL={hoodMode:'',fridgeAllow:APPL.fridgeAllow||900,items:{}}; contact={name:'',phone:'',email:'',suburb:''};
+  buildApplUI(); buildRoomUI(); undoButtons(); render(); buildPanel(); setSideTab('job'); fitToCabinets(true);
+}
+function openJob(id){ const j=loadJobs().find(x=>x.id===id); if(!j) return; saveJobNow(); if(!applyState(j.state)){ alert('That job could not be opened.'); return; }
+  buildFinishUI(); buildApplUI(); buildRoomUI(); buildPriceUI(); undoButtons(); render(); buildPanel(); setTab('plan'); fitToCabinets(true); }
+const jobsBox=document.getElementById('jobsBox');
+function showJobs(){
+  saveJobNow(); const list=loadJobs(); const el=document.getElementById('jobsList'); el.innerHTML='';
+  if(!list.length){ el.innerHTML='<div style="padding:16px;color:#6a7361;">No jobs yet. Add a cabinet or an order number and it will appear here.</div>'; }
+  list.forEach(j=>{ const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);'+(j.id===jobId?'background:#eaf0e4;':'');
+    const when=new Date(j.savedAt); const whenTxt=isNaN(when)?'':when.toLocaleDateString('en-AU')+' '+when.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+    row.innerHTML='<div style="flex:1;min-width:0;"><div style="font-weight:700;">'+((j.order?j.order+' \u00b7 ':'')+(j.customer||'(no customer)')).replace(/[<>]/g,'')+(j.id===jobId?' <span style="color:#00a357;font-size:12px;">open now</span>':'')+'</div><div style="font-size:12px;color:#6a7361;">'+(j.rooms||'').replace(/[<>]/g,'')+' \u00b7 saved '+whenTxt+'</div></div>';
+    const o=document.createElement('button'); o.className='next'; o.textContent='Open'; o.disabled=j.id===jobId; o.onclick=()=>{ jobsBox.hidden=true; openJob(j.id); };
+    const d=document.createElement('button'); d.className='skip'; d.textContent='Delete'; d.style.color='#b3392a'; d.onclick=()=>{ if(!confirm('Delete "'+(j.order||j.customer||'this job')+'" from this device?')) return; storeJobs(loadJobs().filter(x=>x.id!==j.id)); if(j.id===jobId) jobId='j'+Date.now().toString(36); showJobs(); };
+    row.appendChild(o); row.appendChild(d); el.appendChild(row); });
+  jobsBox.hidden=false;
+}
+document.getElementById('btnJobs').onclick=showJobs;
+document.getElementById('jobsClose').onclick=()=>{ jobsBox.hidden=true; };
+document.getElementById('jobsNew').onclick=()=>{ jobsBox.hidden=true; newJob(); };
+jobsBox.addEventListener('click',e=>{ if(e.target===jobsBox) jobsBox.hidden=true; });
 function loadState(){ try{ const raw=localStorage.getItem(STORE_KEY); if(!raw) return false; return applyState(JSON.parse(raw)); }catch(e){ return false; } }
 function safeName(s){ return ((s||'').replace(/[\\/:*?"<>|]+/g,'-').trim())||'hambos-kitchen'; }
 document.getElementById('btnSave').onclick=()=>{
