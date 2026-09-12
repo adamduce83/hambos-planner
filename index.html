@@ -878,7 +878,8 @@ function drawSchedule(rfn,tfn,x,y,fill,swStroke){
 }
 
 /* ---------- render 2D ---------- */
-function render(){
+function render(){ renderPlan(); if(!COMPOSING) drawGroupBadge(); }
+function renderPlan(){
   while(svg.firstChild) svg.removeChild(svg.firstChild);
   // title band
   rect(0,0,12000,TITLE_H,'#2f3a2a',null,0);
@@ -913,6 +914,7 @@ function render(){
   }
   drawWalls(); drawDims();
   cabs.forEach(keepOnBoard);
+  [...selIds].forEach(id=>{ if(!cabs.some(c=>c.id===id)) selIds.delete(id); }); if(selIds.size&&selId!=null&&!selIds.has(selId)) selIds.add(selId);
   // cabinets (overlapping pieces are outlined red)
   OVERLAP=overlapIds();
   cabs.forEach(drawCab);
@@ -943,7 +945,7 @@ function drawCab(c){
   r.setAttribute('width',f.w); r.setAttribute('height',f.h); r.setAttribute('rx',t.thin?2:8);
   r.setAttribute('fill',(t.appliance||t.window||t.benchOnly)?fill:grainFill(svg,fill,true));
   const ov=OVERLAP.has(c.id);
-  r.setAttribute('stroke',ov?'#d0342c':(c.id===selId?'#c9614b':'#33372e'));
+  r.setAttribute('stroke',ov?'#d0342c':((c.id===selId||selIds.has(c.id))?'#c9614b':'#33372e'));
   r.setAttribute('stroke-width',ov||c.id===selId?3:1.5);
   if(t.dashed) r.setAttribute('stroke-dasharray','18 12');
   r.setAttribute('vector-effect','non-scaling-stroke');
@@ -1139,8 +1141,9 @@ function drawRunDim(run){
       if(showCum[i]) text(xr,wallRun?dimY-60:dimY+112,mm(xr-x0),col,72,700,'middle');});
     if(wallRun) text(x0-30,dimY-60,'overheads',col,48,500,'end');
     else { // overall run figure above the run
-      const oy=Math.min(...items.map(c=>c.y))-150; line(x0,oy,xEnd,oy,col,4); line(x0,oy-30,x0,oy+30,col,4); line(xEnd,oy-30,xEnd,oy+30,col,4);
-      text((x0+xEnd)/2,oy-40,'OVERALL '+mm(xEnd-x0),col,84,800,'middle'); }
+      const top=Math.min(...items.map(c=>c.y)); const wallAbove=walls.some(w=>Math.abs(w.y1-w.y2)<1&&w.y1<top+10&&w.y1>top-260&&Math.max(w.x1,w.x2)>x0&&Math.min(w.x1,w.x2)<xEnd);
+      const oy=top-(wallAbove?330:150); line(x0,oy,xEnd,oy,col,4); line(x0,oy-30,x0,oy+30,col,4); line(xEnd,oy-30,xEnd,oy+30,col,4);
+      text((x0+xEnd)/2,oy-40,'CABINETRY '+mm(xEnd-x0),col,84,800,'middle'); }
   } else {
     const y0=items[0].y, yEnd=Math.max(...items.map(c=>c.y+footprint(c).h));
     const dimX=wallRun?Math.min(...items.map(c=>c.x))-90:Math.max(...items.map(c=>c.x+footprint(c).w))+90;
@@ -1152,8 +1155,9 @@ function drawRunDim(run){
       else { text(dimX-44,yt+w/2+20,mm(w),col,w<120?40:56,500,'end'); if(showCum[i]) text(dimX+118,yb+22,mm(yb-y0),col,72,700,'start'); }
     });
     if(wallRun) text(dimX-118,y0-30,'overheads',col,48,500,'end');
-    else { const ox=Math.min(...items.map(c=>c.x))-150; line(ox,y0,ox,yEnd,col,4); line(ox-30,y0,ox+30,y0,col,4); line(ox-30,yEnd,ox+30,yEnd,col,4);
-      const tt=mkText(0,0,'OVERALL '+mm(yEnd-y0),col,84,800,'middle'); tt.setAttribute('transform',`translate(${ox-40},${(y0+yEnd)/2}) rotate(-90)`); svg.appendChild(tt); }
+    else { const left=Math.min(...items.map(c=>c.x)); const wallLeft=walls.some(w=>Math.abs(w.x1-w.x2)<1&&w.x1<left+10&&w.x1>left-260&&Math.max(w.y1,w.y2)>y0&&Math.min(w.y1,w.y2)<yEnd);
+      const ox=left-(wallLeft?330:150); line(ox,y0,ox,yEnd,col,4); line(ox-30,y0,ox+30,y0,col,4); line(ox-30,yEnd,ox+30,yEnd,col,4);
+      const tt=mkText(0,0,'CABINETRY '+mm(yEnd-y0),col,84,800,'middle'); tt.setAttribute('transform',`translate(${ox-40},${(y0+yEnd)/2}) rotate(-90)`); svg.appendChild(tt); }
   }
 }
 
@@ -1342,14 +1346,20 @@ function fmtDate(iso){ const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||''); return
 function localISO(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
 
 /* ---------- drag ---------- */
+const selIds=new Set(); // box-selected group (drag any member to move them all)
+let marquee=null;
 let drag=null;
 function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
 function startDrag(e){
   if(tool!=='select') return;
-  const id=+e.currentTarget.dataset.id; selId=id; selWall=null; selDim=null; buildPanel(); render(); showPiece();
+  const id=+e.currentTarget.dataset.id;
+  if(e.shiftKey){ if(selId&&selId!==id) selIds.add(selId); if(selIds.has(id)) selIds.delete(id); else selIds.add(id); } // shift-click adds to / removes from the group
+  else if(!selIds.has(id)) selIds.clear();
+  selId=id; selWall=null; selDim=null; buildPanel(); render(); showPiece();
   const c=cabs.find(x=>x.id===id); const p=svgPt(e);
   pushUndo();
-  drag={id,dx:p.x-c.x,dy:p.y-c.y,pid:e.pointerId};
+  const group=selIds.has(id)?cabs.filter(x=>selIds.has(x.id)&&x.id!==id).map(x=>({c:x,ox:x.x-c.x,oy:x.y-c.y})):[];
+  drag={id,dx:p.x-c.x,dy:p.y-c.y,pid:e.pointerId,group};
   // capture on the sheet (not the cabinet, which is redrawn mid-drag) so the drag keeps
   // tracking when the pointer leaves the sheet, and always ends on release
   try{ svg.setPointerCapture(e.pointerId); }catch(err){}
@@ -1359,7 +1369,7 @@ function startDrag(e){
 function onDrag(e){
   if(!drag)return; const c=cabs.find(x=>x.id===drag.id); const p=svgPt(e);
   let nx=snap(p.x-drag.dx), ny=snap(p.y-drag.dy); const f=footprint(c);
-  if(snapOn) cabs.forEach(o=>{ if(o.id===c.id)return; const fo=footprint(o);
+  if(snapOn) cabs.forEach(o=>{ if(o.id===c.id||(drag.group.length&&selIds.has(o.id)))return; const fo=footprint(o);
     if(Math.abs(nx-(o.x+fo.w))<MAGNET) nx=o.x+fo.w;
     if(Math.abs(nx+f.w-o.x)<MAGNET) nx=o.x-f.w;
     if(Math.abs(nx-o.x)<MAGNET) nx=o.x;
@@ -1367,8 +1377,14 @@ function onDrag(e){
     if(Math.abs(ny+f.h-o.y)<MAGNET) ny=o.y-f.h;
     if(Math.abs(ny-o.y)<MAGNET) ny=o.y;
   });
-  c.x=Math.max(BOARD.x0,Math.min(BOARD.x1-f.w,nx));
-  c.y=Math.max(BOARD.y0,Math.min(BOARD.y1-f.h,ny));
+  nx=Math.max(BOARD.x0,Math.min(BOARD.x1-f.w,nx)); ny=Math.max(BOARD.y0,Math.min(BOARD.y1-f.h,ny));
+  if(drag.group.length){ // keep every member of the group on the board: shrink the move until they all fit
+    let ddx=nx-c.x, ddy=ny-c.y;
+    drag.group.forEach(g=>{ const fo=footprint(g.c); const tx=c.x+g.ox+ddx, ty=c.y+g.oy+ddy;
+      if(tx<BOARD.x0) ddx+=BOARD.x0-tx; if(tx+fo.w>BOARD.x1) ddx-=tx+fo.w-BOARD.x1;
+      if(ty<BOARD.y0) ddy+=BOARD.y0-ty; if(ty+fo.h>BOARD.y1) ddy-=ty+fo.h-BOARD.y1; });
+    c.x+=ddx; c.y+=ddy; drag.group.forEach(g=>{ g.c.x=c.x+g.ox; g.c.y=c.y+g.oy; });
+  } else { c.x=nx; c.y=ny; }
   render();
 }
 function endDrag(){
@@ -1377,18 +1393,30 @@ function endDrag(){
   drag=null; svg.removeEventListener('pointermove',onDrag); svg.removeEventListener('pointerup',endDrag); svg.removeEventListener('pointercancel',endDrag);
 }
 window.addEventListener('pointerup',endDrag); window.addEventListener('pointercancel',endDrag); window.addEventListener('blur',endDrag);
+window.addEventListener('pointerup',endMarquee); window.addEventListener('pointercancel',endMarquee);
 svg.addEventListener('pointerdown',e=>{
   if(tool==='wall'){ const p=svgPointSnap(e); draft={kind:'wall',x1:p.x,y1:p.y,x2:p.x,y2:p.y}; try{ svg.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); render(); return; }
   if(tool==='dim'){ const p=svgPointSnap(e);
     if(!draft){ draft={kind:'dim',x1:p.x,y1:p.y,x2:null,y2:null}; }
     else { if(Math.hypot(p.x-draft.x1,p.y-draft.y1)>=50){ pushUndo(); dims.push({id:'d'+Date.now().toString(36),x1:draft.x1,y1:draft.y1,x2:p.x,y2:p.y}); } draft=null; }
     e.preventDefault(); render(); return; }
-  if(e.target===svg||(e.target.parentNode===svg&&e.target.tagName!=='g')){ selId=null; selWall=null; selDim=null; buildPanel(); render(); if(sideTab==='selected') setSideTab(prevSideTab); }
+  if(e.target===svg||(e.target.parentNode===svg&&e.target.tagName!=='g')){ selId=null; selWall=null; selDim=null; selIds.clear(); buildPanel(); render(); if(sideTab==='selected') setSideTab(prevSideTab);
+    if(tool==='select'&&e.pointerType!=='touch'&&e.button===0){ const p=svgPt(e); marquee={x1:p.x,y1:p.y,x2:p.x,y2:p.y,pid:e.pointerId}; try{ svg.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); } }
 });
-svg.addEventListener('pointermove',e=>{ if(!draft) return; const p=svgPointSnap(e);
+function marqueeBox(){ return {x0:Math.min(marquee.x1,marquee.x2),y0:Math.min(marquee.y1,marquee.y2),x1:Math.max(marquee.x1,marquee.x2),y1:Math.max(marquee.y1,marquee.y2)}; }
+function drawMarquee(){ if(!marquee) return; const b=marqueeBox(); const r=document.createElementNS(SVGNS,'rect'); r.setAttribute('x',b.x0); r.setAttribute('y',b.y0); r.setAttribute('width',b.x1-b.x0); r.setAttribute('height',b.y1-b.y0); r.setAttribute('fill','#c9614b'); r.setAttribute('fill-opacity',0.08); r.setAttribute('stroke','#c9614b'); r.setAttribute('stroke-width',3); r.setAttribute('stroke-dasharray','40 30'); r.setAttribute('vector-effect','non-scaling-stroke'); r.style.pointerEvents='none'; svg.appendChild(r); }
+function drawGroupBadge(){ if(selIds.size<2||drag||marquee) return; const m=cabs.filter(c=>selIds.has(c.id)); if(m.length<2) return; const x0=Math.min(...m.map(c=>c.x)), y0=Math.min(...m.map(c=>c.y)), x1=Math.max(...m.map(c=>c.x+footprint(c).w)), y1=Math.max(...m.map(c=>c.y+footprint(c).h));
+  const r=document.createElementNS(SVGNS,'rect'); r.setAttribute('x',x0-40); r.setAttribute('y',y0-40); r.setAttribute('width',x1-x0+80); r.setAttribute('height',y1-y0+80); r.setAttribute('fill','none'); r.setAttribute('stroke','#c9614b'); r.setAttribute('stroke-width',2.5); r.setAttribute('stroke-dasharray','30 24'); r.setAttribute('vector-effect','non-scaling-stroke'); r.setAttribute('rx',20); r.style.pointerEvents='none'; svg.appendChild(r);
+  const t=mkText(x0-40,y0-70,m.length+' selected \u2014 drag any one to move them all \u00b7 Delete removes all \u00b7 shift-click adds or removes','#c9614b',52,700,'start'); t.style.pointerEvents='none'; svg.appendChild(t); }
+function endMarquee(e){ if(!marquee) return; const b=marqueeBox(); try{ svg.releasePointerCapture(marquee.pid); }catch(err){} marquee=null;
+  if(b.x1-b.x0>40&&b.y1-b.y0>40){ selIds.clear(); cabs.forEach(c=>{ const f=footprint(c); const cx=c.x+f.w/2, cy=c.y+f.h/2; const inside=(c.x>=b.x0&&c.y>=b.y0&&c.x+f.w<=b.x1&&c.y+f.h<=b.y1)||(cx>=b.x0&&cx<=b.x1&&cy>=b.y0&&cy<=b.y1); if(inside) selIds.add(c.id); });
+    if(selIds.size===1){ selId=[...selIds][0]; selIds.clear(); } else if(selIds.size>1){ selId=[...selIds][0]; }
+    buildPanel(); }
+  render(); }
+svg.addEventListener('pointermove',e=>{ if(marquee){ const p=svgPt(e); marquee.x2=p.x; marquee.y2=p.y; render(); drawMarquee(); return; } if(!draft) return; const p=svgPointSnap(e);
   if(draft.kind==='wall'){ const dx=p.x-draft.x1, dy=p.y-draft.y1; if(Math.abs(dx)>=Math.abs(dy)){ draft.x2=p.x; draft.y2=draft.y1; } else { draft.x2=draft.x1; draft.y2=p.y; } render(); }
   else if(draft.kind==='dim'){ draft.x2=p.x; draft.y2=p.y; render(); } });
-svg.addEventListener('pointerup',e=>{ if(draft&&draft.kind==='wall'){ if(Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1)>=100){ pushUndo(); walls.push({id:'w'+Date.now().toString(36),x1:draft.x1,y1:draft.y1,x2:draft.x2,y2:draft.y2}); } draft=null; try{ svg.releasePointerCapture(e.pointerId); }catch(err){} render(); } });
+svg.addEventListener('pointerup',e=>{ if(marquee){ endMarquee(e); return; } if(draft&&draft.kind==='wall'){ if(Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1)>=100){ pushUndo(); walls.push({id:'w'+Date.now().toString(36),x1:draft.x1,y1:draft.y1,x2:draft.x2,y2:draft.y2}); } draft=null; try{ svg.releasePointerCapture(e.pointerId); }catch(err){} render(); } });
 
 /* ---------- selected panel ---------- */
 function buildPanel(){
@@ -1470,10 +1498,11 @@ document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&!typing&&e.key.toLowerCase()==='y'){ e.preventDefault(); redo(); return; }
   const c=cabs.find(x=>x.id===selId); if(!c)return;
   if(typing)return;
-  if(e.key==='Delete'||e.key==='Backspace'){pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel(); if(sideTab==='selected') setSideTab(prevSideTab);}
+  const grp=selIds.size>1?cabs.filter(x=>selIds.has(x.id)):[c];
+  if(e.key==='Delete'||e.key==='Backspace'){pushUndo();cabs=cabs.filter(x=>!grp.includes(x));selId=null;selIds.clear();render();buildPanel(); if(sideTab==='selected') setSideTab(prevSideTab);}
   const nud={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
-  if(nud){ e.preventDefault(); pushUndo('nudge'); const st=e.shiftKey?100:SNAP; c.x+=nud[0]*st; c.y+=nud[1]*st; keepOnBoard(c); render(); }
-  if(e.key.toLowerCase()==='r'){pushUndo();c.rot=((c.rot||0)+90)%360;render();}
+  if(nud){ e.preventDefault(); pushUndo('nudge'); const st=e.shiftKey?100:SNAP; grp.forEach(g=>{ g.x+=nud[0]*st; g.y+=nud[1]*st; keepOnBoard(g); }); render(); }
+  if(e.key.toLowerCase()==='r'){pushUndo();grp.forEach(g=>{ g.rot=((g.rot||0)+90)%360; });render();}
 });
 
 /* ---------- title block live (TB_IDS is declared in the save/restore block; this runs at init) ---------- */
@@ -1670,7 +1699,7 @@ function drawWalls(){
   walls.forEach(w=>{ const g=document.createElementNS(SVGNS,'g'); g.style.cursor='pointer'; g.style.touchAction='none';
     g.appendChild(mkLine(w.x1,w.y1,w.x2,w.y2,w.id===selWall?'#c9614b':'#3a3f33',WALL_T,{'stroke-linecap':'square'}));
     const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1), mx=(w.x1+w.x2)/2, my=(w.y1+w.y2)/2;
-    const t=mkText(0,0,mm(wallLen(w)),'#2f3a2a',66,700,'middle'); t.setAttribute('transform',horiz?`translate(${mx},${my-WALL_T-16})`:`translate(${mx-WALL_T-16},${my}) rotate(-90)`); g.appendChild(t);
+    const t=mkText(0,0,'WALL '+mm(wallLen(w)),'#2f3a2a',66,700,'middle'); t.setAttribute('transform',horiz?`translate(${mx},${my-WALL_T-16})`:`translate(${mx-WALL_T-16},${my}) rotate(-90)`); g.appendChild(t);
     g.addEventListener('pointerdown',e=>{ if(tool!=='select') return; e.stopPropagation(); selWall=w.id; selDim=null; selId=null; buildPanel(); render(); });
     svg.appendChild(g); });
   if(draft&&draft.kind==='wall'){ svg.appendChild(mkLine(draft.x1,draft.y1,draft.x2,draft.y2,'#8a917f',WALL_T,{'stroke-dasharray':'80 50','stroke-linecap':'square'}));
