@@ -82,9 +82,9 @@
   .rowbtns .del{background:#c9614b;color:#fff;}
   .rowbtns .dup{background:#46553c;color:#fff;}
   main{flex:1;position:relative;overflow:auto;background:#eef1ea;touch-action:pan-x pan-y;}
-  #planWrap{padding:18px;}
+  #planWrap{padding:140px 18px 120px;}
   #planSvg{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.12);width:100%;height:auto;}
-  #viewElev{display:none;padding:18px;}
+  #viewElev{display:none;padding:140px 18px 120px;}
   #elevSvg{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.12);width:100%;height:auto;}
   #view3d{display:none;width:100%;height:100%;}
   #c3d{display:block;width:100%;height:100%;}
@@ -142,7 +142,7 @@
     #asideHandle{display:flex;}
     main{flex:1;min-height:0;}
     .hint{display:none;}
-    #planWrap,#viewElev{padding:8px;}
+    #planWrap,#viewElev{padding:100px 8px 90px;}
   }
   @media print{
     body{display:block;height:auto;}
@@ -1738,7 +1738,10 @@ document.getElementById('asideHandle').onclick=()=>{ if(asideEl.classList.contai
 
 /* ---------- zoom: a working scale by default, fit to what is placed ---------- */
 const WORK_SCALE=0.2;            // px per mm: a 600 mm cabinet is 120 px wide on screen
-const SHEET_PAD=18;              // #planWrap / #viewElev padding
+const SHEET_PAD=18;              // #planWrap / #viewElev side padding
+const padTop=()=>isMobile()?100:140; // top padding: keeps the sheet clear of the floating toolbar
+// parts of the work area covered by floating controls, in px
+function viewInsets(){ const m=isMobile(); const rp=document.getElementById('rightPanel'); const rpW=(!m&&rp&&rp.parentNode&&rp.parentNode.tagName==='MAIN'&&rp.style.display!=='none'&&currentView==='plan')?rp.offsetWidth+40:0; return {top:m?90:120,bottom:m?80:100,left:0,right:rpW}; }
 const mainEl=document.getElementById('canvasScroll'); // the scrolling part of the work area (overlays sit outside it)
 let scale=WORK_SCALE; const viewScales={plan:WORK_SCALE,elev:null};
 function applyZoom(){
@@ -1752,21 +1755,31 @@ function setScale(ns,anchor){
   ns=Math.max(0.05,Math.min(0.8,ns)); const old=scale; if(Math.abs(ns-old)<1e-6) return;
   const rect=mainEl.getBoundingClientRect();
   const ax=(anchor?anchor.cx:rect.left+rect.width/2)-rect.left, ay=(anchor?anchor.cy:rect.top+rect.height/2)-rect.top;
-  const mmX=(mainEl.scrollLeft+ax-SHEET_PAD)/old, mmY=(mainEl.scrollTop+ay-SHEET_PAD)/old;
+  const mmX=(mainEl.scrollLeft+ax-SHEET_PAD)/old, mmY=(mainEl.scrollTop+ay-padTop())/old;
   scale=ns; applyZoom();
-  mainEl.scrollLeft=SHEET_PAD+mmX*ns-ax; mainEl.scrollTop=SHEET_PAD+mmY*ns-ay;
+  mainEl.scrollLeft=SHEET_PAD+mmX*ns-ax; mainEl.scrollTop=padTop()+mmY*ns-ay;
 }
 // fit the placed pieces (with room for their dimension strings) into the work area; empty board = whole sheet
+function elevContentBBox(){
+  const ws=(typeof elevWalls==='function')?elevWalls():[]; if(!ws.length) return null;
+  const along=c=>{const r=((c.rot||0)%360+360)%360; return (r===0||r===180)?c.x:c.y;};
+  let maxLen=2000; ws.forEach(wl=>{ const a0=Math.min(...wl.items.map(along)); maxLen=Math.max(maxLen,Math.max(...wl.items.map(c=>along(c)+c.width-a0))); });
+  const y0=TITLE_H+20, h=+E.getAttribute('viewBox').split(' ')[3];
+  return {x0:0,y0,x1:Math.min(12000,320+maxLen+700),y1:Math.min(y0+h,TITLE_H+140+ws.length*2750)};
+}
 function fitToCabinets(keepScale){
-  const rect=mainEl.getBoundingClientRect(), vw=Math.max(100,rect.width-2*SHEET_PAD), vh=Math.max(100,rect.height-2*SHEET_PAD);
+  const rect=mainEl.getBoundingClientRect(), ins=viewInsets();
+  const vw=Math.max(100,rect.width-ins.left-ins.right-2*SHEET_PAD), vh=Math.max(100,rect.height-ins.top-ins.bottom-40);
   const y0=sheetY0(); let bx0,by0,bx1,by1;
-  const cb=contentBBox();
-  if(cb&&currentView==='plan'){
-    bx0=cb.x0-450; by0=Math.max(y0,cb.y0-450); bx1=cb.x1+450; by1=cb.y1+500;
-  } else { bx0=0; by0=y0; bx1=12000; by1=currentView==='elev'?(+E.getAttribute('viewBox').split(' ')[3]+y0):6950; }
+  const cb=currentView==='elev'?elevContentBBox():contentBBox();
+  if(cb&&currentView==='plan'){ bx0=cb.x0-450; by0=Math.max(y0,cb.y0-450); bx1=cb.x1+450; by1=cb.y1+500; }
+  else if(cb&&currentView==='elev'){ bx0=cb.x0; by0=Math.max(y0,cb.y0-100); bx1=cb.x1; by1=cb.y1; }
+  else { bx0=0; by0=y0; bx1=12000; by1=currentView==='elev'?(+E.getAttribute('viewBox').split(' ')[3]+y0):6950; }
   if(!keepScale){ scale=Math.max(0.05,Math.min(0.8,Math.min(vw/(bx1-bx0),vh/(by1-by0)))); applyZoom(); }
-  mainEl.scrollLeft=SHEET_PAD+bx0*scale-(vw-(bx1-bx0)*scale)/2;
-  mainEl.scrollTop=SHEET_PAD+(by0-y0)*scale-(vh-(by1-by0)*scale)/2;
+  // centre the content in the part of the work area not covered by the toolbar, pill or side panel
+  const cw=(bx1-bx0)*scale, ch=(by1-by0)*scale; // when the content is bigger than the free area, align its top-left to the free area instead of centring under the controls
+  mainEl.scrollLeft=SHEET_PAD+bx0*scale-ins.left-(cw<vw?(vw-cw)/2:0);
+  mainEl.scrollTop=padTop()+(by0-y0)*scale-ins.top-20-(ch<vh?(vh-ch)/2:0);
 }
 document.getElementById('zIn').onclick=()=>setScale(scale*1.25);
 document.getElementById('zOut').onclick=()=>setScale(scale/1.25);
@@ -1815,6 +1828,7 @@ function setTab(t){
   if(t==='3d') start3D();
   if(t==='elev') renderElev();
   applyZoom();
+  if(t==='elev'&&prevView!=='elev') setTimeout(()=>fitToCabinets(false),0);
 }
 document.getElementById('tabPlan').onclick=()=>setTab('plan');
 document.getElementById('tabElev').onclick=()=>setTab('elev');
@@ -1828,10 +1842,16 @@ function start3D(){
   const w=cv.clientWidth||800,h=cv.clientHeight||600;
   if(!renderer){
     renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
-    scene=new THREE.Scene(); scene.background=new THREE.Color(0xeef1ea);
-    camera=new THREE.PerspectiveCamera(45,w/h,0.1,200);
-    scene.add(new THREE.AmbientLight(0xffffff,0.78));
-    const dl=new THREE.DirectionalLight(0xffffff,0.65); dl.position.set(5,9,6); scene.add(dl);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+    renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    scene=new THREE.Scene(); scene.background=new THREE.Color(0xe4e7df);
+    camera=new THREE.PerspectiveCamera(42,w/h,0.1,200);
+    scene.add(new THREE.HemisphereLight(0xffffff,0xb5bfa8,0.55));
+    scene.add(new THREE.AmbientLight(0xffffff,0.18));
+    const key=new THREE.DirectionalLight(0xfff5e6,1.05); key.castShadow=true; key.shadow.mapSize.set(2048,2048); key.shadow.bias=-0.0005; key.shadow.normalBias=0.03;
+    const sc=key.shadow.camera; sc.near=0.5; sc.far=80; sc.left=-16; sc.right=16; sc.top=16; sc.bottom=-16; scene.add(key); scene.add(key.target); scene.userData.key=key;
+    const fill=new THREE.DirectionalLight(0xdde7ff,0.35); fill.position.set(-9,6,-6); scene.add(fill); scene.userData.fill=fill;
     cv.addEventListener('pointerdown',e=>{dragging3d=true;last3d={x:e.clientX,y:e.clientY};});
     window.addEventListener('pointerup',()=>dragging3d=false);
     window.addEventListener('pointermove',e=>{ if(!dragging3d)return;
@@ -1860,68 +1880,93 @@ function wall3DPos(c){
   else if(rot===270) x=best.x;            // wall at left edge
   return {x,y};
 }
+/* 3D materials: real panels with a little gloss so light and shadow give the fronts shape */
+function mat3(col,rough,extra){ const m=new THREE.MeshStandardMaterial(Object.assign({color:new THREE.Color(col),roughness:rough==null?0.55:rough,metalness:0.03},extra||{})); return m; }
+function shade(col,k){ const c=new THREE.Color(col); c.multiplyScalar(k); return c; }
+function addMesh(geo,mat,x,y,z,shadow){ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=shadow!==false; m.receiveShadow=true; m.userData.dyn=true; scene.add(m); return m; }
+function addEdges(geo,x,y,z,op){ const ed=new THREE.LineSegments(new THREE.EdgesGeometry(geo,20),new THREE.LineBasicMaterial({color:0x2f3a2a,transparent:true,opacity:op==null?0.22:op})); ed.position.set(x,y,z); ed.userData.dyn=true; scene.add(ed); return ed; }
 function rebuild3D(){
   scene.children.filter(o=>o.userData.dyn).forEach(o=>scene.remove(o));
   let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-  cabs.forEach(c=>{const f=footprint(c);minX=Math.min(minX,c.x);maxX=Math.max(maxX,c.x+f.w);minZ=Math.min(minZ,c.y);maxZ=Math.max(maxZ,c.y+f.h);});
-  if(!cabs.length){minX=0;maxX=4000;minZ=BOARD.y0;maxZ=4000;}
+  const grow=(x0,z0,x1,z1)=>{minX=Math.min(minX,x0);maxX=Math.max(maxX,x1);minZ=Math.min(minZ,z0);maxZ=Math.max(maxZ,z1);};
+  cabs.forEach(c=>{const f=footprint(c);grow(c.x,c.y,c.x+f.w,c.y+f.h);});
+  walls.forEach(w=>grow(Math.min(w.x1,w.x2),Math.min(w.y1,w.y2),Math.max(w.x1,w.x2),Math.max(w.y1,w.y2)));
+  if(!isFinite(minX)){minX=0;maxX=4000;minZ=BOARD.y0;maxZ=4000;}
   center.x=(minX+maxX)/2000; center.z=(minZ+maxZ)/2000;
-  const span=Math.max((maxX-minX),(maxZ-minZ))/1000; orbit.r=Math.max(6,span*1.7);
-  const fg=new THREE.Mesh(new THREE.PlaneGeometry(span+4,span+4),new THREE.MeshStandardMaterial({color:0xe3e7dd}));
-  fg.rotation.x=-Math.PI/2; fg.position.set(center.x,0,center.z); fg.userData.dyn=true; scene.add(fg);
-  const grid=new THREE.GridHelper(span+4,Math.max(2,Math.round(span+4)*2),0xcdd9c1,0xdfe5d6);
-  grid.position.set(center.x,0.002,center.z); grid.userData.dyn=true; scene.add(grid);
+  const span=Math.max((maxX-minX),(maxZ-minZ))/1000; orbit.r=Math.max(5.5,span*1.6);
+  const key=scene.userData.key; if(key){ key.position.set(center.x+7,11,center.z+8); key.target.position.set(center.x,0.8,center.z); key.target.updateMatrixWorld(); }
+  // floor + soft grid
+  const fg=addMesh(new THREE.PlaneGeometry(span+8,span+8),mat3(0xd6dacd,0.95),center.x,0,center.z,false); fg.rotation.x=-Math.PI/2; fg.castShadow=false;
+  const grid=new THREE.GridHelper(span+8,Math.max(2,Math.round(span+8)*2),0xbfc8b4,0xcfd6c6); grid.material.transparent=true; grid.material.opacity=0.55; grid.position.set(center.x,0.003,center.z); grid.userData.dyn=true; scene.add(grid);
+  // walls drawn on the plan
+  const ceilH=(parseInt(tbv('tbCeiling'))||2400)/1000;
+  walls.forEach(w=>{ const len=wallLen(w)/1000; if(len<=0) return; const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1);
+    const geo=new THREE.BoxGeometry(horiz?len:0.09,ceilH,horiz?0.09:len); const mx=(w.x1+w.x2)/2000, mz=(w.y1+w.y2)/2000;
+    addMesh(geo,mat3(0xeceee7,0.92),mx,ceilH/2,mz); addEdges(geo,mx,ceilH/2,mz,0.18); });
   cabs.forEach(c=>{
     const f=footprint(c),t=TYPES[c.type];
-    const band=cabBand(c), by=band[0]/1000, hh=(band[1]-band[0])/1000;
-    const bodyH=t.benchOnly?0.001:(t.bench?Math.max(0.04,hh-0.04):hh);
-    const geo=new THREE.BoxGeometry(f.w/1000,bodyH,f.h/1000);
-    const col3=t.appliance?'#c9ced3':(t.window?'#cfe2ea':doorColor(c));
-    const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(col3)});
-    if(t.window){mat.transparent=true;mat.opacity=0.4;} else if(t.thin){mat.transparent=true;mat.opacity=0.85;}
-    const m=new THREE.Mesh(geo,mat);
-    const pos=wall3DPos(c);
-    const px=(pos.x+f.w/2)/1000, pz=(pos.y+f.h/2)/1000;
-    m.position.set(px,by+bodyH/2,pz); m.userData.dyn=true; scene.add(m);
-    const ed=new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0x4a4f43}));
-    ed.position.copy(m.position); ed.userData.dyn=true; scene.add(ed);
-    if(!t.sym&&!t.thin&&!t.window) addFrontDetail3D(c,f,by,bodyH,px,pz);
-    if(t.bench){
-      const bg=new THREE.BoxGeometry(f.w/1000+0.03,0.04,f.h/1000+0.03);
-      const bm=new THREE.Mesh(bg,new THREE.MeshStandardMaterial({color:new THREE.Color(scheme.bench.color)}));
-      bm.position.set(px,by+bodyH+0.02,pz); bm.userData.dyn=true; scene.add(bm);
-    }
+    const band=cabBand(c), by=band[0]/1000, top=band[1]/1000, hh=top-by;
+    const pos=wall3DPos(c); const px=(pos.x+f.w/2)/1000, pz=(pos.y+f.h/2)/1000, fw=f.w/1000, fd=f.h/1000;
+    const rot=((c.rot||0)%360+360)%360;
+    const front=doorColor(c);
+    if(t.window){ const geo=new THREE.BoxGeometry(fw,hh,fd); const m=addMesh(geo,mat3(0xcfe2ea,0.15,{transparent:true,opacity:0.35}),px,by+hh/2,pz,false); addEdges(geo,px,by+hh/2,pz,0.35); return; }
+    if(t.benchOnly){ const geo=new THREE.BoxGeometry(fw+0.02,0.02,fd+0.02); addMesh(geo,mat3(scheme.bench.color,0.3),px,top-0.01,pz); addEdges(geo,px,top-0.01,pz,0.3); return; }
+    if(t.thin){ const geo=new THREE.BoxGeometry(fw,hh,fd); addMesh(geo,mat3(front,0.5),px,by+hh/2,pz); addEdges(geo,px,by+hh/2,pz,0.35); return; }
+    // carcass (a shade darker than the fronts so panels read as panels)
+    const kick=(t.bench&&!t.appliance&&band[0]===0)?Math.min(STD.kick,band[1]-100)/1000:0;
+    const benchT=t.bench?0.02:0;
+    const bodyBottom=by+kick, bodyTop=top-benchT, bodyH=Math.max(0.05,bodyTop-bodyBottom);
+    const bodyCol=t.appliance?0xc4c9cf:shade(front,0.9);
+    const geo=new THREE.BoxGeometry(fw,bodyH,fd); addMesh(geo,mat3(bodyCol,0.7),px,bodyBottom+bodyH/2,pz); addEdges(geo,px,bodyBottom+bodyH/2,pz,0.2);
+    if(kick>0){ // recessed dark plinth
+      const inset=0.05; const kg=new THREE.BoxGeometry(fw-(rot===90||rot===270?0:inset*2),kick,fd-(rot===0||rot===180?inset:0)-(rot===90||rot===270?inset*2:0));
+      const kx=px+(rot===90?inset/2:rot===270?-inset/2:0), kz=pz+(rot===0?-inset/2:rot===180?inset/2:0);
+      addMesh(kg,mat3(0x2a2c2a,0.9),kx,kick/2,kz,false); }
+    if(t.bench){ const bg=new THREE.BoxGeometry(fw+0.02+(rot===90||rot===270?0.02:0),benchT,fd+0.02+(rot===0||rot===180?0.02:0));
+      const bx=px+(rot===270?0.01:rot===90?-0.01:0), bz=pz+(rot===0?0.01:rot===180?-0.01:0);
+      addMesh(bg,mat3(scheme.bench.color,0.28),bx,bodyTop+benchT/2,bz); addEdges(bg,bx,bodyTop+benchT/2,bz,0.3); }
+    addFrontDetail3D(c,f,bodyBottom,bodyH,px,pz,front,rot);
   });
 }
-function addFrontDetail3D(c,f,by,hh,px,pz){
-  const ft=c.front||'doors'; if(ft==='none'||ft==='open')return;
-  const rot=((c.rot||0)%360+360)%360;
-  const fw=f.w/1000, fh=f.h/1000, off=0.005;
-  function P(u,v){ const y=by+v*hh;
-    if(rot===0)   return new THREE.Vector3(px+(u-0.5)*fw,y,pz+fh/2+off);
-    if(rot===180) return new THREE.Vector3(px+(u-0.5)*fw,y,pz-fh/2-off);
-    if(rot===90)  return new THREE.Vector3(px-fw/2-off,y,pz+(u-0.5)*fh);
-    return new THREE.Vector3(px+fw/2+off,y,pz+(u-0.5)*fh);
-  }
-  const pts=[]; const seg=(u1,v1,u2,v2)=>{pts.push(P(u1,v1),P(u2,v2));};
-  const shaker=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
-  const frame=(u0,v0,u1,v1)=>{ if(!shaker)return; const iu=Math.min(0.16,(u1-u0)*0.22), iv=Math.min(0.12,(v1-v0)*0.22);
-    const a=u0+iu,b=u1-iu,p=v0+iv,q=v1-iv; if(b<=a||q<=p)return; seg(a,p,b,p); seg(b,p,b,q); seg(b,q,a,q); seg(a,q,a,p); };
-  if(ft==='stack'){ const hs=stackHeights(c,hh*1000); let v=0; hs.forEach((sh,i)=>{ const dv=sh/(hh*1000); if(i>0) seg(0.04,v,0.96,v); seg(0.4,v+dv/2,0.6,v+dv/2); v+=dv; }); }
-  else if(ft==='winerack'){ for(let u=0;u<1;u+=0.25){ seg(u,0.05,Math.min(1,u+0.25),0.95); seg(Math.min(1,u+0.25),0.05,u,0.95); } }
-  else if(ft==='bin'){ seg(0.4,0.85,0.6,0.85); seg(0.4,0.3,0.6,0.3); seg(0.6,0.3,0.55,0.6); seg(0.4,0.3,0.45,0.6); seg(0.45,0.6,0.55,0.6); }
-  else if(isDoorFront(ft)){
-    const hg=c.hinge||(c.width>600?'D':'L');
-    if(hg==='D'){ seg(0.5,0.04,0.5,0.96); frame(0,0.02,0.5,0.98); frame(0.5,0.02,1,0.98); seg(0.42,0.45,0.42,0.6); seg(0.58,0.45,0.58,0.6); }
-    else if(hg==='L'){ frame(0,0.02,1,0.98); seg(0.85,0.45,0.85,0.62); }
-    else { frame(0,0.02,1,0.98); seg(0.15,0.45,0.15,0.62); }
-  } else if(ft==='drawers'){
-    const rows=drawerRows(c), tot=rows.reduce((a,b)=>a+b,0); let v=0;
-    rows.forEach((rh,i)=>{ const dv=rh/tot; if(i>0) seg(0.04,v,0.96,v); frame(0,v+0.02,1,v+dv-0.02); seg(0.4,v+dv/2,0.6,v+dv/2); v+=dv; });
-  }
-  if(!pts.length)return;
-  const ls=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x2c2f28}));
-  ls.userData.dyn=true; scene.add(ls);
+/* fronts: doors, drawers, glass, stacks, appliances as real panels on the face of the carcass */
+function addFrontDetail3D(c,f,by,hh,px,pz,front,rot){
+  const t=TYPES[c.type]; const ft=c.front||'doors';
+  const fw=f.w/1000, fd=f.h/1000; const span=(rot===0||rot===180)?fw:fd; const T=0.018, GAP=0.003;
+  // a panel covering u0..u1 (along the front) and v0..v1 (of the body height), `thick` deep, `out` from the face
+  function panel(u0,u1,v0,v1,thick,mat,out){ const L=(u1-u0)*span-GAP*2, H=(v1-v0)*hh-GAP*2; if(L<=0.01||H<=0.01) return null;
+    const uc=(u0+u1)/2, y=by+((v0+v1)/2)*hh, d=(out||0)+thick/2; let geo,x,z;
+    if(rot===0){ geo=new THREE.BoxGeometry(L,H,thick); x=px+(uc-0.5)*fw; z=pz+fd/2+d; }
+    else if(rot===180){ geo=new THREE.BoxGeometry(L,H,thick); x=px+(0.5-uc)*fw; z=pz-fd/2-d; }
+    else if(rot===90){ geo=new THREE.BoxGeometry(thick,H,L); x=px-fw/2-d; z=pz+(0.5-uc)*fd; }
+    else { geo=new THREE.BoxGeometry(thick,H,L); x=px+fw/2+d; z=pz+(uc-0.5)*fd; }
+    const m=addMesh(geo,mat,x,y,z); addEdges(geo,x,y,z,0.28); return m; }
+  const pm=mat3(front,0.42), frameCol=shade(front,0.95);
+  const framed=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
+  const pull=/finger|j pull/i.test(scheme.profile);
+  const handle=(u,v,horiz)=>{ const L=0.14; if(pull) return; const hm=mat3(0x3a3d3a,0.35,{metalness:0.6}); if(horiz) panel(u-L/2/span,u+L/2/span,v-0.006/hh,v+0.006/hh,0.012,hm,T+0.012); else panel(u-0.006/span,u+0.006/span,v-L/2/hh,v+L/2/hh,0.012,hm,T+0.012); };
+  const door=(u0,u1,v0,v1,glass)=>{ if(glass){ panel(u0,u1,v0,v1,T,mat3(front,0.5)); const iu=Math.min(0.06/span,(u1-u0)*0.2), iv=Math.min(0.06/hh,(v1-v0)*0.2); panel(u0+iu,u1-iu,v0+iv,v1-iv,0.006,mat3(0xbfd8e2,0.1,{transparent:true,opacity:0.45}),T-0.006); return; }
+    if(framed){ panel(u0,u1,v0,v1,T-0.008,mat3(frameCol,0.5)); const iu=Math.min(0.07/span,(u1-u0)*0.22), iv=Math.min(0.07/hh,(v1-v0)*0.22); panel(u0,u1,v0,v0+iv,0.008,pm,T-0.008); panel(u0,u1,v1-iv,v1,0.008,pm,T-0.008); panel(u0,u0+iu,v0,v1,0.008,pm,T-0.008); panel(u1-iu,u1,v0,v1,0.008,pm,T-0.008); }
+    else panel(u0,u1,v0,v1,T,pm); };
+  if(t.appliance){ // appliances: grey front with a dark window / detail
+    const g=mat3(0xd2d6db,0.4,{metalness:0.35}), dark=mat3(0x2b2f33,0.25,{metalness:0.5});
+    if(c.type==='fridge'){ door(0,0.5,0,1); door(0.5,1,0,1); handle(0.47,0.55,false); handle(0.53,0.55,false); }
+    else if(c.type==='oven'){ panel(0,1,0,1,T,g); panel(0.1,0.9,0.15,0.75,0.004,dark,T); handle(0.5,0.86,true); }
+    else if(c.type==='dishwasher'){ panel(0,1,0,1,T,g); panel(0.05,0.95,0.85,0.95,0.004,dark,T); handle(0.5,0.78,true); }
+    else if(c.type==='microwave'){ panel(0,1,0,1,T,g); panel(0.08,0.62,0.15,0.85,0.004,dark,T); }
+    else if(c.type==='rangehood'){ panel(0,1,0,1,T,mat3(0xc9cdd2,0.3,{metalness:0.6})); }
+    else if(c.type==='cooktop'){ door(0,1,0,1); [[0.25,0.3],[0.75,0.3],[0.25,0.7],[0.75,0.7]].forEach(([u,v])=>{ const r=Math.min(fw,fd)*0.16; const ring=new THREE.Mesh(new THREE.TorusGeometry(r,0.006,8,32),mat3(0x2b2f33,0.4,{metalness:0.5})); ring.rotation.x=-Math.PI/2; ring.position.set(px+(u-0.5)*fw,by+hh+0.026,pz+(v-0.5)*fd); ring.userData.dyn=true; scene.add(ring); }); }
+    else door(0,1,0,1);
+    return; }
+  if(ft==='none'||ft==='open'){ if(ft==='open'){ const n=Math.max(1,Math.round(hh/0.35)); for(let i=1;i<n;i++) panel(0.02,0.98,i/n-0.009/hh,i/n+0.009/hh,fd*0.9,mat3(frameCol,0.6),-fd*0.9); } return; }
+  if(ft==='stack'){ const hs=stackHeights(c,hh*1000); let v=0; hs.forEach((sh,i)=>{ const dv=sh/(hh*1000); const kind=(c.stack||[])[i]||''; if(/micro|oven/.test(kind)){ panel(0,1,v,v+dv,T,mat3(0xd2d6db,0.4,{metalness:0.35})); panel(0.1,0.9,v+dv*0.2,v+dv*0.8,0.004,mat3(0x2b2f33,0.25,{metalness:0.5}),T); } else { door(0,1,v,v+dv); handle(0.5,v+dv/2,true); } v+=dv; }); return; }
+  if(ft==='winerack'){ door(0,1,0,1); for(let i=0;i<4;i++){ const u=(i+0.5)/4; panel(u-0.004/span,u+0.004/span,0.05,0.95,0.03,mat3(0x6b5d52,0.7),T); } return; }
+  if(ft==='bin'){ door(0,1,0,1); handle(0.5,0.9,true); return; }
+  if(isDoorFront(ft)){ const glass=ft!=='doors'&&ft!=='pocket'; const hg=c.hinge||(c.width>600?'D':'L');
+    if(hg==='D'){ door(0,0.5,0,1,glass); door(0.5,1,0,1,glass); handle(0.46,0.55,false); handle(0.54,0.55,false); }
+    else if(hg==='L'){ door(0,1,0,1,glass); handle(0.88,0.55,false); }
+    else { door(0,1,0,1,glass); handle(0.12,0.55,false); }
+    return; }
+  if(ft==='drawers'){ const rows=drawerRows(c), tot=rows.reduce((a,b)=>a+b,0); let v=0; rows.forEach(rh=>{ const dv=rh/tot; door(0,1,v,v+dv); handle(0.5,v+dv/2,true); v+=dv; }); }
 }
 function loop(){
   raf=requestAnimationFrame(loop);
@@ -2312,7 +2357,8 @@ buildRoomUI();
 buildPriceUI();
 render();
 applySheetView();
-fitToCabinets(true);
+// opening view: fit what is on the sheet, but never zoom a small job in past the working scale
+fitToCabinets(false); if(scale>WORK_SCALE){ scale=WORK_SCALE; applyZoom(); fitToCabinets(true); }
 mobileFit();
 setHandleText();
 undoButtons();
