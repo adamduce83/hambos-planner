@@ -69,7 +69,7 @@ async function refresh(){ if(!sb){ $('gnote').textContent='Cloud is not configur
   if(user&&recoveryFlow){ recoveryFlow=false; $('pwCard').hidden=false; $('app').hidden=true; }
   if(user&&!staff) $('gnote').textContent='Signed in as '+user.email+', but that email is not on the staff list.';
   if(staff) await loadAll(); }
-let recoveryFlow=/type=recovery/.test(location.hash)||/type=recovery/.test(location.search);
+let recoveryFlow=/type=(recovery|invite)/.test(location.hash)||/type=(recovery|invite)/.test(location.search);
 if(sb) sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY') recoveryFlow=true; refresh(); });
 $('forgot').onclick=async()=>{ const email=$('email').value.trim(); if(!email){ $('gnote').textContent='Type your email first.'; return; } const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split('#')[0].split('?')[0]}); $('gnote').textContent=error?error.message:'Check your inbox: the link brings you back here to set a new password.'; };
 $('btnPw').onclick=()=>{ $('pwCard').hidden=false; $('pwNote').textContent=''; window.scrollTo(0,0); };

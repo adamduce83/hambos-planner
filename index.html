@@ -2194,6 +2194,8 @@ function applyState(s){
 }
 function saveState(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(stateObj())); }catch(e){} queueJobSave(); }
 /* ---------- cloud (Supabase): staff sign-in, cloud jobs, customer enquiries, plan sheets ---------- */
+// an invite or password-reset link lands here (the site's front page): hand it to the Admin page, which has the set-password box
+if(/type=(invite|recovery|magiclink)/.test(location.hash)&&!/admin\.html/.test(location.pathname)){ location.replace('admin.html'+location.search+location.hash); }
 const CLOUD=window.HAMBOS_CLOUD||{};
 const sb=(window.supabase&&CLOUD.url&&CLOUD.anon)?window.supabase.createClient(CLOUD.url,CLOUD.anon):null;
 let cloudUser=null, isStaff=false;
