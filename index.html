@@ -419,6 +419,8 @@
       <h3>Pricing <span style="font-weight:500;text-transform:none;letter-spacing:0;">(internal, never printed)</span></h3>
       <div id="priceBreak" class="panel" style="font-size:13px;line-height:1.7;"></div>
       <button class="toolbtn alt" id="useSub" style="width:100%;margin:6px 0;">Use ballpark as quote total</button>
+      <button class="toolbtn alt" id="xeroCsv" style="width:100%;margin:0 0 6px;">Export quote lines for Xero (CSV)</button>
+      <div class="hint" style="margin:0 0 6px;">One line per room plus benchtop and freight, ex GST, in Xero's sales-invoice import layout. Import in Xero via Business → Invoices → Import.</div>
       <div class="field"><label>Quote total (prints on the sheet)</label><input id="tbTotal" placeholder="$ total"></div>
       <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sage-dk);text-transform:uppercase;letter-spacing:.5px;">Price table &amp; settings</summary>
         <div class="sw-name" style="font-weight:500;color:#6a7361;margin:6px 0;">Agreed manufacturer cost per standard size. A non-standard width is priced at the next standard size down plus the surcharge (e.g. 920 = 900 + surcharge). Saved on this device and in each design file.</div>
@@ -1242,6 +1244,16 @@ function renderElev(){
     const benchItems=wll.items.filter(c=>TYPES[c.type].bench&&cabBand(c)[0]===0).sort((a,b)=>along(a)-along(b));
     const bruns=[]; benchItems.forEach(c=>{ const a=along(c)-aMin, b=a+c.width; const last=bruns[bruns.length-1]; if(last&&a<=last.b+60) last.b=Math.max(last.b,b); else bruns.push({a,b}); });
     bruns.forEach(r=>{ eR(PADX+r.a-20,floorYp-benchH,r.b-r.a+40,40,scheme.bench.color,'#33372e',1.4,3); eR(PADX+r.a-20,floorYp-benchH,r.b-r.a+40,10,'#ffffff',null,0,0).setAttribute('fill-opacity',0.4); eR(PADX+r.a-20,floorYp-benchH+40,r.b-r.a+40,26,'#000000',null,0,0).setAttribute('fill-opacity',0.12); });
+    { // vertical dimension string at the right of the run: floor, bench, underside and tops of everything on the wall
+      const runEnd=PADX+Math.max(...wll.items.map(c=>along(c)+c.width-aMin));
+      const lv=new Set([0]); if(wll.items.some(c=>TYPES[c.type].bench)) lv.add(benchH);
+      wll.items.forEach(c=>{ const b=cabBand(c); if(TYPES[c.type].mount!=='floor'||b[1]>benchH+50) lv.add(b[1]); if(b[0]>0) lv.add(b[0]); });
+      const L=[...lv].filter(v=>v>=0).sort((a,b)=>a-b); const dx=runEnd+230;
+      if(L.length>1){ eL(dx,floorYp-L[L.length-1],dx,floorYp,'#2f3a2a',3,0.9);
+        L.forEach(v=>eL(dx-40,floorYp-v,dx+40,floorYp-v,'#2f3a2a',3,0.9));
+        for(let i=1;i<L.length;i++){ const d=L[i]-L[i-1]; if(d<40) continue; const t=document.createElementNS(SVGNS,'text'); t.setAttribute('fill','#2f3a2a'); t.setAttribute('font-size',54); t.setAttribute('font-weight',700); t.setAttribute('text-anchor','middle'); t.setAttribute('font-family','Helvetica,Arial,sans-serif'); t.setAttribute('transform','translate('+(dx+70)+','+(floorYp-(L[i]+L[i-1])/2)+') rotate(-90)'); t.textContent=d; E.appendChild(t); }
+        const t2=document.createElementNS(SVGNS,'text'); t2.setAttribute('fill','#6a7361'); t2.setAttribute('font-size',48); t2.setAttribute('font-weight',600); t2.setAttribute('text-anchor','middle'); t2.setAttribute('font-family','Helvetica,Arial,sans-serif'); t2.setAttribute('transform','translate('+(dx+150)+','+(floorYp-L[L.length-1]/2)+') rotate(-90)'); t2.textContent='OVERALL '+L[L.length-1]; E.appendChild(t2); }
+    }
     eL(PADX-40,floorYp,11700,floorYp,'#566b4b',8);
     eT(PADX-40,floorYp+86,'FLOOR','#566b4b',56,700,'start');
     if(wi===0){ eL(10500,floorYp+60,11500,floorYp+60,'#566b4b',5); eL(10500,floorYp+42,10500,floorYp+78,'#566b4b',5); eL(11500,floorYp+42,11500,floorYp+78,'#566b4b',5); eT(11000,floorYp+120,'1 metre','#566b4b',52,600,'middle'); }
@@ -1510,6 +1522,25 @@ function updateSubtotal(){
     el.innerHTML='Cabinetry cost <b>'+money(b.cost)+'</b>'+(b.unpriced?' <span style="color:#b3392a;">('+b.unpriced+' piece'+(b.unpriced>1?'s':'')+' with no price set)</span>':'')+'<br>Cabinetry sell (+'+(+PRICES.margin||0)+'%) <b>'+money(b.cabSell)+'</b><br>'+stoneLabel+': '+b.m2.toFixed(2)+' m\u00b2 \u00d7 '+money(b.rate)+' = '+money(b.stoneCost)+' \u2192 sell <b>'+money(b.stoneSell)+'</b><br>Freight (absorbed) <b>'+money(b.freight)+'</b><br><span style="font-size:15px;">Ballpark <b>'+money(b.total)+'</b> '+(PRICES.gst?'inc GST':'ex GST')+'</span>'+(PRICES.gst?' <span style="color:#6a7361;">('+money(b.ex)+' ex)</span>':''); }
   saveState();
 }
+/* quote lines in the column layout of Xero's sales invoice CSV import (Business → Invoices → Import) */
+function xeroLines(){
+  syncRoom(); const b=priceBreakdown(); const mg=1+(+PRICES.margin||0)/100; const L=[];
+  rooms.forEach(r=>{ const list=r.cabs||[]; if(!list.length) return; let cost=0; list.forEach(c=>{ const pc=pieceCost(c); if(pc) cost+=pc.cost; });
+    const fin=(scheme.door&&scheme.door.name)||''; L.push(['Cabinetry — '+(r.name||'Room')+': '+list.length+' piece'+(list.length>1?'s':'')+(fin?', '+fin+' '+scheme.profile:'')+' (supply only, as per plan)',Math.round(cost*mg*100)/100]); });
+  if(b.m2>0&&b.rate>0){ const lbl=PRICES.stoneSel==='0'?'Laminate benchtop':(PRICES.stoneSel==='2'?'Stone benchtop (one step up)':'Stone benchtop (builder\'s range)'); L.push([lbl+' — '+b.m2.toFixed(2)+' m² '+(scheme.bench.name||''),Math.round(b.stoneSell*100)/100]); }
+  if(b.freight>0) L.push(['Delivery / freight',Math.round(b.freight*100)/100]);
+  return L;
+}
+document.getElementById('xeroCsv').onclick=()=>{
+  const lines=xeroLines(); if(!lines.length){ alert('Nothing to export yet: add cabinets and set prices in the price table first.'); return; }
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const d=new Date(), due=new Date(d.getTime()+14*864e5); const f=x=>String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'/'+x.getFullYear();
+  const head=['*ContactName','EmailAddress','POAddressLine1','POAddressLine2','POAddressLine3','POAddressLine4','POCity','PORegion','POPostalCode','POCountry','*InvoiceNumber','Reference','*InvoiceDate','*DueDate','InventoryItemCode','*Description','*Quantity','*UnitAmount','Discount','*AccountCode','*TaxType','TrackingName1','TrackingOption1','TrackingName2','TrackingOption2','Currency','BrandingTheme'];
+  const inv=(tbv('tbJob')||'QUOTE-'+f(d).replace(/\//g,'')); const cust=tbv('tbCust')||'Customer';
+  const rows=lines.map(([desc,amt])=>[cust,'',tbv('tbAddr'),'','','','','','','',inv,'Kitchen quote',f(d),f(due),'',desc,1,amt.toFixed(2),'','200','GST on Income','','','','','AUD','']);
+  const csv=[head,...rows].map(r=>r.map(q).join(',')).join('\r\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.download=safeName(inv)+'-xero.csv'; a.href=URL.createObjectURL(blob); a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+};
 document.getElementById('useSub').onclick=()=>{
   const b=priceBreakdown(); document.getElementById('tbTotal').value=money(Math.round(b.total/10)*10)+(PRICES.gst?' inc GST':' ex GST'); render();
 };
@@ -1865,7 +1896,7 @@ function start3D(){
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
     renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
     renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    scene=new THREE.Scene(); scene.background=new THREE.Color(0xe4e7df);
+    scene=new THREE.Scene(); scene.background=backdropTexture();
     camera=new THREE.PerspectiveCamera(42,w/h,0.1,200);
     scene.add(new THREE.HemisphereLight(0xffffff,0xb5bfa8,0.55));
     scene.add(new THREE.AmbientLight(0xffffff,0.18));
@@ -1916,7 +1947,32 @@ function stoneTexture(hex){ const key='s'+hex; if(TEX3[key]) return TEX3[key]; c
   const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2); t.encoding=THREE.sRGBEncoding; TEX3[key]=t; return t; }
 /* door and carcass finishes: satin poly with a clear coat, or textured woodgrain */
 function frontMat(hex,k){ const col=k?hexShade(hex,k):hex; if(isWoodgrain(hex)){ return new THREE.MeshStandardMaterial({map:woodTexture(hex),color:new THREE.Color(k?hexShade('#ffffff',k):'#ffffff'),roughness:0.62,metalness:0.02}); } return new THREE.MeshPhysicalMaterial({color:new THREE.Color(col),roughness:0.42,metalness:0.02,clearcoat:0.35,clearcoatRoughness:0.35}); }
+/* studio backdrop: darker sage at the top fading to a soft warm grey at the horizon, so white kitchens read as white */
+function backdropTexture(){ if(TEX3.bg) return TEX3.bg; const cv=document.createElement('canvas'); cv.width=4; cv.height=512; const ctx=cv.getContext('2d'); const g=ctx.createLinearGradient(0,0,0,512); g.addColorStop(0,'#5f6b5e'); g.addColorStop(0.55,'#8d978a'); g.addColorStop(1,'#b9bdb2'); ctx.fillStyle=g; ctx.fillRect(0,0,4,512); const t=new THREE.CanvasTexture(cv); t.encoding=THREE.sRGBEncoding; TEX3.bg=t; return t; }
+/* timber floorboards: 1.2 m x 0.15 m boards, staggered, warm oak */
+function floorTexture(){ if(TEX3.floor) return TEX3.floor; const cv=document.createElement('canvas'); cv.width=1024; cv.height=1024; const ctx=cv.getContext('2d'); const base=new THREE.Color('#b08a62');
+  const BW=128, BL=1024/1.5; ctx.fillStyle='#b08a62'; ctx.fillRect(0,0,1024,1024);
+  for(let row=0;row<8;row++){ const off=(row%2)*BL/2; for(let i=-1;i<3;i++){ const x=i*BL+off, y=row*BW; const k=0.86+Math.random()*0.26; ctx.fillStyle=rgba(base.clone().multiplyScalar(k),1); ctx.fillRect(x,y,BL,BW);
+      for(let j=0;j<18;j++){ ctx.fillStyle=rgba(base.clone().multiplyScalar(k*(0.88+Math.random()*0.24)),0.35); ctx.fillRect(x,y+Math.random()*BW,BL,1+Math.random()*2); }
+      ctx.strokeStyle='rgba(60,40,25,0.55)'; ctx.lineWidth=2; ctx.strokeRect(x+1,y+1,BL-2,BW-2); } }
+  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.encoding=THREE.sRGBEncoding; t.anisotropy=8; TEX3.floor=t; return t; }
 function benchMat(){ const hex=scheme.bench.color; const stone=!/oak|walnut|timber|wood/i.test(scheme.bench.name||''); return stone?new THREE.MeshPhysicalMaterial({map:stoneTexture(hex),color:new THREE.Color('#ffffff'),roughness:0.22,metalness:0.02,clearcoat:0.6,clearcoatRoughness:0.2}):new THREE.MeshStandardMaterial({map:woodTexture(hex),roughness:0.5}); }
+/* an undermount sink bowl cut into the benchtop, with a mixer tap on the wall side */
+function sink3D(c,f,top,px,pz,rot){
+  const fw=f.w/1000, fd=f.h/1000, horiz=(rot===0||rot===180);
+  const bw=Math.min(horiz?fw:fd,0.86)*0.72, bd=Math.min(horiz?fd:fw,0.6)*0.68; // bowl width along the front, depth toward the wall
+  const gx=horiz?bw:bd, gz=horiz?bd:bw;
+  const ss=mat3(0xc9ced3,0.28,{metalness:0.85}), dark=mat3(0x6d7276,0.45,{metalness:0.7});
+  const opening=new THREE.BoxGeometry(gx,0.004,gz); addMesh(opening,dark,px,top+0.002,pz,false);
+  const bowl=new THREE.BoxGeometry(gx-0.02,0.17,gz-0.02); addMesh(bowl,ss,px,top-0.09,pz,false);
+  const rim=new THREE.BoxGeometry(gx+0.03,0.003,gz+0.03); addMesh(rim,ss,px,top+0.0015,pz,false);
+  // tap: back edge (wall side) of the cabinet
+  const back=[[0,-1],[1,0],[0,1],[-1,0]][rot/90]||[0,-1]; const setback=(horiz?fd:fw)/2-0.07;
+  const tx=px+back[0]*setback, tz=pz+back[1]*setback;
+  const post=new THREE.CylinderGeometry(0.014,0.016,0.30,16); addMesh(post,ss,tx,top+0.15,tz);
+  const arm=horiz?new THREE.BoxGeometry(0.024,0.02,0.20):new THREE.BoxGeometry(0.20,0.02,0.024);
+  addMesh(arm,ss,tx-back[0]*0.09,top+0.30,tz-back[1]*0.09);
+}
 /* runs of floor-standing bench units that share one benchtop */
 function benchRuns3D(){ const items=cabs.filter(c=>TYPES[c.type].bench&&cabBand(c)[0]===0); const used=new Set(), runs=[];
   items.forEach(c=>{ if(used.has(c.id)) return; const rot=((c.rot||0)%360+360)%360, horiz=(rot===0||rot===180); const run={rot,items:[c]}; used.add(c.id); let grew=true;
@@ -1939,13 +1995,13 @@ function rebuild3D(){
   const span=Math.max((maxX-minX),(maxZ-minZ))/1000; orbit.r=Math.max(5.5,span*1.6);
   const key=scene.userData.key; if(key){ key.position.set(center.x+7,11,center.z+8); key.target.position.set(center.x,0.8,center.z); key.target.updateMatrixWorld(); }
   // floor + soft grid
-  const fg=addMesh(new THREE.PlaneGeometry(span+8,span+8),mat3(0xd6dacd,0.95),center.x,0,center.z,false); fg.rotation.x=-Math.PI/2; fg.castShadow=false;
-  const grid=new THREE.GridHelper(span+8,Math.max(2,Math.round(span+8)*2),0xbfc8b4,0xcfd6c6); grid.material.transparent=true; grid.material.opacity=0.55; grid.position.set(center.x,0.003,center.z); grid.userData.dyn=true; scene.add(grid);
+  const ft=floorTexture(); ft.repeat.set((span+8)/1.5,(span+8)/1.5);
+  const fg=addMesh(new THREE.PlaneGeometry(span+8,span+8),new THREE.MeshStandardMaterial({map:ft,roughness:0.55,metalness:0.02}),center.x,0,center.z,false); fg.rotation.x=-Math.PI/2; fg.castShadow=false;
   // walls drawn on the plan
   const ceilH=(parseInt(tbv('tbCeiling'))||2400)/1000;
   walls.forEach(w=>{ const len=wallLen(w)/1000; if(len<=0) return; const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1);
     const geo=new THREE.BoxGeometry(horiz?len:0.09,ceilH,horiz?0.09:len); const mx=(w.x1+w.x2)/2000, mz=(w.y1+w.y2)/2000;
-    addMesh(geo,mat3(0xeceee7,0.92),mx,ceilH/2,mz); addEdges(geo,mx,ceilH/2,mz,0.18); });
+    addMesh(geo,mat3(0xd6d2c8,0.92),mx,ceilH/2,mz); addEdges(geo,mx,ceilH/2,mz,0.18); });
   cabs.forEach(c=>{
     const f=footprint(c),t=TYPES[c.type];
     const band=cabBand(c), by=band[0]/1000, top=band[1]/1000, hh=top-by;
@@ -1997,14 +2053,15 @@ function addFrontDetail3D(c,f,by,hh,px,pz,front,rot){
     else if(c.type==='oven'){ panel(0,1,0,1,T,g); panel(0.1,0.9,0.15,0.75,0.004,dark,T); handle(0.5,0.86,true); }
     else if(c.type==='dishwasher'){ panel(0,1,0,1,T,g); panel(0.05,0.95,0.85,0.95,0.004,dark,T); handle(0.5,0.78,true); }
     else if(c.type==='microwave'){ panel(0,1,0,1,T,g); panel(0.08,0.62,0.15,0.85,0.004,dark,T); }
-    else if(c.type==='rangehood'){ panel(0,1,0,1,T,mat3(0xc9cdd2,0.3,{metalness:0.6})); }
-    else if(c.type==='cooktop'){ door(0,1,0,1); [[0.25,0.3],[0.75,0.3],[0.25,0.7],[0.75,0.7]].forEach(([u,v])=>{ const r=Math.min(fw,fd)*0.16; const ring=new THREE.Mesh(new THREE.TorusGeometry(r,0.006,8,32),mat3(0x2b2f33,0.4,{metalness:0.5})); ring.rotation.x=-Math.PI/2; ring.position.set(px+(u-0.5)*fw,by+hh+0.026,pz+(v-0.5)*fd); ring.userData.dyn=true; scene.add(ring); }); }
+    else if(c.type==='rangehood'){ const ss=mat3(0xc9cdd2,0.3,{metalness:0.6}); panel(0,1,0,1,T,ss); const ceil=(parseInt(tbv('tbCeiling'))||2400)/1000; const ch=ceil-(by+hh); if(ch>0.05){ const cg=new THREE.BoxGeometry(rot===0||rot===180?0.3:Math.min(fw,0.3),ch,rot===0||rot===180?Math.min(fd,0.3):0.3); const back=[0,-1,0,1][rot/90]; const bx=px+(rot===90?fw/2-0.15:rot===270?-(fw/2-0.15):0), bz=pz+(rot===0?-(fd/2-0.15):rot===180?(fd/2-0.15):0); addMesh(cg,ss,bx,by+hh+ch/2,bz); addEdges(cg,bx,by+hh+ch/2,bz,0.3); } }
+    else if(c.type==='cooktop'){ door(0,1,0,1); handle(0.5,0.55,true); const gg=new THREE.BoxGeometry(fw*0.9,0.006,fd*0.78); addMesh(gg,new THREE.MeshPhysicalMaterial({color:new THREE.Color(0x15171a),roughness:0.15,metalness:0.1,clearcoat:1,clearcoatRoughness:0.05}),px,by+hh+0.003,pz); addEdges(gg,px,by+hh+0.003,pz,0.4); const gas=STD.cooktop==='gas'; [[0.27,0.3],[0.73,0.3],[0.27,0.7],[0.73,0.7]].forEach(([u,v])=>{ const r=Math.min(fw,fd)*0.15; const ring=new THREE.Mesh(gas?new THREE.TorusGeometry(r,0.008,8,32):new THREE.RingGeometry(r-0.004,r,32),mat3(gas?0x2b2f33:0x555a5f,0.4,{metalness:0.5,side:THREE.DoubleSide})); ring.rotation.x=-Math.PI/2; ring.position.set(px+(u-0.5)*fw,by+hh+0.007+(gas?0.006:0),pz+(v-0.5)*fd); ring.userData.dyn=true; scene.add(ring); if(gas){ const tr=new THREE.Mesh(new THREE.CylinderGeometry(r*0.55,r*0.55,0.012,16),mat3(0x1e2124,0.5)); tr.position.set(px+(u-0.5)*fw,by+hh+0.012,pz+(v-0.5)*fd); tr.userData.dyn=true; scene.add(tr); } }); }
     else door(0,1,0,1);
     return; }
   if(ft==='none'||ft==='open'){ if(ft==='open'){ const n=Math.max(1,Math.round(hh/0.35)); for(let i=1;i<n;i++) panel(0.02,0.98,i/n-0.009/hh,i/n+0.009/hh,fd*0.9,mat3(frameCol,0.6),-fd*0.9); } return; }
   if(ft==='stack'){ const hs=stackHeights(c,hh*1000); let v=0; hs.forEach((sh,i)=>{ const dv=sh/(hh*1000); const kind=(c.stack||[])[i]||''; if(/micro|oven/.test(kind)){ panel(0,1,v,v+dv,T,mat3(0xd2d6db,0.4,{metalness:0.35})); panel(0.1,0.9,v+dv*0.2,v+dv*0.8,0.004,mat3(0x2b2f33,0.25,{metalness:0.5}),T); } else { door(0,1,v,v+dv); handle(0.5,v+dv/2,true); } v+=dv; }); return; }
   if(ft==='winerack'){ door(0,1,0,1); for(let i=0;i<4;i++){ const u=(i+0.5)/4; panel(u-0.004/span,u+0.004/span,0.05,0.95,0.03,mat3(0x6b5d52,0.7),T); } return; }
   if(ft==='bin'){ door(0,1,0,1); handle(0.5,0.9,true); return; }
+  if(t.sym==='sink'){ sink3D(c,f,by+hh,px,pz,rot); }
   if(isDoorFront(ft)){ const glass=ft!=='doors'&&ft!=='pocket'; const hg=c.hinge||(c.width>600?'D':'L');
     if(hg==='D'){ door(0,0.5,0,1,glass); door(0.5,1,0,1,glass); handle(0.46,0.55,false); handle(0.54,0.55,false); }
     else if(hg==='L'){ door(0,1,0,1,glass); handle(0.88,0.55,false); }
