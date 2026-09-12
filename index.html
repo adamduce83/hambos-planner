@@ -571,38 +571,38 @@ const LABEL_PRESETS=['TOP DRAW','D/W','BIN DRAW','WINE RACK','ON-BENCH PANTRY','
 // Hex values are approximations from photos of the samples; check against the real boards.
 const DOORS = [
   // SKB Poly colours (painted)
-  {group:'SKB poly colours', name:'White',                   color:'#f6f6f2'},
-  {group:'SKB poly colours', name:'Vivid White',             color:'#fafaf7'},
-  {group:'SKB poly colours', name:'Lexicon Half',            color:'#f0f1ec'},
-  {group:'SKB poly colours', name:'Natural White',           color:'#efede4'},
-  {group:'SKB poly colours', name:'Pearly White 7009',       color:'#e9e4d8'},
-  {group:'SKB poly colours', name:'Canvas Tan 7531',         color:'#e8ddc3'},
-  {group:'SKB poly colours', name:'Wombat Forest',           color:'#e2e3d6'},
-  {group:'SKB poly colours', name:'Intellectual Gray 7045',  color:'#c2c0ad'},
-  {group:'SKB poly colours', name:'Black of Night 6993',     color:'#35383c'},
-  {group:'SKB poly colours', name:'Black',                   color:'#1e1e1e'},
-  {group:'SKB poly colours', name:'Rockwood Blue Green 2811',color:'#8ca898'},
-  {group:'SKB poly colours', name:'Moorland',                color:'#c6cbae'},
-  {group:'SKB poly colours', name:'Attitude Gray 7060',      color:'#a3a99c'},
-  {group:'SKB poly colours', name:'Acacia Haze 9132',        color:'#a8b6a0'},
-  {group:'SKB poly colours', name:'Dried Thyme 6186',        color:'#8fa088'},
-  {group:'SKB poly colours', name:'Uncertain Gray 6234',     color:'#c6cdd0'},
-  {group:'SKB poly colours', name:'Serious Gray 6256',       color:'#9ea9b5'},
-  {group:'SKB poly colours', name:'Gibraltar 6257',          color:'#72808d'},
-  {group:'SKB poly colours', name:'Mount Etna 7625',         color:'#3e4c57'},
+  {group:'SKB poly colours', name:'White',                   color:'#f7f7f4'},
+  {group:'SKB poly colours', name:'Vivid White',             color:'#fbfbf9'},
+  {group:'SKB poly colours', name:'Lexicon Half',            color:'#f2f2ed'},
+  {group:'SKB poly colours', name:'Natural White',           color:'#f1eee5'},
+  {group:'SKB poly colours', name:'Pearly White 7009',       color:'#ebe6d8'},
+  {group:'SKB poly colours', name:'Canvas Tan 7531',         color:'#e7dcbf'},
+  {group:'SKB poly colours', name:'Wombat Forest',           color:'#e3e4d8'},
+  {group:'SKB poly colours', name:'Intellectual Gray 7045',  color:'#c3c1ac'},
+  {group:'SKB poly colours', name:'Black of Night 6993',     color:'#34373b'},
+  {group:'SKB poly colours', name:'Black',                   color:'#1c1c1c'},
+  {group:'SKB poly colours', name:'Rockwood Blue Green 2811',color:'#8ea997'},
+  {group:'SKB poly colours', name:'Moorland',                color:'#c9ceac'},
+  {group:'SKB poly colours', name:'Attitude Gray 7060',      color:'#a2a798'},
+  {group:'SKB poly colours', name:'Acacia Haze 9132',        color:'#a6b59f'},
+  {group:'SKB poly colours', name:'Dried Thyme 6186',        color:'#8da089'},
+  {group:'SKB poly colours', name:'Uncertain Gray 6234',     color:'#c8d0d4'},
+  {group:'SKB poly colours', name:'Serious Gray 6256',       color:'#9daab7'},
+  {group:'SKB poly colours', name:'Gibraltar 6257',          color:'#70808e'},
+  {group:'SKB poly colours', name:'Mount Etna 7625',         color:'#3d4c58'},
   // SKB Decorative doors (woodgrain, 18 mm)
-  {group:'SKB woodgrain', name:'Clear Oak',        color:'#d9a96a'},
-  {group:'SKB woodgrain', name:'Black Oak',        color:'#3a3634'},
-  {group:'SKB woodgrain', name:'Bronzed Oak',      color:'#6b5d52'},
-  {group:'SKB woodgrain', name:'Light Teak',       color:'#ddc49c'},
-  {group:'SKB woodgrain', name:'Clear Walnut',     color:'#d6a067'},
-  {group:'SKB woodgrain', name:'Nordic Oak',       color:'#d8b07e'},
-  {group:'SKB woodgrain', name:'Maryland Walnut',  color:'#a8826a'},
-  {group:'SKB woodgrain', name:'Letsch Wood',      color:'#8e8a82'},
-  {group:'SKB woodgrain', name:'Bronzed Walnut',   color:'#5a4a42'},
-  {group:'SKB woodgrain', name:'Chalky Milan',     color:'#d2cdc4'},
-  {group:'SKB woodgrain', name:'Pure Oak',         color:'#e0b872'},
-  {group:'SKB woodgrain', name:'Cafe Oak',         color:'#5e5650'},
+  {group:'SKB woodgrain', name:'Clear Oak',        color:'#d8a866'},
+  {group:'SKB woodgrain', name:'Black Oak',        color:'#383533'},
+  {group:'SKB woodgrain', name:'Bronzed Oak',      color:'#6a5c50'},
+  {group:'SKB woodgrain', name:'Light Teak',       color:'#dcc39b'},
+  {group:'SKB woodgrain', name:'Clear Walnut',     color:'#d49c62'},
+  {group:'SKB woodgrain', name:'Nordic Oak',       color:'#d6ad7a'},
+  {group:'SKB woodgrain', name:'Maryland Walnut',  color:'#a67f66'},
+  {group:'SKB woodgrain', name:'Letsch Wood',      color:'#8c8880'},
+  {group:'SKB woodgrain', name:'Bronzed Walnut',   color:'#574740'},
+  {group:'SKB woodgrain', name:'Chalky Milan',     color:'#d0cbc2'},
+  {group:'SKB woodgrain', name:'Pure Oak',         color:'#ddb56c'},
+  {group:'SKB woodgrain', name:'Cafe Oak',         color:'#5c544e'},
 ];
 const BENCH = [
   {name:'White Stone',     color:'#eef0ed'},
@@ -669,6 +669,21 @@ function blindSplit(c){ const w=c.width, door=w>900?600:Math.round(w/2); return 
 function lum(hex){const c=hex.replace('#','');return 0.2126*parseInt(c.substr(0,2),16)/255+0.7152*parseInt(c.substr(2,2),16)/255+0.0722*parseInt(c.substr(4,2),16)/255;}
 function textOn(hex){return lum(hex)>0.55?'#23241f':'#f7f7f4';}
 function doorColor(c){return (c.door&&c.door.color)||scheme.door.color;}
+function hexShade(hex,k){ const n=parseInt(String(hex).slice(1),16); const ch=v=>Math.max(0,Math.min(255,Math.round(v*k))); const r=ch((n>>16)&255),g=ch((n>>8)&255),b=ch(n&255); return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
+function isWoodgrain(hex){ const d=DOORS.find(x=>x.color.toLowerCase()===String(hex).toLowerCase()); return !!(d&&/woodgrain/i.test(d.group||'')); }
+function ensureDefs(svgEl){ let d=svgEl.querySelector('defs'); if(!d){ d=document.createElementNS(SVGNS,'defs'); svgEl.insertBefore(d,svgEl.firstChild); } return d; }
+/* a woodgrain fill for the 2D sheets: the swatch colour with fine grain lines in lighter and darker tones */
+function grainFill(svgEl,hex,vertical){
+  if(!isWoodgrain(hex)) return hex;
+  const id=(svgEl.id||'svg')+'-wg-'+String(hex).slice(1)+(vertical?'v':'h'); const d=ensureDefs(svgEl); // ids are per-svg: a url(#…) resolves document-wide, and a pattern inside a hidden svg does not paint
+  if(!d.querySelector('#'+id)){
+    const p=document.createElementNS(SVGNS,'pattern'); p.setAttribute('id',id); p.setAttribute('patternUnits','userSpaceOnUse'); p.setAttribute('width',vertical?72:600); p.setAttribute('height',vertical?600:72);
+    const base=document.createElementNS(SVGNS,'rect'); base.setAttribute('width',vertical?72:600); base.setAttribute('height',vertical?600:72); base.setAttribute('fill',hex); p.appendChild(base);
+    [[0,0.9,3],[9,1.07,2],[17,0.95,4],[28,0.86,2],[36,1.05,3],[47,0.92,2],[56,0.88,3],[64,1.04,2]].forEach(([o,k,w])=>{ const l=document.createElementNS(SVGNS,'rect'); if(vertical){ l.setAttribute('x',o); l.setAttribute('y',0); l.setAttribute('width',w); l.setAttribute('height',600); } else { l.setAttribute('y',o); l.setAttribute('x',0); l.setAttribute('height',w); l.setAttribute('width',600); } l.setAttribute('fill',hexShade(hex,k)); l.setAttribute('fill-opacity',0.6); p.appendChild(l); });
+    d.appendChild(p);
+  }
+  return 'url(#'+id+')';
+}
 
 /* ---------- palette UI ---------- */
 function catOf(t){ if(t.appliance)return 'appl'; if(t.thin||t.window||t.sym==='shelves')return 'struct'; return 'cab'; }
@@ -924,7 +939,7 @@ function drawCab(c){
   if(padMM>0){ const hit=document.createElementNS(SVGNS,'rect'); hit.setAttribute('x',-padMM); hit.setAttribute('y',-padMM); hit.setAttribute('width',f.w+2*padMM); hit.setAttribute('height',f.h+2*padMM); hit.setAttribute('fill','none'); hit.style.pointerEvents='all'; g.appendChild(hit); }
   const r=document.createElementNS(SVGNS,'rect');
   r.setAttribute('width',f.w); r.setAttribute('height',f.h); r.setAttribute('rx',t.thin?2:8);
-  r.setAttribute('fill',fill);
+  r.setAttribute('fill',(t.appliance||t.window||t.benchOnly)?fill:grainFill(svg,fill,true));
   const ov=OVERLAP.has(c.id);
   r.setAttribute('stroke',ov?'#d0342c':(c.id===selId?'#c9614b':'#33372e'));
   r.setAttribute('stroke-width',ov||c.id===selId?3:1.5);
@@ -1176,19 +1191,19 @@ function elevWalls(){
 }
 function drawElevCab(c,xLeft,floorYp){
   const t=TYPES[c.type], w=c.width, bd=cabBand(c), hh=bd[1]-bd[0];
-  const fill=t.appliance?'#e6e9ec':(t.window?'#eef4f7':doorColor(c)), tc=textOn(fill);
+  const fill=t.appliance?'#d9dde2':(t.window?'#eef4f7':doorColor(c)), tc=textOn(fill);
   const y=floorYp-bd[1];
-  if(t.benchOnly){
-    eR(xLeft-15,y,w+30,45,scheme.bench.color,'#33372e',1.2,3);
-    eT(xLeft+w/2,y+hh/2,(c.label||t.code),'#6a7361',48,600,'middle'); return;
-  }
+  const gf=(t.appliance||t.window)?fill:grainFill(E,fill,true);
+  if(t.benchOnly){ eT(xLeft+w/2,y+hh/2,(c.label||t.code),'#6a7361',48,600,'middle'); return; } // the bench slab is drawn per run
   if(t.bench){
-    eR(xLeft,y+45,w,hh-45,fill,'#33372e',1.5,6);
-    eR(xLeft-15,y,w+30,45,scheme.bench.color,'#33372e',1.2,3);
-    eDetail(xLeft,y+45,w,hh-45,c,tc);
-    if(bd[0]===0&&STD.kick>0&&STD.kick<hh-45) eR(xLeft+10,floorYp-STD.kick,w-20,STD.kick,'#2f3a2a',null,0,0); // kickboard
+    eR(xLeft,y+40,w,hh-40,gf,'#33372e',1.5,6);
+    eR(xLeft+3,y+40,w-6,50,'#ffffff',null,0,0).setAttribute('fill-opacity',0.16); // light catching the top of the fronts
+    eDetail(xLeft,y+40,w,hh-40,c,tc);
+    if(bd[0]===0&&STD.kick>0&&STD.kick<hh-40){ eR(xLeft+10,floorYp-STD.kick,w-20,STD.kick,'#2a2c2a',null,0,0); eR(xLeft+10,floorYp-STD.kick,w-20,14,'#000000',null,0,0).setAttribute('fill-opacity',0.35); } // kickboard, in shadow
   } else {
-    eR(xLeft,y,w,hh,fill,'#33372e',t.thin?1.2:1.5,t.thin?2:6);
+    if(t.mount==='wall'&&!t.thin){ eR(xLeft-6,y+hh,w+12,90,'#000000',null,0,0).setAttribute('fill-opacity',0.10); } // shadow under overheads
+    eR(xLeft,y,w,hh,gf,'#33372e',t.thin?1.2:1.5,t.thin?2:6);
+    if(!t.thin&&!t.appliance) eR(xLeft+3,y,w-6,50,'#ffffff',null,0,0).setAttribute('fill-opacity',0.16);
     eDetail(xLeft,y,w,hh,c,tc);
   }
   if(!t.thin){
@@ -1223,6 +1238,10 @@ function renderElev(){
     const along=c=>{const r=((c.rot||0)%360+360)%360; return (r===0||r===180)?c.x:c.y;};
     const aMin=Math.min(...wll.items.map(along));
     wll.items.forEach(c=>drawElevCab(c,PADX+(along(c)-aMin),floorYp));
+    // one continuous benchtop per run of floor-standing bench units (20 mm overhang at the ends)
+    const benchItems=wll.items.filter(c=>TYPES[c.type].bench&&cabBand(c)[0]===0).sort((a,b)=>along(a)-along(b));
+    const bruns=[]; benchItems.forEach(c=>{ const a=along(c)-aMin, b=a+c.width; const last=bruns[bruns.length-1]; if(last&&a<=last.b+60) last.b=Math.max(last.b,b); else bruns.push({a,b}); });
+    bruns.forEach(r=>{ eR(PADX+r.a-20,floorYp-benchH,r.b-r.a+40,40,scheme.bench.color,'#33372e',1.4,3); eR(PADX+r.a-20,floorYp-benchH,r.b-r.a+40,10,'#ffffff',null,0,0).setAttribute('fill-opacity',0.4); eR(PADX+r.a-20,floorYp-benchH+40,r.b-r.a+40,26,'#000000',null,0,0).setAttribute('fill-opacity',0.12); });
     eL(PADX-40,floorYp,11700,floorYp,'#566b4b',8);
     eT(PADX-40,floorYp+86,'FLOOR','#566b4b',56,700,'start');
     if(wi===0){ eL(10500,floorYp+60,11500,floorYp+60,'#566b4b',5); eL(10500,floorYp+42,10500,floorYp+78,'#566b4b',5); eL(11500,floorYp+42,11500,floorYp+78,'#566b4b',5); eT(11000,floorYp+120,'1 metre','#566b4b',52,600,'middle'); }
@@ -1242,9 +1261,9 @@ function eDetail(x,y,w,h,c,tc){
   if(t.thin){ for(let o=-h;o<w;o+=Math.max(40,h/3)){ eL(x+Math.max(0,o),y+Math.max(0,-o),x+Math.min(w,o+h),y+Math.min(h,w-o),tc,1.1,0.4);} return; }
   if(t.sym==='shelves'){ const n=Math.max(1,Math.round(h/300)); for(let i=1;i<=n;i++)eL(x,y+h*i/(n+1),x+w,y+h*i/(n+1),tc,2,0.6); return; }
   if(t.sym==='fridge'){ if(w>700) eL(x+w/2,y+10,x+w/2,y+h-10,tc,1.8,0.6); else eL(x+w-90,y+h*0.18,x+w-90,y+h*0.42,tc,3,0.7); eL(x+10,y+h*0.62,x+w-10,y+h*0.62,tc,1.4,0.4); return; } // fridge/freezer split
-  if(t.sym==='oven'){ eR(x+w*0.12,y+h*0.26,w*0.76,h*0.6,4,1.8); eL(x+w*0.12,y+h*0.16,x+w*0.88,y+h*0.16,tc,2,0.6); eL(x+w*0.4,y+h*0.5,x+w*0.6,y+h*0.5,tc,2.4,0.7); return; }
-  if(t.sym==='dishwasher'){ eL(x+10,y+h*0.2,x+w-10,y+h*0.2,tc,2,0.6); eL(x+w*0.4,y+h*0.1,x+w*0.6,y+h*0.1,tc,2.4,0.7); return; }
-  if(t.sym==='microwave'){ eR(x+w*0.14,y+h*0.2,w*0.56,h*0.6,4,1.8); eL(x+w*0.78,y+h*0.3,x+w*0.78,y+h*0.7,tc,2.6,0.7); return; }
+  if(t.sym==='oven'){ eR(x+w*0.12,y+h*0.26,w*0.76,h*0.6,'#2b2f33',tc,1.4,4).setAttribute('fill-opacity',0.85); eL(x+w*0.12,y+h*0.16,x+w*0.88,y+h*0.16,tc,2,0.6); eHandle(x+w*0.3,y+h*0.2,x+w*0.7,y+h*0.2,tc); return; }
+  if(t.sym==='dishwasher'){ eR(x+10,y+h*0.06,w-20,h*0.1,'#2b2f33',null,0,3).setAttribute('fill-opacity',0.8); eL(x+10,y+h*0.2,x+w-10,y+h*0.2,tc,2,0.6); return; }
+  if(t.sym==='microwave'){ eR(x+w*0.14,y+h*0.2,w*0.56,h*0.6,'#2b2f33',tc,1.4,4).setAttribute('fill-opacity',0.85); eL(x+w*0.78,y+h*0.3,x+w*0.78,y+h*0.7,tc,2.6,0.7); return; }
   if(t.sym==='cooktop'){ eL(x+10,y+10,x+w-10,y+10,tc,2.6,0.7); return; } // cooktop edge at bench
   if(t.sym==='sink'){ eL(x+w*0.5,y+10,x+w*0.5,y+h-10,tc,1.4,0.4); return; }
   if(t.appliance) return;
@@ -1255,36 +1274,37 @@ function eGlass(x,y,w,h,kind,tc){ const ins=Math.min(80,w*0.14,h*0.14); const gx
   if(kind==='glassfluted'){ for(let fx=gx+30;fx<gx+gw;fx+=45) eL(fx,gy+6,fx,gy+gh-6,'#5a7a8a',1,0.5); }
   if(kind==='glasscolonial'){ eL(gx+gw/2,gy,gx+gw/2,gy+gh,tc,2.2,0.8); [1/3,2/3].forEach(p=>eL(gx,gy+gh*p,gx+gw,gy+gh*p,tc,2.2,0.8)); } }
 function eSegment(kind,x,y,w,h,c,tc,frame){
-  if(kind==='drawer'||kind==='potdrawer'){ frame(x,y,w,h); eL(x+w*0.38,y+h/2,x+w*0.62,y+h/2,tc,2.4,0.7); }
-  else if(kind==='oven'){ eR(x+w*0.12,y+h*0.26,w*0.76,h*0.6,'none',tc,1.8,4); eL(x+w*0.12,y+h*0.16,x+w*0.88,y+h*0.16,tc,2,0.6); eL(x+w*0.4,y+h*0.5,x+w*0.6,y+h*0.5,tc,2.4,0.7); }
+  if(kind==='drawer'||kind==='potdrawer'){ frame(x,y,w,h); eHandle(x+w*0.38,y+h/2,x+w*0.62,y+h/2,tc); }
+  else if(kind==='oven'){ eR(x+w*0.12,y+h*0.26,w*0.76,h*0.6,'none',tc,1.8,4); eL(x+w*0.12,y+h*0.16,x+w*0.88,y+h*0.16,tc,2,0.6); eHandle(x+w*0.4,y+h*0.5,x+w*0.6,y+h*0.5,tc); }
   else if(kind==='micro'){ eR(x+w*0.14,y+h*0.2,w*0.56,h*0.6,'none',tc,1.8,4); eL(x+w*0.78,y+h*0.3,x+w*0.78,y+h*0.7,tc,2.6,0.7); }
   else if(kind==='open'){ const n=Math.max(1,Math.round(h/300)); for(let i=1;i<=n;i++) eL(x+10,y+h*i/(n+1),x+w-10,y+h*i/(n+1),tc,2,0.6); }
-  else { if(w>600){ eL(x+w/2,y+20,x+w/2,y+h-20,tc,1.6,0.55); frame(x,y,w/2,h); frame(x+w/2,y,w/2,h); eL(x+w/2-100,y+h*0.42,x+w/2-100,y+h*0.58,tc,2.4,0.7); eL(x+w/2+100,y+h*0.42,x+w/2+100,y+h*0.58,tc,2.4,0.7); } else { frame(x,y,w,h); eL(x+w-110,y+h*0.42,x+w-110,y+h*0.58,tc,2.4,0.7); } }
+  else { if(w>600){ eL(x+w/2,y+20,x+w/2,y+h-20,tc,1.6,0.55); frame(x,y,w/2,h); frame(x+w/2,y,w/2,h); eHandle(x+w/2-100,y+h*0.42,x+w/2-100,y+h*0.58,tc); eHandle(x+w/2+100,y+h*0.42,x+w/2+100,y+h*0.58,tc); } else { frame(x,y,w,h); eHandle(x+w-110,y+h*0.42,x+w-110,y+h*0.58,tc); } }
 }
+function eHandle(x1,y1,x2,y2,tc){ if(/finger|j pull/i.test(scheme.profile)){ eL(x1,y1,x2,y2,tc,1.6,0.35); return; } const vert=Math.abs(y2-y1)>Math.abs(x2-x1); const r=eR(vert?x1-7:Math.min(x1,x2),vert?Math.min(y1,y2):y1-7,vert?14:Math.abs(x2-x1),vert?Math.abs(y2-y1):14,'#3b3e3b',null,0,6); r.setAttribute('fill-opacity',0.88); }
 function eFront(x,y,w,h,c,tc){
-  const ft=c.front||'doors', t=TYPES[c.type];
+  const ft=c.front||'doors', t=TYPES[c.type]; const col=doorColor(c);
   const shaker=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
-  const frame=(fx,fy,fw,fh)=>{ if(!shaker)return; const ins=Math.min(70,fw*0.16,fh*0.16); if(fw-2*ins>20&&fh-2*ins>20) eR(fx+ins,fy+ins,fw-2*ins,fh-2*ins,'none',tc,1.3); };
+  const frame=(fx,fy,fw,fh)=>{ if(!shaker)return; const ins=Math.min(70,fw*0.16,fh*0.16); if(fw-2*ins>20&&fh-2*ins>20){ const r=eR(fx+ins,fy+ins,fw-2*ins,fh-2*ins,isWoodgrain(col)?grainFill(E,col,true):hexShade(col,0.93),tc,1.1); r.setAttribute('stroke-opacity',0.55); eL(fx+ins,fy+ins,fx+fw-ins,fy+ins,'#000000',3,0.14); eL(fx+ins,fy+ins,fx+ins,fy+fh-ins,'#000000',3,0.10); eL(fx+ins,fy+fh-ins,fx+fw-ins,fy+fh-ins,'#ffffff',3,0.35); } };
   if(ft==='stack'){ const segs=stackSegs(c), hs=stackHeights(c,h); let yy=y+h; segs.forEach((k,i)=>{ const sh=hs[i]; yy-=sh; if(i>0) eL(x,yy+sh,x+w,yy+sh,tc,1.8,0.6); eSegment(k,x,yy,w,sh,c,tc,frame); }); return; }
   if(ft==='open'){ eR(x+30,y+30,w-60,h-60,'none',tc,1.4); eSegment('open',x,y,w,h,c,tc,frame); return; }
   if(ft==='winerack'){ const st=Math.max(120,Math.min(w,h)/4); for(let o=-h;o<w;o+=st){ eL(x+Math.max(0,o),y+Math.max(0,-o),x+Math.min(w,o+h),y+Math.min(h,w-o),tc,1.2,0.6); eL(x+Math.max(0,o),y+h-Math.max(0,-o),x+Math.min(w,o+h),y+h-Math.min(h,w-o),tc,1.2,0.6); } return; }
-  if(ft==='bin'){ frame(x,y,w,h); eL(x+w*0.38,y+h*0.16,x+w*0.62,y+h*0.16,tc,2.4,0.7); const bx=x+w/2, by=y+h*0.62, bw=Math.min(180,w*0.3), bh=Math.min(220,h*0.34); eL(bx-bw/2,by-bh/2,bx+bw/2,by-bh/2,tc,2,0.7); eL(bx-bw/2+14,by-bh/2,bx-bw/2+30,by+bh/2,tc,2,0.7); eL(bx+bw/2-14,by-bh/2,bx+bw/2-30,by+bh/2,tc,2,0.7); eL(bx-bw/2+30,by+bh/2,bx+bw/2-30,by+bh/2,tc,2,0.7); eT(bx,by+bh/2+60,'BIN',tc,40,700,'middle',0.8); return; }
+  if(ft==='bin'){ frame(x,y,w,h); eHandle(x+w*0.38,y+h*0.16,x+w*0.62,y+h*0.16,tc); const bx=x+w/2, by=y+h*0.62, bw=Math.min(180,w*0.3), bh=Math.min(220,h*0.34); eL(bx-bw/2,by-bh/2,bx+bw/2,by-bh/2,tc,2,0.7); eL(bx-bw/2+14,by-bh/2,bx-bw/2+30,by+bh/2,tc,2,0.7); eL(bx+bw/2-14,by-bh/2,bx+bw/2-30,by+bh/2,tc,2,0.7); eL(bx-bw/2+30,by+bh/2,bx+bw/2-30,by+bh/2,tc,2,0.7); eT(bx,by+bh/2+60,'BIN',tc,40,700,'middle',0.8); return; }
   if(t.blind&&isDoorFront(ft)){ const bs=blindSplit(c); const dx=bs.side==='L'?x+bs.blind:x, hx=bs.side==='L'?x:x+bs.door;
     for(let o=-h;o<bs.blind;o+=Math.max(60,h/8)){ eL(hx+Math.max(0,o),y+Math.max(0,-o),hx+Math.min(bs.blind,o+h),y+Math.min(h,bs.blind-o),tc,1,0.35); }
-    eL(dx,y+10,dx,y+h-10,tc,1.6,0.6); frame(dx,y,bs.door,h); eL(bs.side==='L'?dx+110:dx+bs.door-110,y+h*0.42,bs.side==='L'?dx+110:dx+bs.door-110,y+h*0.58,tc,2.4,0.7); eT(hx+bs.blind/2,y+h/2,'BLIND',tc,44,800,'middle',0.7);
+    eL(dx,y+10,dx,y+h-10,tc,1.6,0.6); frame(dx,y,bs.door,h); eHandle(bs.side==='L'?dx+110:dx+bs.door-110,y+h*0.42,bs.side==='L'?dx+110:dx+bs.door-110,y+h*0.58,tc); eT(hx+bs.blind/2,y+h/2,'BLIND',tc,44,800,'middle',0.7);
     if(ft!=='doors'&&ft!=='pocket') eGlass(dx,y,bs.door,h,ft,tc); return; }
   if(isDoorFront(ft)){
     const hg=c.hinge||(c.width>600?'D':'L');
     if(hg==='D'){ eL(x+w/2,y+20,x+w/2,y+h-20,tc,1.6,0.55);
       frame(x,y,w/2,h); frame(x+w/2,y,w/2,h);
-      eL(x+w/2-100,y+h*0.42,x+w/2-100,y+h*0.58,tc,2.4,0.7); eL(x+w/2+100,y+h*0.42,x+w/2+100,y+h*0.58,tc,2.4,0.7);
-    } else if(hg==='L'){ frame(x,y,w,h); eL(x+w-110,y+h*0.42,x+w-110,y+h*0.58,tc,2.4,0.7); }
-    else { frame(x,y,w,h); eL(x+110,y+h*0.42,x+110,y+h*0.58,tc,2.4,0.7); }
+      eHandle(x+w/2-100,y+h*0.42,x+w/2-100,y+h*0.58,tc); eHandle(x+w/2+100,y+h*0.42,x+w/2+100,y+h*0.58,tc);
+    } else if(hg==='L'){ frame(x,y,w,h); eHandle(x+w-110,y+h*0.42,x+w-110,y+h*0.58,tc); }
+    else { frame(x,y,w,h); eHandle(x+110,y+h*0.42,x+110,y+h*0.58,tc); }
     if(ft.startsWith('glass')){ if(hg==='D'){ eGlass(x,y,w/2,h,ft,tc); eGlass(x+w/2,y,w/2,h,ft,tc); } else eGlass(x,y,w,h,ft,tc); }
     if(ft==='pocket'){ eL(x+26,y+10,x+26,y+h-10,tc,1.4,0.6); eL(x+w-26,y+10,x+w-26,y+h-10,tc,1.4,0.6); eT(x+w/2,y+h*0.9,'POCKET',tc,40,700,'middle',0.7); }
   } else if(ft==='drawers'){
     const rows=drawerRows(c), tot=rows.reduce((a,b)=>a+b,0); let yy=y;
-    rows.forEach((rh,i)=>{ const dh=h*rh/tot; if(i>0) eL(x,yy,x+w,yy,tc,1.6,0.5); frame(x,yy,w,dh); eL(x+w*0.38,yy+dh/2,x+w*0.62,yy+dh/2,tc,2.4,0.7); yy+=dh; });
+    rows.forEach((rh,i)=>{ const dh=h*rh/tot; if(i>0) eL(x,yy,x+w,yy,tc,1.6,0.5); frame(x,yy,w,dh); eHandle(x+w*0.38,yy+dh/2,x+w*0.62,yy+dh/2,tc); yy+=dh; });
   }
 }
 
@@ -1882,6 +1902,29 @@ function wall3DPos(c){
 }
 /* 3D materials: real panels with a little gloss so light and shadow give the fronts shape */
 function mat3(col,rough,extra){ const m=new THREE.MeshStandardMaterial(Object.assign({color:new THREE.Color(col),roughness:rough==null?0.55:rough,metalness:0.03},extra||{})); return m; }
+const TEX3={};
+function rgba(c,a){ return 'rgba('+Math.round(c.r*255)+','+Math.round(c.g*255)+','+Math.round(c.b*255)+','+a+')'; }
+/* procedural woodgrain: the swatch colour with fine streaks and a little wobble, tiled vertically */
+function woodTexture(hex){ if(TEX3[hex]) return TEX3[hex]; const cv=document.createElement('canvas'); cv.width=256; cv.height=1024; const ctx=cv.getContext('2d'); const base=new THREE.Color(hex); ctx.fillStyle=hex; ctx.fillRect(0,0,256,1024);
+  for(let i=0;i<160;i++){ const x=Math.random()*256, w=1+Math.random()*3, k=0.84+Math.random()*0.3; ctx.fillStyle=rgba(base.clone().multiplyScalar(k),0.2+Math.random()*0.35); ctx.fillRect(x,0,w,1024); }
+  for(let i=0;i<26;i++){ const x0=Math.random()*256, amp=3+Math.random()*9, ph=Math.random()*6, k=0.78+Math.random()*0.2; ctx.strokeStyle=rgba(base.clone().multiplyScalar(k),0.3); ctx.lineWidth=1+Math.random()*1.5; ctx.beginPath(); for(let y=0;y<=1024;y+=8){ ctx.lineTo(x0+Math.sin(y/95+ph)*amp,y); } ctx.stroke(); }
+  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.encoding=THREE.sRGBEncoding; t.anisotropy=4; TEX3[hex]=t; return t; }
+/* procedural stone: speckles and a couple of faint veins over the swatch colour */
+function stoneTexture(hex){ const key='s'+hex; if(TEX3[key]) return TEX3[key]; const cv=document.createElement('canvas'); cv.width=512; cv.height=512; const ctx=cv.getContext('2d'); const base=new THREE.Color(hex); ctx.fillStyle=hex; ctx.fillRect(0,0,512,512);
+  for(let i=0;i<2600;i++){ const k=Math.random()<0.5?0.86:1.1; ctx.fillStyle=rgba(base.clone().multiplyScalar(k),0.25+Math.random()*0.4); const r=0.6+Math.random()*1.6; ctx.beginPath(); ctx.arc(Math.random()*512,Math.random()*512,r,0,7); ctx.fill(); }
+  for(let i=0;i<3;i++){ ctx.strokeStyle=rgba(base.clone().multiplyScalar(0.9),0.25); ctx.lineWidth=1.2; ctx.beginPath(); let x=Math.random()*512,y=0; ctx.moveTo(x,y); while(y<512){ y+=20; x+=(Math.random()-0.5)*40; ctx.lineTo(x,y); } ctx.stroke(); }
+  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2); t.encoding=THREE.sRGBEncoding; TEX3[key]=t; return t; }
+/* door and carcass finishes: satin poly with a clear coat, or textured woodgrain */
+function frontMat(hex,k){ const col=k?hexShade(hex,k):hex; if(isWoodgrain(hex)){ return new THREE.MeshStandardMaterial({map:woodTexture(hex),color:new THREE.Color(k?hexShade('#ffffff',k):'#ffffff'),roughness:0.62,metalness:0.02}); } return new THREE.MeshPhysicalMaterial({color:new THREE.Color(col),roughness:0.42,metalness:0.02,clearcoat:0.35,clearcoatRoughness:0.35}); }
+function benchMat(){ const hex=scheme.bench.color; const stone=!/oak|walnut|timber|wood/i.test(scheme.bench.name||''); return stone?new THREE.MeshPhysicalMaterial({map:stoneTexture(hex),color:new THREE.Color('#ffffff'),roughness:0.22,metalness:0.02,clearcoat:0.6,clearcoatRoughness:0.2}):new THREE.MeshStandardMaterial({map:woodTexture(hex),roughness:0.5}); }
+/* runs of floor-standing bench units that share one benchtop */
+function benchRuns3D(){ const items=cabs.filter(c=>TYPES[c.type].bench&&cabBand(c)[0]===0); const used=new Set(), runs=[];
+  items.forEach(c=>{ if(used.has(c.id)) return; const rot=((c.rot||0)%360+360)%360, horiz=(rot===0||rot===180); const run={rot,items:[c]}; used.add(c.id); let grew=true;
+    while(grew){ grew=false; items.forEach(o=>{ if(used.has(o.id)||((o.rot||0)%360+360)%360!==rot) return; const fo=footprint(o);
+      const near=run.items.some(m=>{ const fm=footprint(m); return horiz?(Math.abs(m.y-o.y)<=60&&o.x<=m.x+fm.w+45&&o.x+fo.w>=m.x-45):(Math.abs(m.x-o.x)<=60&&o.y<=m.y+fm.h+45&&o.y+fo.h>=m.y-45); });
+      if(near){ run.items.push(o); used.add(o.id); grew=true; } }); }
+    runs.push(run); });
+  return runs; }
 function shade(col,k){ const c=new THREE.Color(col); c.multiplyScalar(k); return c; }
 function addMesh(geo,mat,x,y,z,shadow){ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=shadow!==false; m.receiveShadow=true; m.userData.dyn=true; scene.add(m); return m; }
 function addEdges(geo,x,y,z,op){ const ed=new THREE.LineSegments(new THREE.EdgesGeometry(geo,20),new THREE.LineBasicMaterial({color:0x2f3a2a,transparent:true,opacity:op==null?0.22:op})); ed.position.set(x,y,z); ed.userData.dyn=true; scene.add(ed); return ed; }
@@ -1910,23 +1953,24 @@ function rebuild3D(){
     const rot=((c.rot||0)%360+360)%360;
     const front=doorColor(c);
     if(t.window){ const geo=new THREE.BoxGeometry(fw,hh,fd); const m=addMesh(geo,mat3(0xcfe2ea,0.15,{transparent:true,opacity:0.35}),px,by+hh/2,pz,false); addEdges(geo,px,by+hh/2,pz,0.35); return; }
-    if(t.benchOnly){ const geo=new THREE.BoxGeometry(fw+0.02,0.02,fd+0.02); addMesh(geo,mat3(scheme.bench.color,0.3),px,top-0.01,pz); addEdges(geo,px,top-0.01,pz,0.3); return; }
-    if(t.thin){ const geo=new THREE.BoxGeometry(fw,hh,fd); addMesh(geo,mat3(front,0.5),px,by+hh/2,pz); addEdges(geo,px,by+hh/2,pz,0.35); return; }
+    if(t.benchOnly) return; // drawn with the benchtop runs
+    if(t.thin){ const geo=new THREE.BoxGeometry(fw,hh,fd); addMesh(geo,frontMat(front),px,by+hh/2,pz); addEdges(geo,px,by+hh/2,pz,0.35); return; }
     // carcass (a shade darker than the fronts so panels read as panels)
     const kick=(t.bench&&!t.appliance&&band[0]===0)?Math.min(STD.kick,band[1]-100)/1000:0;
     const benchT=t.bench?0.02:0;
     const bodyBottom=by+kick, bodyTop=top-benchT, bodyH=Math.max(0.05,bodyTop-bodyBottom);
-    const bodyCol=t.appliance?0xc4c9cf:shade(front,0.9);
-    const geo=new THREE.BoxGeometry(fw,bodyH,fd); addMesh(geo,mat3(bodyCol,0.7),px,bodyBottom+bodyH/2,pz); addEdges(geo,px,bodyBottom+bodyH/2,pz,0.2);
+    const geo=new THREE.BoxGeometry(fw,bodyH,fd); addMesh(geo,t.appliance?mat3(0xc4c9cf,0.6,{metalness:0.2}):frontMat(front,0.9),px,bodyBottom+bodyH/2,pz); addEdges(geo,px,bodyBottom+bodyH/2,pz,0.2);
     if(kick>0){ // recessed dark plinth
       const inset=0.05; const kg=new THREE.BoxGeometry(fw-(rot===90||rot===270?0:inset*2),kick,fd-(rot===0||rot===180?inset:0)-(rot===90||rot===270?inset*2:0));
       const kx=px+(rot===90?inset/2:rot===270?-inset/2:0), kz=pz+(rot===0?-inset/2:rot===180?inset/2:0);
       addMesh(kg,mat3(0x2a2c2a,0.9),kx,kick/2,kz,false); }
-    if(t.bench){ const bg=new THREE.BoxGeometry(fw+0.02+(rot===90||rot===270?0.02:0),benchT,fd+0.02+(rot===0||rot===180?0.02:0));
-      const bx=px+(rot===270?0.01:rot===90?-0.01:0), bz=pz+(rot===0?0.01:rot===180?-0.01:0);
-      addMesh(bg,mat3(scheme.bench.color,0.28),bx,bodyTop+benchT/2,bz); addEdges(bg,bx,bodyTop+benchT/2,bz,0.3); }
     addFrontDetail3D(c,f,bodyBottom,bodyH,px,pz,front,rot);
   });
+  // benchtops: one slab per run, 20 mm thick, 20 mm overhang at the front and both ends
+  benchRuns3D().forEach(run=>{ let x0=Infinity,z0=Infinity,x1=-Infinity,z1=-Infinity; run.items.forEach(c=>{ const f=footprint(c); const pos=wall3DPos(c); x0=Math.min(x0,pos.x); z0=Math.min(z0,pos.y); x1=Math.max(x1,pos.x+f.w); z1=Math.max(z1,pos.y+f.h); });
+    const r=run.rot; if(r===0){ z1+=20; x0-=20; x1+=20; } else if(r===180){ z0-=20; x0-=20; x1+=20; } else if(r===90){ x0-=20; z0-=20; z1+=20; } else { x1+=20; z0-=20; z1+=20; }
+    const top=Math.max(...run.items.map(c=>cabBand(c)[1]))/1000, T=0.02; const geo=new THREE.BoxGeometry((x1-x0)/1000,T,(z1-z0)/1000); const mx=(x0+x1)/2000, mz=(z0+z1)/2000;
+    addMesh(geo,benchMat(),mx,top-T/2,mz); addEdges(geo,mx,top-T/2,mz,0.35); });
 }
 /* fronts: doors, drawers, glass, stacks, appliances as real panels on the face of the carcass */
 function addFrontDetail3D(c,f,by,hh,px,pz,front,rot){
@@ -1940,12 +1984,12 @@ function addFrontDetail3D(c,f,by,hh,px,pz,front,rot){
     else if(rot===90){ geo=new THREE.BoxGeometry(thick,H,L); x=px-fw/2-d; z=pz+(0.5-uc)*fd; }
     else { geo=new THREE.BoxGeometry(thick,H,L); x=px+fw/2+d; z=pz+(uc-0.5)*fd; }
     const m=addMesh(geo,mat,x,y,z); addEdges(geo,x,y,z,0.28); return m; }
-  const pm=mat3(front,0.42), frameCol=shade(front,0.95);
+  const pm=frontMat(front), frameCol=hexShade(front,0.95);
   const framed=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
   const pull=/finger|j pull/i.test(scheme.profile);
   const handle=(u,v,horiz)=>{ const L=0.14; if(pull) return; const hm=mat3(0x3a3d3a,0.35,{metalness:0.6}); if(horiz) panel(u-L/2/span,u+L/2/span,v-0.006/hh,v+0.006/hh,0.012,hm,T+0.012); else panel(u-0.006/span,u+0.006/span,v-L/2/hh,v+L/2/hh,0.012,hm,T+0.012); };
   const door=(u0,u1,v0,v1,glass)=>{ if(glass){ panel(u0,u1,v0,v1,T,mat3(front,0.5)); const iu=Math.min(0.06/span,(u1-u0)*0.2), iv=Math.min(0.06/hh,(v1-v0)*0.2); panel(u0+iu,u1-iu,v0+iv,v1-iv,0.006,mat3(0xbfd8e2,0.1,{transparent:true,opacity:0.45}),T-0.006); return; }
-    if(framed){ panel(u0,u1,v0,v1,T-0.008,mat3(frameCol,0.5)); const iu=Math.min(0.07/span,(u1-u0)*0.22), iv=Math.min(0.07/hh,(v1-v0)*0.22); panel(u0,u1,v0,v0+iv,0.008,pm,T-0.008); panel(u0,u1,v1-iv,v1,0.008,pm,T-0.008); panel(u0,u0+iu,v0,v1,0.008,pm,T-0.008); panel(u1-iu,u1,v0,v1,0.008,pm,T-0.008); }
+    if(framed){ panel(u0,u1,v0,v1,T-0.008,frontMat(front,0.94)); const iu=Math.min(0.07/span,(u1-u0)*0.22), iv=Math.min(0.07/hh,(v1-v0)*0.22); panel(u0,u1,v0,v0+iv,0.008,pm,T-0.008); panel(u0,u1,v1-iv,v1,0.008,pm,T-0.008); panel(u0,u0+iu,v0,v1,0.008,pm,T-0.008); panel(u1-iu,u1,v0,v1,0.008,pm,T-0.008); }
     else panel(u0,u1,v0,v1,T,pm); };
   if(t.appliance){ // appliances: grey front with a dark window / detail
     const g=mat3(0xd2d6db,0.4,{metalness:0.35}), dark=mat3(0x2b2f33,0.25,{metalness:0.5});
