@@ -25,15 +25,23 @@
   @media (max-width:820px){ main{padding:12px;} td,th{padding:8px 4px;} header .sub{display:none;} }
 </style></head>
 <body>
-<header><img src="hambos-logo-white.svg" alt="Hambo's"><span class="t">Kitchen Designer</span><span class="sub">Admin</span><span class="sp"></span><a href="index.html">Open the designer</a><button id="btnOut" hidden>Sign out</button></header>
+<header><img src="hambos-logo-white.svg" alt="Hambo's"><span class="t">Kitchen Designer</span><span class="sub">Admin</span><span class="sp"></span><a href="index.html">Open the designer</a><button id="btnPw" hidden>Change password</button><button id="btnOut" hidden>Sign out</button></header>
 <main>
   <div class="card" id="gate">
     <h1>Staff sign in</h1>
     <p class="muted">Jobs, plan sheets and customer enquiries. Staff emails only.</p>
     <label>Email</label><input id="email" type="email" autocomplete="email">
     <label>Password</label><input id="pass" type="password" autocomplete="current-password">
-    <div class="row" style="margin-top:12px;"><button class="btn" id="go">Sign in</button><button class="btn alt" id="link">Email me a sign-in link</button></div>
+    <div class="row" style="margin-top:12px;"><button class="btn" id="go">Sign in</button><button class="btn alt" id="link">Email me a sign-in link</button><button class="btn alt" id="forgot">Forgot password</button></div>
     <div class="note" id="gnote"></div>
+    <p class="muted" style="margin-top:12px;">No password yet, or it isn't working? Use <b>Email me a sign-in link</b>, click the link, then set a password under <b>Change password</b> at the top.</p>
+  </div>
+  <div class="card" id="pwCard" hidden>
+    <h2>Set a new password</h2>
+    <label>New password (8 characters or more)</label><input id="pw1" type="password" autocomplete="new-password">
+    <label>Type it again</label><input id="pw2" type="password" autocomplete="new-password">
+    <div class="row" style="margin-top:12px;"><button class="btn" id="pwGo">Save password</button><button class="btn alt" id="pwCancel">Cancel</button></div>
+    <div class="note" id="pwNote"></div>
   </div>
   <div id="app" hidden>
     <div class="tabs"><button class="on" data-v="jobs">Jobs</button><button data-v="enq">Enquiries <span class="pill new" id="enqCount" hidden>0</span></button></div>
@@ -57,10 +65,16 @@ const when=iso=>{ const d=new Date(iso); return isNaN(d)?'':d.toLocaleDateString
 let user=null, staff=false, jobs=[], enqs=[];
 async function refresh(){ if(!sb){ $('gnote').textContent='Cloud is not configured on this copy.'; return; } const {data:{session}}=await sb.auth.getSession(); user=session?session.user:null; staff=false;
   if(user){ const {data}=await sb.from('staff').select('email').limit(1); staff=!!(data&&data.length); }
-  $('gate').hidden=staff; $('app').hidden=!staff; $('btnOut').hidden=!user;
+  $('gate').hidden=!!user; $('app').hidden=!staff; $('btnOut').hidden=!user; $('btnPw').hidden=!user;
+  if(user&&recoveryFlow){ recoveryFlow=false; $('pwCard').hidden=false; $('app').hidden=true; }
   if(user&&!staff) $('gnote').textContent='Signed in as '+user.email+', but that email is not on the staff list.';
   if(staff) await loadAll(); }
-if(sb) sb.auth.onAuthStateChange(()=>refresh());
+let recoveryFlow=/type=recovery/.test(location.hash)||/type=recovery/.test(location.search);
+if(sb) sb.auth.onAuthStateChange((ev)=>{ if(ev==='PASSWORD_RECOVERY') recoveryFlow=true; refresh(); });
+$('forgot').onclick=async()=>{ const email=$('email').value.trim(); if(!email){ $('gnote').textContent='Type your email first.'; return; } const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.href.split('#')[0].split('?')[0]}); $('gnote').textContent=error?error.message:'Check your inbox: the link brings you back here to set a new password.'; };
+$('btnPw').onclick=()=>{ $('pwCard').hidden=false; $('pwNote').textContent=''; window.scrollTo(0,0); };
+$('pwCancel').onclick=()=>{ $('pwCard').hidden=true; if(staff) $('app').hidden=false; };
+$('pwGo').onclick=async()=>{ const a=$('pw1').value, b=$('pw2').value; if(a.length<8){ $('pwNote').textContent='Use at least 8 characters.'; return; } if(a!==b){ $('pwNote').textContent='The two passwords differ.'; return; } $('pwNote').textContent='Saving…'; const {error}=await sb.auth.updateUser({password:a}); if(error){ $('pwNote').textContent=error.message; return; } $('pw1').value=$('pw2').value=''; $('pwNote').textContent='Password saved. Use it next time you sign in.'; setTimeout(()=>{ $('pwCard').hidden=true; if(staff) $('app').hidden=false; },1500); };
 $('go').onclick=async()=>{ $('gnote').textContent='Signing in…'; const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value}); if(error) $('gnote').textContent=error.message; else refresh(); };
 $('link').onclick=async()=>{ const email=$('email').value.trim(); if(!email){ $('gnote').textContent='Type your email first.'; return; } const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href.split('#')[0]}}); $('gnote').textContent=error?error.message:'Check your inbox and click the link.'; };
 $('pass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('go').click(); });
