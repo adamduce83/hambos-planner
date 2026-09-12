@@ -1140,7 +1140,7 @@ function drawRunDim(run){
       text(xl+w/2,wallRun?dimY+70:dimY-42,mm(w),col,w<120?40:56,500,'middle');
       if(showCum[i]) text(xr,wallRun?dimY-60:dimY+112,mm(xr-x0),col,72,700,'middle');});
     if(wallRun) text(x0-30,dimY-60,'overheads',col,48,500,'end');
-    else { // overall run figure above the run
+    else if(items.length>1||(((items[0].rot||0)%360+360)%360)%180===0){ // overall run figure above the run (not for a lone piece that only looks like a run across its depth)
       const top=Math.min(...items.map(c=>c.y)); const wallAbove=walls.some(w=>Math.abs(w.y1-w.y2)<1&&w.y1<top+10&&w.y1>top-260&&Math.max(w.x1,w.x2)>x0&&Math.min(w.x1,w.x2)<xEnd);
       const oy=top-(wallAbove?300:150); line(x0,oy,xEnd,oy,col,4); line(x0,oy-30,x0,oy+30,col,4); line(xEnd,oy-30,xEnd,oy+30,col,4);
       text((x0+xEnd)/2,oy-40,'CABINETRY '+mm(xEnd-x0),col,84,800,'middle');
@@ -1161,7 +1161,7 @@ function drawRunDim(run){
       else { text(dimX-44,yt+w/2+20,mm(w),col,w<120?40:56,500,'end'); if(showCum[i]) text(dimX+118,yb+22,mm(yb-y0),col,72,700,'start'); }
     });
     if(wallRun) text(dimX-118,y0-30,'overheads',col,48,500,'end');
-    else { const left=Math.min(...items.map(c=>c.x)); const wallLeft=walls.some(w=>Math.abs(w.x1-w.x2)<1&&w.x1<left+10&&w.x1>left-260&&Math.max(w.y1,w.y2)>y0&&Math.min(w.y1,w.y2)<yEnd);
+    else if(items.length>1||(((items[0].rot||0)%360+360)%360)%180===90){ const left=Math.min(...items.map(c=>c.x)); const wallLeft=walls.some(w=>Math.abs(w.x1-w.x2)<1&&w.x1<left+10&&w.x1>left-260&&Math.max(w.y1,w.y2)>y0&&Math.min(w.y1,w.y2)<yEnd);
       const ox=left-(wallLeft?300:150); line(ox,y0,ox,yEnd,col,4); line(ox-30,y0,ox+30,y0,col,4); line(ox-30,yEnd,ox+30,yEnd,col,4);
       const tt=mkText(0,0,'CABINETRY '+mm(yEnd-y0),col,84,800,'middle'); tt.setAttribute('transform',`translate(${ox-40},${(y0+yEnd)/2}) rotate(-90)`); svg.appendChild(tt);
       const xl=Math.min(...items.map(c=>c.x)), xh=Math.max(...items.map(c=>c.x+footprint(c).w));
