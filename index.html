@@ -1146,7 +1146,7 @@ function drawRunDim(run){
       text((x0+xEnd)/2,oy-40,'CABINETRY '+mm(xEnd-x0),col,84,800,'middle');
       // fit inside the opening: the clearance to the wall at each end (a 5 mm side, a 20 mm scribe, or OVER when it will not fit)
       const yl=Math.min(...items.map(c=>c.y)), yh=Math.max(...items.map(c=>c.y+footprint(c).h));
-      const gL=endGap('h',x0,yl,yh,-1), gR=endGap('h',xEnd,yl,yh,1);
+      const gL=endGap('h',x0,yl,yh,-1,xEnd-x0), gR=endGap('h',xEnd,yl,yh,1,xEnd-x0);
       if(gL!=null) gapMark(x0-Math.max(gL,0)/2-(gL<0?260:0),oy+70,gL,0);
       if(gR!=null) gapMark(xEnd+Math.max(gR,0)/2+(gR<0?260:0),oy+70,gR,0);
       if(gL!=null&&gR!=null) text((x0+xEnd)/2,oy-130,'OPENING '+mm(xEnd-x0+gL+gR)+'  \u00b7  '+(gL<0||gR<0?'CABINETRY TOO BIG FOR THE OPENING':('clearance '+mm(gL)+' + '+mm(gR))),gL<0||gR<0?'#d0342c':'#6a7361',56,700,'middle'); }
@@ -1165,7 +1165,7 @@ function drawRunDim(run){
       const ox=left-(wallLeft?300:150); line(ox,y0,ox,yEnd,col,4); line(ox-30,y0,ox+30,y0,col,4); line(ox-30,yEnd,ox+30,yEnd,col,4);
       const tt=mkText(0,0,'CABINETRY '+mm(yEnd-y0),col,84,800,'middle'); tt.setAttribute('transform',`translate(${ox-40},${(y0+yEnd)/2}) rotate(-90)`); svg.appendChild(tt);
       const xl=Math.min(...items.map(c=>c.x)), xh=Math.max(...items.map(c=>c.x+footprint(c).w));
-      const gT=endGap('v',y0,xl,xh,-1), gB=endGap('v',yEnd,xl,xh,1);
+      const gT=endGap('v',y0,xl,xh,-1,yEnd-y0), gB=endGap('v',yEnd,xl,xh,1,yEnd-y0);
       if(gT!=null) gapMark(ox+70,y0-Math.max(gT,0)/2-(gT<0?260:0),gT,-90);
       if(gB!=null) gapMark(ox+70,yEnd+Math.max(gB,0)/2+(gB<0?260:0),gB,-90);
       if(gT!=null&&gB!=null){ const t3=mkText(0,0,'OPENING '+mm(yEnd-y0+gT+gB)+'  \u00b7  '+(gT<0||gB<0?'CABINETRY TOO BIG FOR THE OPENING':('clearance '+mm(gT)+' + '+mm(gB))),gT<0||gB<0?'#d0342c':'#6a7361',56,700,'middle'); t3.setAttribute('transform',`translate(${ox-130},${(y0+yEnd)/2}) rotate(-90)`); svg.appendChild(t3); } }
@@ -1716,10 +1716,10 @@ function contentBBox(){ if(!cabs.length&&!walls.length) return null; let x0=Infi
   return {x0,y0,x1,y1}; }
 function mkLine(x1,y1,x2,y2,col,w,extra){ const l=document.createElementNS(SVGNS,'line'); l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('stroke',col);l.setAttribute('stroke-width',w); if(extra) for(const k in extra) l.setAttribute(k,extra[k]); return l; }
 /* clearance between the end of a cabinetry run and the wall it runs up to (walls are inside faces). Returns the gap in mm or null when no wall is there. */
-function endGap(axis,edge,lo,hi,dir){ // axis 'h': edge is an x, lo..hi the run's y-range, dir -1 = look left, +1 = look right
+function endGap(axis,edge,lo,hi,dir,len){ // axis 'h': edge is an x, lo..hi the run's y-range, dir -1 = look left, +1 = look right
   let best=null; walls.forEach(w=>{ const vert=Math.abs(w.x2-w.x1)<Math.abs(w.y2-w.y1); if((axis==='h')!==vert) return;
     const pos=axis==='h'?w.x1:w.y1, a=axis==='h'?Math.min(w.y1,w.y2):Math.min(w.x1,w.x2), b=axis==='h'?Math.max(w.y1,w.y2):Math.max(w.x1,w.x2);
-    if(b<lo-50||a>hi+50) return; const g=(pos-edge)*dir; if(g<-600||g>400) return; if(best==null||Math.abs(g)<Math.abs(best)) best=g; });
+    if(b<lo-50||a>hi+50) return; const g=(pos-edge)*dir; if(g<=-(len||0)||g>400) return; /* a wall behind the run's far end is not this end's wall */ if(best==null||Math.abs(g)<Math.abs(best)) best=g; });
   return best; }
 function gapMark(x,y,gap,rot){ const bad=gap<0; const t=mkText(0,0,bad?('OVER BY '+mm(-gap)):mm(gap),bad?'#d0342c':'#4a5a40',bad?52:46,800,'middle'); t.setAttribute('transform',`translate(${x},${y}) rotate(${rot||0})`); if(!bad){ const bg=document.createElementNS(SVGNS,'rect'); const wd=String(mm(gap)).length*28+24; bg.setAttribute('x',rot?x-30:x-wd/2); bg.setAttribute('y',rot?y-wd/2:y-38); bg.setAttribute('width',rot?46:wd); bg.setAttribute('height',rot?wd:48); bg.setAttribute('rx',8); bg.setAttribute('fill','#ffffff'); bg.setAttribute('fill-opacity',0.85); svg.appendChild(bg); } svg.appendChild(t); }
 function drawWalls(){
