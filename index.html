@@ -218,7 +218,7 @@
   #floatTools #zPct{font-size:13px;font-weight:600;min-width:44px;text-align:center;color:var(--ink);}
   #warn{position:absolute;top:96px;left:50%;transform:translateX(-50%);background:#fff3f0;border:1px solid #f0c8c0;color:#b3392a;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;z-index:19;}
   #warn:empty{display:none;}
-  #rightPanel{position:absolute;top:14px;right:14px;width:236px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.10);z-index:20;font-size:12px;max-height:calc(100% - 150px);overflow:auto;}
+  #rightPanel{position:absolute;top:14px;right:14px;width:210px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.10);z-index:20;font-size:12px;max-height:calc(100% - 150px);overflow:auto;}
   #rightPanel .rphead{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);font-size:14px;font-weight:700;color:var(--ink);}
   #rightPanel .rphead .ic{width:18px;height:18px;color:#566b4b;}
   #rightPanel .rpbody{padding:12px 14px;}
@@ -887,7 +887,7 @@ function renderPlan(){
     const lh=210, lw=lh*LOGO_RATIO;
     rect(40,55,lw+80,lh+60,'#ffffff',null,0,18);
     const im=document.createElementNS(SVGNS,'image');
-    im.setAttributeNS('http://www.w3.org/1999/xlink','href',LOGO); im.setAttribute('href',LOGO);
+    im.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',LOGO); im.setAttribute('href',LOGO);
     im.setAttribute('x',80); im.setAttribute('y',85); im.setAttribute('height',lh); im.setAttribute('width',lw);
     svg.appendChild(im);
   } else { text(45,210,"HAMBO'S",'#cdd9c1',180,800,'start'); }
@@ -1140,7 +1140,7 @@ function drawRunDim(run){
       text(xl+w/2,wallRun?dimY+70:dimY-42,mm(w),col,w<120?40:56,500,'middle');
       if(showCum[i]) text(xr,wallRun?dimY-60:dimY+112,mm(xr-x0),col,72,700,'middle');});
     if(wallRun) text(x0-30,dimY-60,'overheads',col,48,500,'end');
-    else if(items.length>1||(((items[0].rot||0)%360+360)%360)%180===0){ // overall run figure above the run (not for a lone piece that only looks like a run across its depth)
+    else if(xEnd-x0>Math.max(...items.map(c=>footprint(c).w))+1||(items.length===1&&(((items[0].rot||0)%360+360)%360)%180===0)){ // overall run figure: only when pieces really sit side by side along this axis
       const top=Math.min(...items.map(c=>c.y)); const wallAbove=walls.some(w=>Math.abs(w.y1-w.y2)<1&&w.y1<top+10&&w.y1>top-260&&Math.max(w.x1,w.x2)>x0&&Math.min(w.x1,w.x2)<xEnd);
       const oy=top-(wallAbove?300:150); line(x0,oy,xEnd,oy,col,4); line(x0,oy-30,x0,oy+30,col,4); line(xEnd,oy-30,xEnd,oy+30,col,4);
       text((x0+xEnd)/2,oy-40,'CABINETRY '+mm(xEnd-x0),col,84,800,'middle');
@@ -1161,7 +1161,7 @@ function drawRunDim(run){
       else { text(dimX-44,yt+w/2+20,mm(w),col,w<120?40:56,500,'end'); if(showCum[i]) text(dimX+118,yb+22,mm(yb-y0),col,72,700,'start'); }
     });
     if(wallRun) text(dimX-118,y0-30,'overheads',col,48,500,'end');
-    else if(items.length>1||(((items[0].rot||0)%360+360)%360)%180===90){ const left=Math.min(...items.map(c=>c.x)); const wallLeft=walls.some(w=>Math.abs(w.x1-w.x2)<1&&w.x1<left+10&&w.x1>left-260&&Math.max(w.y1,w.y2)>y0&&Math.min(w.y1,w.y2)<yEnd);
+    else if(yEnd-y0>Math.max(...items.map(c=>footprint(c).h))+1||(items.length===1&&(((items[0].rot||0)%360+360)%360)%180===90)){ const left=Math.min(...items.map(c=>c.x)); const wallLeft=walls.some(w=>Math.abs(w.x1-w.x2)<1&&w.x1<left+10&&w.x1>left-260&&Math.max(w.y1,w.y2)>y0&&Math.min(w.y1,w.y2)<yEnd);
       const ox=left-(wallLeft?300:150); line(ox,y0,ox,yEnd,col,4); line(ox-30,y0,ox+30,y0,col,4); line(ox-30,yEnd,ox+30,yEnd,col,4);
       const tt=mkText(0,0,'CABINETRY '+mm(yEnd-y0),col,84,800,'middle'); tt.setAttribute('transform',`translate(${ox-40},${(y0+yEnd)/2}) rotate(-90)`); svg.appendChild(tt);
       const xl=Math.min(...items.map(c=>c.x)), xh=Math.max(...items.map(c=>c.x+footprint(c).w));
@@ -1232,7 +1232,7 @@ function renderElev(){
   while(E.firstChild)E.removeChild(E.firstChild);
   eR(0,0,12000,TITLE_H,'#2f3a2a');
   if(LOGO){const lh=210,lw=lh*LOGO_RATIO; eR(40,55,lw+80,lh+60,'#ffffff',null,0,18);
-    const im=document.createElementNS(SVGNS,'image'); im.setAttributeNS('http://www.w3.org/1999/xlink','href',LOGO); im.setAttribute('href',LOGO);
+    const im=document.createElementNS(SVGNS,'image'); im.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',LOGO); im.setAttribute('href',LOGO);
     im.setAttribute('x',80);im.setAttribute('y',85);im.setAttribute('height',lh);im.setAttribute('width',lw);E.appendChild(im);
   } else eT(45,210,"HAMBO'S",'#cdd9c1',180,800,'start');
   eT(45,440,'Kitchen Elevations','#ffffff',112,700,'start');
@@ -2138,7 +2138,7 @@ function loop(){
 window.addEventListener('resize',()=>{ if(document.getElementById('view3d').style.display!=='none') start3D(); });
 
 /* ---------- the branded plan sheet: plan + elevations on the left, title block down the right ---------- */
-const SHEET_W=16000, SHEET_H=11000, TB_X=11700, TB_W=4100;
+const SHEET_W=16000, SHEET_H=11000, HEAD_H=1250, FOOT_H=880; // job details run across the top, notes and sign-off across the bottom, the drawing has the full width between
 let COMPOSING=false; // true while the plan sheet is being built (per-view quote chips are left off)
 function tbv(id){ const el=document.getElementById(id); if(!el) return ''; return el.type==='checkbox'?(el.checked?'Yes':''):(el.value||'').trim(); }
 function wrapText(str,maxChars){ const out=[]; String(str||'').split(/\r?\n/).forEach(par=>{ let line=''; par.split(/\s+/).filter(Boolean).forEach(w=>{ if((line+' '+w).trim().length>maxChars&&line){ out.push(line.trim()); line=w; } else line=line+' '+w; }); out.push(line.trim()); }); return out; }
@@ -2150,73 +2150,70 @@ function buildSheet(){
   const T=(x,y,str,fill,size,weight,anchor)=>{const t=mkText(x,y,str,fill,size,weight,anchor);S.appendChild(t);return t;};
   const L=(x1,y1,x2,y2,col,w)=>{const l=document.createElementNS(SVGNS,'line');l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('stroke',col);l.setAttribute('stroke-width',w||2);S.appendChild(l);};
   R(0,0,SHEET_W,SHEET_H,'#ffffff');
-  const nest=(node,vb,x,y,w,h)=>{ const n=node.cloneNode(true); n.removeAttribute('id'); n.removeAttribute('style'); n.setAttribute('viewBox',vb.join(' ')); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('width',w); n.setAttribute('height',h); n.setAttribute('preserveAspectRatio','xMinYMin meet'); S.appendChild(n); };
-  const x0=200, leftW=TB_X-400, top=420, availH=SHEET_H-top-260;
-  // plan panel: cropped to the pieces (with room for dimension strings), never smaller than 4 x 3 m
+  const nest=(node,vb,x,y,w,h,align)=>{ const n=node.cloneNode(true); n.removeAttribute('id'); n.removeAttribute('style'); n.setAttribute('viewBox',vb.join(' ')); n.setAttribute('x',x); n.setAttribute('y',y); n.setAttribute('width',w); n.setAttribute('height',h); n.setAttribute('preserveAspectRatio',(align||'xMidYMid')+' meet'); S.appendChild(n); };
+  const GREEN='#2f3a2a', BRIGHT='#00a357', PALE='#f2f5ee', INK='#1f2620';
+  /* ---- header band: logo tile, INSTALLER PLAN, sheet + issue date, STOP BEFORE CUTTING badge ---- */
+  R(0,0,SHEET_W,1020,GREEN);
+  R(250,130,1330,760,'#ffffff',null,0,40);
+  if(LOGO){ const lh=560, lw=lh*LOGO_RATIO; const im=document.createElementNS(SVGNS,'image'); im.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',LOGO); im.setAttribute('href',LOGO); im.setAttribute('x',250+(1330-lw)/2); im.setAttribute('y',130+100); im.setAttribute('width',lw); im.setAttribute('height',lh); S.appendChild(im); }
+  const pg=/^(\d+)\s*\/\s*(\d+)$/.exec(tbv('tbPage')||''); const sheetNo=pg?pg[1]:'1', sheetOf=pg?pg[2]:'1';
+  const issued=fmtDate(tbv('tbDate'))||fmtDate(new Date().toISOString().slice(0,10));
+  T(1800,470,'INSTALLER PLAN','#ffffff',300,800,'start');
+  T(1800,700,(tbv('tbRoom')||'Kitchen')+'   |   Sheet '+sheetNo+' of '+sheetOf+'   |   Issued '+issued,'#cdd9c1',110,500,'start');
+  R(SHEET_W-3950,170,3700,700,BRIGHT,null,0,60);
+  T(SHEET_W-2100,460,'STOP BEFORE CUTTING','#ffffff',130,800,'middle');
+  T(SHEET_W-2100,650,"Call Hambo's if anything doesn't fit",'#eafff4',80,500,'middle');
+  /* ---- customer strip ---- */
+  R(0,1020,SHEET_W,880,PALE);
+  const cols=[['Customer',tbv('tbCust')],['Site address',tbv('tbAddr')],['Mobile',tbv('tbMobile')],['Room',tbv('tbRoom')||'Kitchen'],['Page',sheetNo+' / '+sheetOf]];
+  const cx0=250, cwid=(SHEET_W-500)/5;
+  cols.forEach(([lb,v],i)=>{ const cx=cx0+i*cwid; if(i) L(cx-100,1120,cx-100,1800,'#d6ddcd',3); T(cx,1200,lb.toUpperCase(),'#566b4b',56,700,'start'); const ls=wrapText(v||'—',Math.floor(cwid/56)).slice(0,2); ls.forEach((l,j)=>T(cx,1345+j*110,l,INK,104,700,'start')); });
+  const notes=[tbv('tbNotes'),tbv('tbSpecial')].filter(Boolean).join('  ·  ');
+  T(cx0,1720,'Installer: verify site measurements, services and levels before installation.'+(notes?'   Notes: '+wrapText(notes,150)[0]+(wrapText(notes,150).length>1?' …':''):''),'#3a3f33',66,500,'start');
+  /* ---- plan (primary) and elevations frames ---- */
+  const top=2320, bottom=SHEET_H-1900-220, fh=bottom-top;
+  const px=250, pw=Math.round((SHEET_W-500)*0.68), ex=px+pw+250, ew=SHEET_W-250-ex;
+  T(px,top-90,'PLAN — PRIMARY INSTALL VIEW',INK,90,800,'start'); T(px+2300,top-90,'1 grid square = 500 mm  ·  sizes in mm  ·  walls are inside faces','#6a7361',60,500,'start');
+  T(ex,top-90,'ELEVATIONS',INK,90,800,'start');
+  R(px,top,pw,fh,'#ffffff','#2a2f28',6,50); R(ex,top,ew,fh,'#ffffff','#2a2f28',6,50);
+  // plan panel: cropped to the pieces (with room for dimension strings), never smaller than 3 x 2 m
   let planVB=[0,TITLE_H+20,12000,6950-TITLE_H-20];
   const cb=contentBBox();
   if(cb){
     let bx0=cb.x0-700, by0=cb.y0-700, bx1=cb.x1+700, by1=cb.y1+900;
-    if(bx1-bx0<4000){ const m=(4000-(bx1-bx0))/2; bx0-=m; bx1+=m; } if(by1-by0<3000){ const m=(3000-(by1-by0))/2; by0-=m; by1+=m; }
+    if(bx1-bx0<3000){ const m=(3000-(bx1-bx0))/2; bx0-=m; bx1+=m; } if(by1-by0<2000){ const m=(2000-(by1-by0))/2; by0-=m; by1+=m; }
     bx0=Math.max(0,bx0); by0=Math.max(TITLE_H+20,by0); bx1=Math.min(12000,bx1); by1=Math.min(6950,by1);
     planVB=[bx0,by0,bx1-bx0,by1-by0];
   }
-  const fitBox=(vb,maxW,maxH)=>{ const ar=vb[2]/vb[3]; let w=maxW, h=w/ar; if(h>maxH){ h=maxH; w=h*ar; } return [w,h]; };
-  T(x0,300,'PLAN','#566b4b',100,800,'start'); T(x0+420,300,'1 grid square = 500 mm  \u00b7  sizes in mm','#8a917f',60,500,'start');
-  const [pw,ph]=fitBox(planVB,leftW,availH*(cabs.length?0.55:1));
-  nest(svg,planVB,x0,top,pw,ph); R(x0,top,pw,ph,null,'#c9d1bf',3);
-  if(cabs.length){
-    // elevation panel: cropped to the longest wall
-    const elevH=+ELEV_VB.split(' ')[3];
+  nest(svg,planVB,px+120,top+120,pw-240,fh-240);
+  const ewalls=cabs.length?elevWalls():[];
+  if(ewalls.length){
     const along=c=>{const r=((c.rot||0)%360+360)%360; return (r===0||r===180)?c.x:c.y;};
-    let maxX=3000; elevWalls().forEach(wl=>{ const a0=Math.min(...wl.items.map(along)); maxX=Math.max(maxX,320+Math.max(...wl.items.map(c=>along(c)+c.width-a0))); });
-    const elevVB=[0,TITLE_H+20,Math.min(12000,maxX+700),elevH-TITLE_H-20];
-    const ey=top+ph+300; T(x0,ey-90,'ELEVATIONS','#566b4b',100,800,'start');
-    const [ew,eh]=fitBox(elevVB,leftW,availH-ph-300);
-    nest(E,elevVB,x0,ey,ew,eh); R(x0,ey,ew,eh,null,'#c9d1bf',3);
-  }
-  drawTitleBlock(S,R,T,L);
-  T(x0,SHEET_H-90,"Hambo's Homemaker Centre \u00b7 Unit 2, 15 Freighter Ave, Wilsonton QLD 4350 \u00b7 0411 330 905 \u00b7 admin@hambos.com.au \u00b7 Supply only: fillers (F) go against walls, end panels (P) on exposed ends. Nothing is to be cut, trimmed or drilled on site.",'#8a917f',52,500,'start');
+    const PANEL_H=2720, GAP=200;
+    const panels=ewalls.map((wl,i)=>{ const a0=Math.min(...wl.items.map(along)); const runW=Math.max(...wl.items.map(c=>along(c)+c.width-a0)); return {vb:[0,TITLE_H+140+i*2750-20,Math.max(3000,320+runW+900),PANEL_H]}; });
+    const innerW=ew-240, innerH=fh-240; const maxPW=Math.max(...panels.map(p=>p.vb[2]));
+    const sc=Math.min(innerW/maxPW,(innerH-GAP*(panels.length-1))/(panels.length*PANEL_H));
+    let ey=top+120+(innerH-(panels.length*PANEL_H*sc+GAP*(panels.length-1)))/2;
+    panels.forEach((p,i)=>{ const w=p.vb[2]*sc, h=PANEL_H*sc; nest(E,p.vb,ex+120,ey,innerW,h,'xMinYMin'); if(i<panels.length-1) L(ex+120,ey+h+GAP/2*sc,ex+ew-120,ey+h+GAP/2*sc,'#d6ddcd',3); ey+=h+GAP*sc; });
+  } else T(ex+ew/2,top+fh/2,'Add cabinets to see the elevations','#9aa392',70,500,'middle');
+  /* ---- footer band: install specification, installer check, contact + approval ---- */
+  const fy=SHEET_H-1900; R(0,fy,SHEET_W,1900,GREEN);
+  T(250,fy+230,'INSTALL SPECIFICATION','#ffffff',80,800,'start');
+  const fin=finishesUsed().map(f=>f.name).join(', ');
+  const spec=[['Cabinet height',tbv('tbCabH')?tbv('tbCabH')+' mm':'—'],['Doors / Drawers',scheme.profile+' / '+(scheme.drawerProfile||scheme.profile)],['Colour / Finish',fin+' / '+(tbv('tbDoorFinish')||'Satin')],['Handle',tbv('tbHandle')||'TBC'],['Kickboard',STD.kick+' mm'],['Benchtop',benchtopText()],['Edge',tbv('tbEdge')||'Pencil Edge']];
+  const sw=(SHEET_W-500)/7;
+  spec.forEach(([lb,v],i)=>{ const sx=250+i*sw; T(sx,fy+430,lb.toUpperCase(),'#b9c7ad',52,700,'start'); const ls=wrapText(v,Math.floor(sw/50)).slice(0,2); ls.forEach((l,j)=>T(sx,fy+560+j*100,l,'#ffffff',92,700,'start')); });
+  L(250,fy+800,SHEET_W-250,fy+800,'#55654d',3);
+  T(250,fy+1010,'INSTALLER CHECK','#ffffff',66,800,'start');
+  ['All boxes checked against plan','Kick height confirmed','Cabinets level before stone','No panels cut or drilled'].forEach((t,i)=>{ const bx=2000+i*3400; R(bx,fy+930,100,100,'none','#ffffff',5,14); T(bx+150,fy+1012,t,'#ffffff',66,500,'start'); });
+  L(250,fy+1180,SHEET_W-250,fy+1180,'#55654d',3);
+  T(250,fy+1420,'Questions on site?  Jess  0411 330 905   •   admin@hambos.com.au','#ffffff',76,800,'start');
+  T(SHEET_W-250,fy+1420,'Customer approval — Signature  ____________________   Date  ____________','#cdd9c1',66,500,'end');
+  const by=tbv('tbBy'), tot=tbv('tbTotal');
+  T(250,fy+1680,"Hambo's Homemaker Centre · Unit 2, 15 Freighter Ave, Wilsonton QLD 4350 · Supply only: fillers (F) go against walls, end panels (P) on exposed ends. Nothing is to be cut, trimmed or drilled on site."+(by?'   ·   Designed by '+by:''),'#b9c7ad',52,500,'start');
+  if(tot){ T(SHEET_W-250,fy+1680,'Quote total '+tot,'#ffffff',60,800,'end'); }
   COMPOSING=false; selId=keepSel; render(); return S;
 }
-function drawTitleBlock(S,R,T,L){
-  const x=TB_X, w=TB_W, pad=110, xr=x+w-pad; let y=200;
-  const bg=R(x,y,w,SHEET_H-400,'#f7f9f4','#2f3a2a',5,24);
-  const lh=520, lw=lh*LOGO_RATIO; const im=document.createElementNS(SVGNS,'image'); im.setAttributeNS('http://www.w3.org/1999/xlink','href',LOGO); im.setAttribute('href',LOGO); im.setAttribute('x',x+pad); im.setAttribute('y',y+pad); im.setAttribute('width',lw); im.setAttribute('height',lh); S.appendChild(im);
-  T(x+pad,y+pad+lh+130,'WE DESIGN IT \u00b7 WE QUOTE IT \u00b7 WE SUPPLY IT','#566b4b',56,700,'start');
-  y+=pad+lh+220; L(x,y,x+w,y,'#2f3a2a',5);
-  const row=(label,value,big,lines)=>{
-    const vals=lines||[value||'\u2014']; const fs=big?88:70; const hgt=(big?150:110)+vals.length*(fs+16);
-    if(big) R(x,y,w,hgt,'#eaf0e4'); T(x+pad,y+(big?84:66),label.toUpperCase(),'#566b4b',big?54:50,700,'start');
-    vals.forEach((v,i)=>T(xr,y+(big?84:66)+(i+1)*(fs+16)-6,v,'#2a2f28',fs,big?800:600,'end'));
-    y+=hgt; L(x,y,x+w,y,'#d6ddcd',2);
-  };
-  const fin=finishesUsed().map(f=>f.name).join(', ');
-  row('Order / Ref number',tbv('tbJob'),true);
-  row('Room',tbv('tbRoom')||'Kitchen'); row('Page',tbv('tbPage')||'1/1');
-  row('Customer',tbv('tbCust')); row('Site address','',false,tbv('tbAddr')?wrapText(tbv('tbAddr'),34):['\u2014']); row('Mobile',tbv('tbMobile'));
-  row('Ceiling height',tbv('tbCeiling')?tbv('tbCeiling')+' mm':'',true); row('Cabinet height',tbv('tbCabH')?tbv('tbCabH')+' mm':'');
-  row('Door colour','',true,wrapText(fin,26)); row('Door finish',tbv('tbDoorFinish')||'Satin');
-  row('Door profile','',true,['Doors \u2013 '+scheme.profile,'Drawers \u2013 '+(scheme.drawerProfile||scheme.profile)]);
-  row('Handle',tbv('tbHandle')||'TBC'); row('Drawers',(tbv('tbDrawers')||'S/C')+(tbv('tbBlum')?' \u00b7 Blum':'')); row('Hinges',(tbv('tbHinges')||'S/C')+(tbv('tbBlum')?' \u00b7 Blum upgrade':''));
-  row('Kickboard',STD.kick+' mm',true);
-  row('Benchtop','',true,wrapText(benchtopText(),26)); row('Edge finish',tbv('tbEdge')||'Pencil Edge');
-  const box=(label,text,minLines)=>{ const lines=wrapText(text,52); while(lines.length<minLines) lines.push(''); const hgt=90+lines.length*66+40;
-    T(x+pad,y+66,label.toUpperCase(),'#566b4b',50,700,'start'); lines.forEach((ln,i)=>T(x+pad,y+66+(i+1)*66,ln,'#2a2f28',56,500,'start')); y+=hgt; L(x,y,x+w,y,'#d6ddcd',2); };
-  box('Notes',tbv('tbNotes'),2); box('Quoting notes',tbv('tbQuoteNotes'),2); box('Special requests',tbv('tbSpecial'),2);
-  const ap=applianceLines();
-  if(ap.length){ T(x+pad,y+66,'APPLIANCES','#566b4b',50,700,'start'); let yy=y+66; ap.forEach(([n,v])=>{ const ls=wrapText(v,40); T(x+pad,yy+64,n,'#566b4b',52,700,'start'); ls.forEach((l,i)=>T(xr,yy+64+i*58,l,'#2a2f28',52,500,'end')); yy+=64+Math.max(0,ls.length-1)*58; }); y=yy+40; L(x,y,x+w,y,'#d6ddcd',2); }
-  // signature + date
-  y+=60; T(x+pad,y+60,'SIGNATURE','#566b4b',50,700,'start'); L(x+pad+420,y+70,x+w/2+520,y+70,'#2f3a2a',3);
-  T(x+w/2+600,y+60,'DATE','#566b4b',50,700,'start'); L(x+w/2+820,y+70,xr,y+70,'#2f3a2a',3);
-  y+=170; T(x+pad,y+40,'I approve this plan for production. Sizes checked on site.','#6a7361',46,500,'start');
-  y+=110; L(x,y,x+w,y,'#2f3a2a',4);
-  const by=tbv('tbBy'), dt=fmtDate(tbv('tbDate')), tot=tbv('tbTotal');
-  T(x+pad,y+90,(by?('Designed by '+by+'  \u00b7  '):'')+(dt||''),'#3a3f33',54,500,'start');
-  if(tot){ R(x+pad,y+150,w-2*pad,150,'#00a357',null,0,16); T(x+pad+50,y+252,'QUOTE TOTAL','#eafff4',60,700,'start'); T(xr-50,y+256,tot,'#ffffff',96,800,'end'); y+=180; }
-  bg.setAttribute('height',Math.min(SHEET_H-400,y+200-200)); // box hugs its content
-}
-
 /* every room's sheet, as detached SVGs; the current room is restored afterwards */
 function allSheets(){
   const orig=curRoom, out=[];
