@@ -38,7 +38,8 @@
   <div id="app" hidden>
     <div class="tabs"><button class="on" data-v="jobs">Jobs</button><button data-v="enq">Enquiries <span class="pill new" id="enqCount" hidden>0</span></button></div>
     <div class="card" id="vJobs">
-      <div class="row"><h2 style="margin:0;">Jobs</h2><span class="sp" style="flex:1"></span><input id="q" placeholder="Search order, customer, room…" style="max-width:320px;"></div>
+      <div class="row"><h2 style="margin:0;">Jobs</h2><span class="sp" style="flex:1"></span><input id="q" placeholder="Search order, customer, room…" style="max-width:320px;"><label class="btn alt" style="cursor:pointer;">Import job files<input type="file" id="importJobs" accept=".json,application/json" multiple style="display:none"></label></div>
+      <div class="note" id="importNote"></div>
       <div id="jobs"></div>
     </div>
     <div class="card" id="vEnq" hidden>
@@ -66,6 +67,11 @@ $('pass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('go').click(); }
 $('btnOut').onclick=async()=>{ await sb.auth.signOut(); location.reload(); };
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b)); $('vJobs').hidden=b.dataset.v!=='jobs'; $('vEnq').hidden=b.dataset.v!=='enq'; });
 $('q').oninput=()=>renderJobs();
+$('importJobs').onchange=async()=>{ const files=[...$('importJobs').files]; if(!files.length) return; let ok=0, bad=[];
+  for(const f of files){ try{ const st=JSON.parse(await f.text()); if(!st||!Array.isArray(st.cabs)) throw new Error('not a design file'); st.jobId=st.jobId||('j'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+    const row={id:st.jobId,order_ref:(st.tb&&st.tb.tbJob)||'',customer:(st.tb&&st.tb.tbCust)||'',rooms:(st.rooms||[]).map(r=>r.name+' ('+(r.cabs||[]).length+')').join(', '),state:st,updated_by:user.email};
+    const {error}=await sb.from('jobs').upsert(row); if(error) throw error; ok++; }catch(e){ bad.push(f.name+': '+e.message); } }
+  $('importNote').textContent=ok+' job'+(ok===1?'':'s')+' imported'+(bad.length?'. Skipped: '+bad.join('; '):'.'); $('importJobs').value=''; loadAll(); };
 async function loadAll(){
   const j=await sb.from('jobs').select('id,order_ref,customer,rooms,updated_at,updated_by').order('updated_at',{ascending:false}).limit(500); jobs=j.data||[];
   const e=await sb.from('enquiries').select('id,created_at,name,phone,email,suburb,message,order_ref,customer,handled').order('created_at',{ascending:false}).limit(200); enqs=e.data||[];
