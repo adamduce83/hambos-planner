@@ -1142,7 +1142,7 @@ function drawRunDim(run){
     if(wallRun) text(x0-30,dimY-60,'overheads',col,48,500,'end');
     else { // overall run figure above the run
       const top=Math.min(...items.map(c=>c.y)); const wallAbove=walls.some(w=>Math.abs(w.y1-w.y2)<1&&w.y1<top+10&&w.y1>top-260&&Math.max(w.x1,w.x2)>x0&&Math.min(w.x1,w.x2)<xEnd);
-      const oy=top-(wallAbove?330:150); line(x0,oy,xEnd,oy,col,4); line(x0,oy-30,x0,oy+30,col,4); line(xEnd,oy-30,xEnd,oy+30,col,4);
+      const oy=top-(wallAbove?300:150); line(x0,oy,xEnd,oy,col,4); line(x0,oy-30,x0,oy+30,col,4); line(xEnd,oy-30,xEnd,oy+30,col,4);
       text((x0+xEnd)/2,oy-40,'CABINETRY '+mm(xEnd-x0),col,84,800,'middle'); }
   } else {
     const y0=items[0].y, yEnd=Math.max(...items.map(c=>c.y+footprint(c).h));
@@ -1156,7 +1156,7 @@ function drawRunDim(run){
     });
     if(wallRun) text(dimX-118,y0-30,'overheads',col,48,500,'end');
     else { const left=Math.min(...items.map(c=>c.x)); const wallLeft=walls.some(w=>Math.abs(w.x1-w.x2)<1&&w.x1<left+10&&w.x1>left-260&&Math.max(w.y1,w.y2)>y0&&Math.min(w.y1,w.y2)<yEnd);
-      const ox=left-(wallLeft?330:150); line(ox,y0,ox,yEnd,col,4); line(ox-30,y0,ox+30,y0,col,4); line(ox-30,yEnd,ox+30,yEnd,col,4);
+      const ox=left-(wallLeft?300:150); line(ox,y0,ox,yEnd,col,4); line(ox-30,y0,ox+30,y0,col,4); line(ox-30,yEnd,ox+30,yEnd,col,4);
       const tt=mkText(0,0,'CABINETRY '+mm(yEnd-y0),col,84,800,'middle'); tt.setAttribute('transform',`translate(${ox-40},${(y0+yEnd)/2}) rotate(-90)`); svg.appendChild(tt); }
   }
 }
@@ -1684,6 +1684,15 @@ document.getElementById('roomDel').onclick=()=>{ if(rooms.length<2) return; if(!
 /* ---------- walls, manual dimensions, canvas tools ---------- */
 let walls=[], dims=[], selWall=null, selDim=null, tool='select', draft=null, snapOn=true, showGrid=true;
 const WALL_T=90;
+/* wall coordinates are the INSIDE face: the figure on a wall is the clear wall-to-wall size, and the thickness is drawn on the outside.
+   The outside is the side away from the room (cabinets first, otherwise the other walls). Returns the offset to the stroke centreline. */
+function wallOut(w){
+  let cx,cy; const src=cabs.length?cabs.map(c=>{ const f=footprint(c); return {x:c.x+f.w/2,y:c.y+f.h/2}; }):walls.flatMap(o=>[{x:o.x1,y:o.y1},{x:o.x2,y:o.y2}]);
+  if(src.length){ cx=src.reduce((a,p)=>a+p.x,0)/src.length; cy=src.reduce((a,p)=>a+p.y,0)/src.length; }
+  const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1), h=WALL_T/2;
+  if(horiz){ const inside=(cy==null||Math.abs(cy-w.y1)<1)?1:Math.sign(cy-w.y1); return {ox:0,oy:-inside*h}; }
+  const inside=(cx==null||Math.abs(cx-w.x1)<1)?1:Math.sign(cx-w.x1); return {ox:-inside*h,oy:0};
+}
 function svgPointSnap(e){ const p=svgPt(e); return {x:Math.max(BOARD.x0,Math.min(BOARD.x1,snap(p.x))),y:Math.max(BOARD.y0,Math.min(BOARD.y1,snap(p.y)))}; }
 function setTool(t){ if(tool===t&&!draft) { document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); return; } tool=t; draft=null; document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); svg.style.cursor=t==='select'?'':'crosshair'; if(t!=='select'){ selId=null; buildPanel(); } render(); }
 document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
@@ -1697,9 +1706,10 @@ function contentBBox(){ if(!cabs.length&&!walls.length) return null; let x0=Infi
 function mkLine(x1,y1,x2,y2,col,w,extra){ const l=document.createElementNS(SVGNS,'line'); l.setAttribute('x1',x1);l.setAttribute('y1',y1);l.setAttribute('x2',x2);l.setAttribute('y2',y2);l.setAttribute('stroke',col);l.setAttribute('stroke-width',w); if(extra) for(const k in extra) l.setAttribute(k,extra[k]); return l; }
 function drawWalls(){
   walls.forEach(w=>{ const g=document.createElementNS(SVGNS,'g'); g.style.cursor='pointer'; g.style.touchAction='none';
-    g.appendChild(mkLine(w.x1,w.y1,w.x2,w.y2,w.id===selWall?'#c9614b':'#3a3f33',WALL_T,{'stroke-linecap':'square'}));
-    const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1), mx=(w.x1+w.x2)/2, my=(w.y1+w.y2)/2;
-    const t=mkText(0,0,'WALL '+mm(wallLen(w)),'#2f3a2a',66,700,'middle'); t.setAttribute('transform',horiz?`translate(${mx},${my-WALL_T-16})`:`translate(${mx-WALL_T-16},${my}) rotate(-90)`); g.appendChild(t);
+    const o=wallOut(w); g.appendChild(mkLine(w.x1+o.ox,w.y1+o.oy,w.x2+o.ox,w.y2+o.oy,w.id===selWall?'#c9614b':'#3a3f33',WALL_T,{'stroke-linecap':'square'}));
+    const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1), mx=(w.x1+w.x2)/2+o.ox, my=(w.y1+w.y2)/2+o.oy;
+    // the figure sits on the outside of the wall, and reads inside face to inside face
+    const t=mkText(0,0,'WALL '+mm(wallLen(w)),'#2f3a2a',66,700,'middle'); t.setAttribute('transform',horiz?(o.oy<0?`translate(${mx},${my-WALL_T/2-120})`:`translate(${mx},${my+WALL_T/2+150})`):(o.ox<0?`translate(${mx-WALL_T/2-120},${my}) rotate(-90)`:`translate(${mx+WALL_T/2+150},${my}) rotate(-90)`)); g.appendChild(t);
     g.addEventListener('pointerdown',e=>{ if(tool!=='select') return; e.stopPropagation(); selWall=w.id; selDim=null; selId=null; buildPanel(); render(); });
     svg.appendChild(g); });
   if(draft&&draft.kind==='wall'){ svg.appendChild(mkLine(draft.x1,draft.y1,draft.x2,draft.y2,'#8a917f',WALL_T,{'stroke-dasharray':'80 50','stroke-linecap':'square'}));
@@ -2029,7 +2039,7 @@ function rebuild3D(){
   // walls drawn on the plan
   const ceilH=(parseInt(tbv('tbCeiling'))||2400)/1000;
   walls.forEach(w=>{ const len=wallLen(w)/1000; if(len<=0) return; const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1);
-    const geo=new THREE.BoxGeometry(horiz?len:0.09,ceilH,horiz?0.09:len); const mx=(w.x1+w.x2)/2000, mz=(w.y1+w.y2)/2000;
+    const o=wallOut(w); const geo=new THREE.BoxGeometry(horiz?len+0.09:0.09,ceilH,horiz?0.09:len+0.09); const mx=(w.x1+w.x2+2*o.ox)/2000, mz=(w.y1+w.y2+2*o.oy)/2000;
     addMesh(geo,mat3(0xd6d2c8,0.92),mx,ceilH/2,mz); addEdges(geo,mx,ceilH/2,mz,0.18); });
   cabs.forEach(c=>{
     const f=footprint(c),t=TYPES[c.type];
