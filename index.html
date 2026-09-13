@@ -181,6 +181,12 @@
   aside.rail #sideTabs button .ic{width:22px;height:22px;}
   #railToggle{position:absolute;left:calc(var(--asideW) - 11px);top:50%;transform:translateY(-50%);width:22px;height:52px;border-radius:11px;background:#fff;border:1px solid var(--line);box-shadow:0 3px 10px rgba(0,0,0,.12);cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center;padding:0;color:#566b4b;transition:left .18s ease;}
   #railToggle:hover{background:#f1f3ee;}
+  /* slide-out panel: opens beside the icon rail on hover or click, closes after a pick or when the pointer leaves */
+  #flyout{position:absolute;left:var(--asideW);top:0;bottom:0;width:300px;background:#fff;border-right:1px solid var(--line);box-shadow:10px 0 26px rgba(0,0,0,.14);z-index:26;overflow-y:auto;padding:14px 14px 20px;display:none;}
+  #flyout.open{display:block;animation:flyIn .16s ease-out;}
+  @keyframes flyIn{from{transform:translateX(-14px);opacity:0}to{transform:none;opacity:1}}
+  #flyout .stab{display:block!important;}
+  #flyout .stab h2{font-size:18px;}
   #railToggle .ic{width:16px;height:16px;stroke-width:2.4;}
   #sideTabs{gap:8px;padding:16px 0 14px;margin-top:-16px;top:-16px;}
   #sideTabs button{min-height:64px;border-radius:10px;background:#f6f7f3;border:1px solid var(--line);font-size:10px;font-weight:600;gap:6px;padding:8px 2px 6px;line-height:1.15;}
@@ -240,9 +246,10 @@
   #emptyState .caps{font-size:13px;letter-spacing:2.5px;font-weight:700;color:#2f3a2a;margin-top:6px;}
   #emptyState .lead{margin-top:22px;font-size:17px;color:#2f3a2a;display:flex;align-items:center;gap:14px;justify-content:center;text-align:left;}
   #emptyState .lead .script{font-size:34px;color:#2f3a2a;}
-  #viewPill{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;background:#fff;border:1px solid var(--line);border-radius:40px;box-shadow:0 6px 24px rgba(0,0,0,.10);padding:5px;z-index:20;}
-  #viewPill button{display:inline-flex;align-items:center;gap:8px;border:none;background:none;border-radius:30px;padding:11px 20px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;}
-  #viewPill button .ic{width:18px;height:18px;}
+  /* compact view switch, sized to match the toolbar */
+  #viewPill{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;background:#fff;border:1px solid var(--line);border-radius:30px;box-shadow:0 4px 14px rgba(0,0,0,.10);padding:3px;z-index:20;}
+  #viewPill button{display:inline-flex;align-items:center;gap:5px;border:none;background:none;border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;line-height:1;white-space:nowrap;}
+  #viewPill button .ic{width:14px;height:14px;}
   #viewPill button.active{background:var(--forest);color:#fff;}
   #canvasOpts{position:absolute;right:14px;bottom:16px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.10);padding:10px 14px;display:flex;flex-direction:column;gap:8px;font-size:13px;z-index:20;}
   #canvasOpts label{display:flex;align-items:center;gap:8px;cursor:pointer;}
@@ -271,7 +278,7 @@
     .cards{gap:6px;} .card svg{width:70px;height:48px;}
     #floatTools{top:6px;left:8px;right:8px;transform:none;max-width:none;overflow-x:auto;padding:3px;} #floatTools button{font-size:10px;padding:5px 7px;} #floatTools .fsep{margin:0 2px;}
     #emptyState .big{font-size:44px;} #emptyState .lead{font-size:14px;} #emptyState .lead .script{font-size:22px;}
-    #viewPill{bottom:8px;} #viewPill button{padding:9px 12px;font-size:12px;}
+    #viewPill{bottom:6px;} #viewPill button{padding:5px 9px;font-size:10px;}
     #canvasOpts{display:none;}
     .hint{display:none;}
     footer.strip{display:none;}
@@ -435,6 +442,7 @@
       </details>
     </div>
   </aside>
+  <div id="flyout" aria-live="polite"></div>
 
   <main>
     <div id="floatTools">
@@ -847,6 +855,7 @@ function addCab(type){
   const bottom=t.mount==='bench'?benchH:((t.mount==='wall'&&(type==='wall'||type==='rangehood'||type==='microwave'||type==='microwall'))?benchH+overheadClear():(t.bottom||0));
   cabs.push({id:nextId++,type,width,depth,height:t.eh,bottom,x:snap(ox),y:snap(oy),rot:0,front:(t.stack?'stack':(t.defFront||(noDoor?'none':'doors'))),stack:t.stack?t.stack.slice():undefined,hinge:(width>600?'D':'L'),drawers:3,label:'',door:null,price:null});
   selId=nextId-1; render(); buildPanel();
+  if(typeof flyTab!=='undefined'&&flyTab) flyoutClose(true); // picked a piece: the slide-out goes away
 }
 function snap(v){return snapOn?Math.round(v/SNAP)*SNAP:Math.round(v);}
 // sizes in mm: ignore blanks (keep the old value) and clamp to sensible limits
@@ -1796,6 +1805,7 @@ const asideEl=document.getElementById('palette');
 /* desktop: the side panel pops in and out (icon rail when collapsed) */
 function setRail(on){
   if(isMobile()) return;
+  if(typeof flyTab!=='undefined'&&flyTab) flyoutClose(true);
   asideEl.classList.toggle('rail',on);
   document.querySelector('.layout').style.setProperty('--asideW',on?'60px':'280px');
   const tg=document.getElementById('railToggle'); tg.innerHTML='<svg class="ic" aria-hidden="true"><use href="#i-'+(on?'chevr':'chevl')+'"/></svg>'; tg.title=tg.ariaLabel=on?'Show the side panel':'Hide the side panel';
@@ -1805,13 +1815,35 @@ function setRail(on){
 document.getElementById('railToggle').onclick=()=>setRail(!asideEl.classList.contains('rail'));
 let sideTab='build', prevSideTab='build';
 function setSideTab(t,remember){
+  if(typeof flyTab!=='undefined'&&flyTab&&flyTab!==t) flyoutClose(true);
   if(remember!==false&&t!=='selected') prevSideTab=t;
   sideTab=t;
   document.querySelectorAll('#sideTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
   document.querySelectorAll('.stab').forEach(p=>p.hidden=p.dataset.tab!==t);
   asideEl.scrollTop=0;
 }
-document.querySelectorAll('#sideTabs button').forEach(b=>b.onclick=()=>{ if(asideEl.classList.contains('rail')) setRail(false); setSideTab(b.dataset.tab); });
+/* ---- slide-out beside the rail ---- */
+const flyEl=document.getElementById('flyout'); let flyTab=null, flyTimer=null;
+function flyoutOpen(tab){
+  if(!asideEl.classList.contains('rail')||isMobile()) return;
+  clearTimeout(flyTimer);
+  if(flyTab&&flyTab!==tab) flyoutClose(true);
+  const st=document.querySelector('.stab[data-tab="'+tab+'"]'); if(!st) return;
+  if(flyTab!==tab){ flyEl.appendChild(st); st.hidden=false; flyTab=tab; flyEl.scrollTop=0; }
+  flyEl.classList.add('open');
+  document.querySelectorAll('#sideTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+}
+function flyoutClose(now){
+  clearTimeout(flyTimer);
+  const go=()=>{ if(!flyTab) return; const st=flyEl.querySelector('.stab'); if(st){ asideEl.appendChild(st); st.hidden=st.dataset.tab!==sideTab; } flyTab=null; flyEl.classList.remove('open'); document.querySelectorAll('#sideTabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===sideTab)); };
+  if(now) go(); else flyTimer=setTimeout(go,380);
+}
+document.querySelectorAll('#sideTabs button').forEach(b=>{
+  b.onclick=()=>{ if(asideEl.classList.contains('rail')&&!isMobile()){ if(flyTab===b.dataset.tab&&flyEl.classList.contains('open')) flyoutClose(true); else flyoutOpen(b.dataset.tab); return; } setSideTab(b.dataset.tab); };
+  b.addEventListener('pointerenter',e=>{ if(e.pointerType==='mouse') flyoutOpen(b.dataset.tab); });
+});
+[asideEl,flyEl].forEach(el=>{ el.addEventListener('pointerenter',()=>clearTimeout(flyTimer)); el.addEventListener('pointerleave',e=>{ if(e.pointerType==='mouse'&&flyTab) flyoutClose(false); }); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&flyTab) flyoutClose(true); });
 function openDrawer(){ asideEl.classList.remove('collapsed'); document.getElementById('asideArrow').innerHTML='&#9660;'; setHandleText(); if(typeof applyZoom==='function') applyZoom(); }
 function collapseDrawer(){ if(asideEl.classList.contains('collapsed')) return; asideEl.classList.add('collapsed'); document.getElementById('asideArrow').innerHTML='&#9650;'; setHandleText(); if(typeof applyZoom==='function') applyZoom(); }
 function setHandleText(){ const h=document.querySelector('#asideHandle span'); if(h) h.textContent=asideEl.classList.contains('collapsed')?'Add cabinets & tools':'Design tools'; }
@@ -1850,7 +1882,7 @@ const WORK_SCALE=0.2;            // px per mm: a 600 mm cabinet is 120 px wide o
 const SHEET_PAD=18;              // #planWrap / #viewElev side padding
 const padTop=()=>isMobile()?100:140; // top padding: keeps the sheet clear of the floating toolbar
 // parts of the work area covered by floating controls, in px
-function viewInsets(){ const m=isMobile(); const rp=document.getElementById('rightPanel'); const rpW=(!m&&rp&&rp.parentNode&&rp.parentNode.tagName==='MAIN'&&rp.style.display!=='none'&&currentView==='plan')?rp.offsetWidth+40:0; return {top:m?60:70,bottom:m?80:100,left:0,right:rpW}; }
+function viewInsets(){ const m=isMobile(); const rp=document.getElementById('rightPanel'); const rpW=(!m&&rp&&rp.parentNode&&rp.parentNode.tagName==='MAIN'&&rp.style.display!=='none'&&currentView==='plan')?rp.offsetWidth+40:0; return {top:m?60:70,bottom:m?60:70,left:0,right:rpW}; }
 const mainEl=document.getElementById('canvasScroll'); // the scrolling part of the work area (overlays sit outside it)
 let scale=WORK_SCALE; const viewScales={plan:WORK_SCALE,elev:null};
 function applyZoom(){
@@ -1898,7 +1930,7 @@ window.addEventListener('resize',applyZoom);
 mainEl.addEventListener('wheel',e=>{ if(!(e.ctrlKey||e.metaKey)||currentView==='3d') return; e.preventDefault(); setScale(scale*(e.deltaY<0?1.1:1/1.1),{cx:e.clientX,cy:e.clientY}); },{passive:false});
 // touch: two fingers pinch to zoom and pan; one finger still scrolls the sheet natively
 const touchPts=new Map(); let pinch=null;
-mainEl.addEventListener('pointerdown',e=>{ if(isMobile()) collapseDrawer(); if(e.pointerType!=='touch') return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+mainEl.addEventListener('pointerdown',e=>{ if(typeof flyTab!=='undefined'&&flyTab) flyoutClose(true); if(isMobile()) collapseDrawer(); if(e.pointerType!=='touch') return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(touchPts.size===2){ endDrag(); const [a,b]=[...touchPts.values()]; pinch={d:Math.hypot(a.x-b.x,a.y-b.y),cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,s:scale}; } });
 mainEl.addEventListener('pointermove',e=>{ if(!touchPts.has(e.pointerId)) return; touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pinch&&touchPts.size===2){ const [a,b]=[...touchPts.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y), cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
@@ -2523,7 +2555,7 @@ const restored=loadState();
 cloudRefresh().then(async()=>{ const id=new URLSearchParams(location.search).get('job'); if(id&&isStaff){ const st=await cloudGetJob(id); if(st&&applyState(st)){ buildFinishUI(); buildApplUI(); buildRoomUI(); buildPriceUI(); undoButtons(); render(); buildPanel(); fitToCabinets(true); } } });
 wireTitleBlock();
 placePanels();
-try{ if(localStorage.getItem('hambosRail')==='1') setRail(true); }catch(e){}
+try{ if(localStorage.getItem('hambosRail')!=='0') setRail(true); }catch(e){ setRail(true); }
 buildFinishUI();
 buildApplUI();
 buildRoomUI();
