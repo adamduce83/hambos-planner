@@ -2193,15 +2193,15 @@ function buildSheet(kind,sheetNo,sheetOf){
   if(LOGO){ const lh=500, lw=lh*LOGO_RATIO; const im=document.createElementNS(SVGNS,'image'); im.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',LOGO); im.setAttribute('href',LOGO); im.setAttribute('x',230+(1300-lw)/2); im.setAttribute('y',110+90); im.setAttribute('width',lw); im.setAttribute('height',lh); S.appendChild(im); }
   const issued=fmtDate(tbv('tbDate'))||fmtDate(new Date().toISOString().slice(0,10));
   const room=tbv('tbRoom')||'Kitchen';
-  T(1750,430,'INSTALLER PLAN','#ffffff',290,800,'start');
-  T(1750,660,room+'   |   Sheet '+(sheetNo||1)+' of '+(sheetOf||1)+'   |   Issued '+issued+(kind==='elev'?'   |   Elevations':''),'#cdd9c1',105,500,'start');
+  T(1750,430,kind==='details'?'JOB DETAILS':'INSTALLER PLAN','#ffffff',290,800,'start');
+  T(1750,660,(kind==='details'?'Approval & specification':room)+'   |   Sheet '+(sheetNo||1)+' of '+(sheetOf||1)+'   |   Issued '+issued+(kind==='elev'?'   |   Elevations':''),'#cdd9c1',105,500,'start');
   R(SHEET_W-3950,150,3700,600,BRIGHT,null,0,60);
   T(SHEET_W-2100,400,'STOP BEFORE CUTTING','#ffffff',125,800,'middle');
   T(SHEET_W-2100,570,"Call Hambo's if anything doesn't fit.",'#eafff4',76,500,'middle');
   /* ---- customer strip ---- */
   R(0,900,SHEET_W,720,PALE);
-  const cols=[['Customer',tbv('tbCust')],['Site address',tbv('tbAddr')],['Mobile',tbv('tbMobile')],['Room',room],['Page',(sheetNo||1)+' / '+(sheetOf||1)]];
-  const cx0=250, cwid=(SHEET_W-500)/5;
+  const cols=[['Order / Ref',tbv('tbJob')],['Customer',tbv('tbCust')],['Site address',tbv('tbAddr')],['Mobile',tbv('tbMobile')],['Room',kind==='details'?'All rooms':room],['Page',(sheetNo||1)+' / '+(sheetOf||1)]];
+  const cx0=250, cwid=(SHEET_W-500)/6;
   cols.forEach(([lb,v],i)=>{ const cx=cx0+i*cwid; if(i) L(cx-100,980,cx-100,1540,'#d6ddcd',3); T(cx,1060,lb.toUpperCase(),'#566b4b',54,700,'start'); const ls=wrapText(v||'—',Math.floor(cwid/54)).slice(0,2); ls.forEach((l,j)=>T(cx,1200+j*100,l,INK,100,700,'start')); });
   const notes=[tbv('tbNotes'),tbv('tbSpecial')].filter(Boolean).join('  ·  ');
   T(cx0,1470,'Installer: verify site measurements, services and levels before installation.'+(notes?'   Notes: '+wrapText(notes,140)[0]+(wrapText(notes,140).length>1?' …':''):''),'#3a3f33',62,500,'start');
@@ -2220,6 +2220,54 @@ function buildSheet(kind,sheetNo,sheetOf){
       planVB=[bx0,by0,bx1-bx0,by1-by0];
     }
     nest(svg,planVB,fx+100,top+100,fw-200,fh-200);
+  } else if(kind==='details'){
+    T(fx,top-80,'JOB DETAILS, FINISHES & APPROVAL',INK,92,800,'start'); T(fx+3500,top-80,'everything the office and the customer sign off on','#6a7361',60,500,'start');
+    R(fx,top,fw,fh,'#ffffff','#2a2f28',6,50);
+    const colW=(fw-360)/4, cy0=top+140;
+    for(let i=1;i<4;i++) L(fx+120+colW*i-60,cy0+40,fx+120+colW*i-60,top+fh-520,'#e4e9dd',4);
+    const head=(cx,txt)=>{ T(cx,cy0+100,txt.toUpperCase(),BRIGHT,92,800,'start'); L(cx,cy0+170,cx+colW-160,cy0+170,'#d6ddcd',5); return cy0+330; };
+    const row=(cx,y,lb,v)=>{ T(cx,y,lb,'#566b4b',66,600,'start'); const ls=wrapText(v||'—',Math.floor((colW-160)/56)).slice(0,3); ls.forEach((l,i)=>T(cx,y+130+i*128,l,INK,116,700,'start')); return y+130+ls.length*128+110; };
+    // 1 — the job
+    let cx=fx+120, y=head(cx,'The job');
+    y=row(cx,y,'Order / Ref number',tbv('tbJob'));
+    y=row(cx,y,'Customer',tbv('tbCust'));
+    y=row(cx,y,'Site address',tbv('tbAddr'));
+    y=row(cx,y,'Mobile',tbv('tbMobile'));
+    y=row(cx,y,'Rooms on this job',rooms.map(r=>r.name+' ('+((r.cabs||[]).length)+')').join(', '));
+    y=row(cx,y,'Ceiling height',tbv('tbCeiling')?tbv('tbCeiling')+' mm':'');
+    y=row(cx,y,'Cabinet height',tbv('tbCabH')?tbv('tbCabH')+' mm':'');
+    y=row(cx,y,'Bench height / kickboard',benchH+' mm   /   '+STD.kick+' mm');
+    // 2 — finishes, with the colour swatches
+    cx=fx+120+colW; y=head(cx,'Finishes');
+    const fmap=new Map(); rooms.forEach(r=>(r.cabs||[]).forEach(c=>{ const dr=c.door||scheme.door; if(!fmap.has(dr.color)) fmap.set(dr.color,dr.name); }));
+    if(!fmap.size) fmap.set(scheme.door.color,scheme.door.name);
+    T(cx,y,'Door colours','#566b4b',66,600,'start'); y+=140;
+    [...fmap.entries()].slice(0,6).forEach(([col,nm])=>{ R(cx,y-100,130,130,col,'#2a2f28',4,20); T(cx+180,y,nm,INK,110,700,'start'); y+=170; });
+    y+=50;
+    y=row(cx,y,'Door finish',tbv('tbDoorFinish')||'Satin');
+    y=row(cx,y,'Door profile','Doors — '+scheme.profile+',   Drawers — '+(scheme.drawerProfile||scheme.profile));
+    y=row(cx,y,'Handle',tbv('tbHandle')||'TBC');
+    y=row(cx,y,'Drawers / Hinges',(tbv('tbDrawers')||'S/C')+'   /   '+(tbv('tbHinges')||'S/C')+(tbv('tbBlum')?'   ·   Blum upgrade':''));
+    T(cx,y,'Benchtop','#566b4b',66,600,'start'); R(cx,y+40,130,130,scheme.bench.color,'#2a2f28',4,20);
+    wrapText(benchtopText(),Math.floor((colW-360)/56)).slice(0,2).forEach((l,i)=>T(cx+180,y+150+i*126,l,INK,110,700,'start')); y+=330;
+    y=row(cx,y,'Edge finish',tbv('tbEdge')||'Pencil Edge');
+    // 3 — appliances
+    cx=fx+120+colW*2; y=head(cx,'Appliances');
+    const ap=applianceLines(), apChars=Math.floor((colW-160)/56);
+    if(!ap.length) T(cx,y,'None recorded on the appliance form.','#6a7361',100,500,'start');
+    else ap.slice(0,8).forEach(([n,v])=>{ const ls=wrapText(v,apChars).slice(0,2); T(cx,y,n,'#566b4b',66,600,'start'); ls.forEach((l,i)=>T(cx,y+128+i*122,l,INK,106,700,'start')); y+=128+ls.length*122+96; });
+    // 4 — notes
+    cx=fx+120+colW*3; y=head(cx,'Notes');
+    [['Notes',tbv('tbNotes')],['Quoting notes',tbv('tbQuoteNotes')],['Special requests',tbv('tbSpecial')]].forEach(([lb,tx])=>{ T(cx,y,lb.toUpperCase(),'#566b4b',66,700,'start'); const ls=wrapText(tx||'—',Math.floor((colW-160)/44)).slice(0,8); ls.forEach((l,i)=>T(cx,y+128+i*104,l,INK,88,500,'start')); y+=128+Math.max(2,ls.length)*104+150; });
+    // approval strip along the bottom of the panel
+    const ay=top+fh-430; L(fx+120,ay,fx+fw-120,ay,'#d6ddcd',5);
+    T(fx+120,ay+160,'CUSTOMER APPROVAL','#566b4b',80,800,'start');
+    T(fx+120,ay+280,'I approve this plan for production. Sizes checked on site.','#3a3f33',66,500,'start');
+    T(fx+3400,ay+160,'SIGNATURE','#566b4b',66,700,'start'); L(fx+4400,ay+175,fx+8000,ay+175,'#2a2f28',5);
+    T(fx+8300,ay+160,'DATE','#566b4b',66,700,'start'); L(fx+8900,ay+175,fx+11200,ay+175,'#2a2f28',5);
+    const by2=tbv('tbBy'); T(fx+3400,ay+280,(by2?'Designed by '+by2+'   ·   ':'')+'Issued '+issued,'#6a7361',62,500,'start');
+    const tot2=tbv('tbTotal');
+    if(tot2){ R(fx+fw-3000,ay+60,2880,260,BRIGHT,null,0,40); T(fx+fw-2860,ay+180,'QUOTE TOTAL','#eafff4',62,700,'start'); T(fx+fw-260,ay+192,tot2,'#ffffff',120,800,'end'); }
   } else {
     T(fx,top-80,'ELEVATIONS — FRONT VIEWS',INK,92,800,'start'); T(fx+2600,top-80,'one panel per wall  ·  heights in mm  ·  870 bench line shown','#6a7361',60,500,'start');
     R(fx,top,fw,fh,'#ffffff','#2a2f28',6,50);
@@ -2241,7 +2289,7 @@ function buildSheet(kind,sheetNo,sheetOf){
   R(0,fy,SHEET_W,1950,DARK);
   T(250,fy+400,'INSTALL','#ffffff',130,800,'start'); T(250,fy+560,'SPECIFICATION','#ffffff',130,800,'start');
   const fin=finishesUsed().map(f=>f.name).join(', ');
-  const spec=[['cab','Cabinet height',tbv('tbCabH')?tbv('tbCabH')+' mm':'—'],['drw','Doors / Drawers',scheme.profile+' / '+(scheme.drawerProfile||scheme.profile)],['brush','Colour / Finish',fin+' / '+(tbv('tbDoorFinish')||'Satin')],['handle','Handle',tbv('tbHandle')||'TBC'],['kick','Kickboard',STD.kick+' mm'],['bench','Benchtop',benchtopText()],['edge','Edge',tbv('tbEdge')||'Pencil Edge']];
+  const spec=[['cab','Ceiling / cabinet',(tbv('tbCeiling')?tbv('tbCeiling')+' mm':'—')+'  /  '+(tbv('tbCabH')?tbv('tbCabH')+' mm':'—')],['drw','Doors / Drawers',scheme.profile+' / '+(scheme.drawerProfile||scheme.profile)],['brush','Colour / Finish',fin+' / '+(tbv('tbDoorFinish')||'Satin')],['handle','Handle',tbv('tbHandle')||'TBC'],['kick','Kickboard',STD.kick+' mm'],['bench','Benchtop',benchtopText()],['edge','Edge',tbv('tbEdge')||'Pencil Edge']];
   const cardX=2250, cardGap=90, cardW=(SHEET_W-cardX-250-cardGap*6)/7, cardY=fy+150, cardH=780;
   const icon=(k,x,y)=>{ const c='#1f2620', sw=16; // 300 x 300 line pictograms
     if(k==='cab'){ R(x+40,y+20,220,260,'none',c,sw,18); L(x+150,y+20,x+150,y+280,c,sw); R(x+118,y+130,20,60,c); R(x+162,y+130,20,60,c); }
@@ -2267,7 +2315,8 @@ function buildSheet(kind,sheetNo,sheetOf){
 function allSheets(){
   const orig=curRoom, out=[];
   const plan=[]; for(let i=0;i<rooms.length;i++){ switchRoom(i,true); const kinds=['plan']; if(cabs.length&&elevWalls().length) kinds.push('elev'); kinds.forEach(k=>plan.push({i,k})); }
-  plan.forEach((p,n)=>{ switchRoom(p.i,true); out.push({name:roomName(p.i)+(p.k==='elev'?' Elevations':''),svg:buildSheet(p.k,n+1,plan.length)}); });
+  plan.push({i:0,k:'details'}); // the office and customer page: full specification, appliances, notes, sign-off
+  plan.forEach((p,n)=>{ switchRoom(p.i,true); out.push({name:p.k==='details'?'Job details':(roomName(p.i)+(p.k==='elev'?' Elevations':'')),svg:buildSheet(p.k,n+1,plan.length)}); });
   switchRoom(orig,true); render(); buildPanel(); return out;
 }
 function printImages(urls,title){
