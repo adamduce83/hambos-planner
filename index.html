@@ -698,6 +698,19 @@ function hexShade(hex,k){ const n=parseInt(String(hex).slice(1),16); const ch=v=
 function isWoodgrain(hex){ const d=DOORS.find(x=>x.color.toLowerCase()===String(hex).toLowerCase()); return !!(d&&/woodgrain/i.test(d.group||'')); }
 function ensureDefs(svgEl){ let d=svgEl.querySelector('defs'); if(!d){ d=document.createElementNS(SVGNS,'defs'); svgEl.insertBefore(d,svgEl.firstChild); } return d; }
 /* a woodgrain fill for the 2D sheets: the swatch colour with fine grain lines in lighter and darker tones */
+/* a painted door is not a flat colour: light falls across it, so every poly colour gets a soft sheen */
+function sheenFill(svgEl,hex,vertical){
+  const id=(svgEl.id||'svg')+'-sh-'+String(hex).slice(1)+(vertical?'v':'h'); const d=ensureDefs(svgEl);
+  if(!d.querySelector('#'+id)){
+    const g=document.createElementNS(SVGNS,'linearGradient'); g.setAttribute('id',id);
+    g.setAttribute('x1','0'); g.setAttribute('y1','0'); g.setAttribute('x2',vertical?'0':'1'); g.setAttribute('y2',vertical?'1':'0');
+    [[0,1.055],[0.38,1.015],[0.72,0.975],[1,0.93]].forEach(([off,k])=>{ const st=document.createElementNS(SVGNS,'stop'); st.setAttribute('offset',off); st.setAttribute('stop-color',hexShade(hex,k)); g.appendChild(st); });
+    d.appendChild(g);
+  }
+  return 'url(#'+id+')';
+}
+/* the fill for a door or a panel in that colour: grain for the woodgrains, sheen for everything else */
+function materialFill(svgEl,hex,vertical){ return isWoodgrain(hex)?grainFill(svgEl,hex,vertical):sheenFill(svgEl,hex,vertical); }
 function grainFill(svgEl,hex,vertical){
   if(!isWoodgrain(hex)) return hex;
   const id=(svgEl.id||'svg')+'-wg-'+String(hex).slice(1)+(vertical?'v':'h'); const d=ensureDefs(svgEl); // ids are per-svg: a url(#…) resolves document-wide, and a pattern inside a hidden svg does not paint
@@ -987,7 +1000,7 @@ function drawCab(c){
   if(padMM>0){ const hit=document.createElementNS(SVGNS,'rect'); hit.setAttribute('x',-padMM); hit.setAttribute('y',-padMM); hit.setAttribute('width',f.w+2*padMM); hit.setAttribute('height',f.h+2*padMM); hit.setAttribute('fill','none'); hit.style.pointerEvents='all'; g.appendChild(hit); }
   const r=document.createElementNS(SVGNS,'rect');
   r.setAttribute('width',f.w); r.setAttribute('height',f.h); r.setAttribute('rx',t.thin?2:8);
-  r.setAttribute('fill',(t.appliance||t.window||t.benchOnly)?fill:grainFill(svg,fill,true));
+  r.setAttribute('fill',(t.appliance||t.window)?fill:materialFill(svg,fill,!t.benchOnly));
   const ov=OVERLAP.has(c.id);
   r.setAttribute('stroke',ov?'#d0342c':((c.id===selId||selIds.has(c.id))?'#c9614b':'#33372e'));
   r.setAttribute('stroke-width',ov||c.id===selId?3:1.5);
@@ -1254,7 +1267,7 @@ function drawElevCab(c,xLeft,floorYp){
   const t=TYPES[c.type], w=c.width, bd=cabBand(c), hh=bd[1]-bd[0];
   const fill=t.appliance?'#d9dde2':(t.window?'#eef4f7':doorColor(c)), tc=textOn(fill);
   const y=floorYp-bd[1];
-  const gf=(t.appliance||t.window)?fill:grainFill(E,fill,true);
+  const gf=(t.appliance||t.window)?fill:materialFill(E,fill,true);
   if(t.benchOnly){ eT(xLeft+w/2,y+hh/2,(c.label||t.code),'#6a7361',48,600,'middle'); return; } // the bench slab is drawn per run
   if(t.bench){
     eR(xLeft,y+40,w,hh-40,gf,'#33372e',1.5,6);
@@ -1355,7 +1368,7 @@ function eHandle(x1,y1,x2,y2,tc){ if(/finger|j pull/i.test(scheme.profile)){ eL(
 function eFront(x,y,w,h,c,tc){
   const ft=c.front||'doors', t=TYPES[c.type]; const col=doorColor(c);
   const shaker=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
-  const frame=(fx,fy,fw,fh)=>{ if(!shaker)return; const ins=Math.min(70,fw*0.16,fh*0.16); if(fw-2*ins>20&&fh-2*ins>20){ const r=eR(fx+ins,fy+ins,fw-2*ins,fh-2*ins,isWoodgrain(col)?grainFill(E,col,true):hexShade(col,0.93),tc,1.1); r.setAttribute('stroke-opacity',0.55); eL(fx+ins,fy+ins,fx+fw-ins,fy+ins,'#000000',3,0.14); eL(fx+ins,fy+ins,fx+ins,fy+fh-ins,'#000000',3,0.10); eL(fx+ins,fy+fh-ins,fx+fw-ins,fy+fh-ins,'#ffffff',3,0.35); } };
+  const frame=(fx,fy,fw,fh)=>{ if(!shaker)return; const ins=Math.min(70,fw*0.16,fh*0.16); if(fw-2*ins>20&&fh-2*ins>20){ const r=eR(fx+ins,fy+ins,fw-2*ins,fh-2*ins,materialFill(E,hexShade(col,0.965),true),tc,1.1); r.setAttribute('stroke-opacity',0.55); eL(fx+ins,fy+ins,fx+fw-ins,fy+ins,'#000000',3,0.14); eL(fx+ins,fy+ins,fx+ins,fy+fh-ins,'#000000',3,0.10); eL(fx+ins,fy+fh-ins,fx+fw-ins,fy+fh-ins,'#ffffff',3,0.35); } };
   if(ft==='stack'){ const segs=stackSegs(c), hs=stackHeights(c,h); let yy=y+h; segs.forEach((k,i)=>{ const sh=hs[i]; yy-=sh; if(i>0) eL(x,yy+sh,x+w,yy+sh,tc,1.8,0.6); eSegment(k,x,yy,w,sh,c,tc,frame); }); return; }
   if(ft==='open'){ eR(x+30,y+30,w-60,h-60,'none',tc,1.4); eSegment('open',x,y,w,h,c,tc,frame); return; }
   if(ft==='winerack'){ const st=Math.max(120,Math.min(w,h)/4); for(let o=-h;o<w;o+=st){ eL(x+Math.max(0,o),y+Math.max(0,-o),x+Math.min(w,o+h),y+Math.min(h,w-o),tc,1.2,0.6); eL(x+Math.max(0,o),y+h-Math.max(0,-o),x+Math.min(w,o+h),y+h-Math.min(h,w-o),tc,1.2,0.6); } return; }
@@ -2087,15 +2100,15 @@ function start3D(){
   if(!renderer){
     renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-    renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+    renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.72; // measured: at 0.92 every colour clipped toward white; 0.72 renders the swatch
     renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     scene=new THREE.Scene(); scene.background=backdropTexture();
     camera=new THREE.PerspectiveCamera(42,w/h,0.1,200);
-    scene.add(new THREE.HemisphereLight(0xffffff,0xb5bfa8,0.55));
-    scene.add(new THREE.AmbientLight(0xffffff,0.18));
-    const key=new THREE.DirectionalLight(0xfff5e6,1.05); key.castShadow=true; key.shadow.mapSize.set(2048,2048); key.shadow.bias=-0.0005; key.shadow.normalBias=0.03;
+    scene.add(new THREE.HemisphereLight(0xf4f7ff,0xa9b49c,0.34));
+    scene.add(new THREE.AmbientLight(0xffffff,0.10));
+    const key=new THREE.DirectionalLight(0xfff4e2,0.78); key.castShadow=true; key.shadow.mapSize.set(2048,2048); key.shadow.bias=-0.0005; key.shadow.normalBias=0.03;
     const sc=key.shadow.camera; sc.near=0.5; sc.far=80; sc.left=-16; sc.right=16; sc.top=16; sc.bottom=-16; scene.add(key); scene.add(key.target); scene.userData.key=key;
-    const fill=new THREE.DirectionalLight(0xdde7ff,0.35); fill.position.set(-9,6,-6); scene.add(fill); scene.userData.fill=fill;
+    const fill=new THREE.DirectionalLight(0xdde7ff,0.22); fill.position.set(-9,6,-6); scene.add(fill); scene.userData.fill=fill;
     cv.addEventListener('pointerdown',e=>{dragging3d=true;last3d={x:e.clientX,y:e.clientY};});
     window.addEventListener('pointerup',()=>dragging3d=false);
     window.addEventListener('pointermove',e=>{ if(!dragging3d)return;
@@ -2139,7 +2152,13 @@ function stoneTexture(hex){ const key='s'+hex; if(TEX3[key]) return TEX3[key]; c
   for(let i=0;i<3;i++){ ctx.strokeStyle=rgba(base.clone().multiplyScalar(0.9),0.25); ctx.lineWidth=1.2; ctx.beginPath(); let x=Math.random()*512,y=0; ctx.moveTo(x,y); while(y<512){ y+=20; x+=(Math.random()-0.5)*40; ctx.lineTo(x,y); } ctx.stroke(); }
   const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2); t.encoding=THREE.sRGBEncoding; TEX3[key]=t; return t; }
 /* door and carcass finishes: satin poly with a clear coat, or textured woodgrain */
-function frontMat(hex,k){ const col=k?hexShade(hex,k):hex; if(isWoodgrain(hex)){ return new THREE.MeshStandardMaterial({map:woodTexture(hex),color:new THREE.Color(k?hexShade('#ffffff',k):'#ffffff'),roughness:0.62,metalness:0.02}); } return new THREE.MeshPhysicalMaterial({color:new THREE.Color(col),roughness:0.42,metalness:0.02,clearcoat:0.35,clearcoatRoughness:0.35}); }
+/* fine orange-peel of a sprayed 2-pac door: a greyscale bump the key light can catch */
+function satinTexture(){ if(TEX3.satin) return TEX3.satin; const cv=document.createElement('canvas'); cv.width=256; cv.height=256; const ctx=cv.getContext('2d');
+  ctx.fillStyle='#808080'; ctx.fillRect(0,0,256,256);
+  for(let i=0;i<9000;i++){ const v=128+Math.round((Math.random()-0.5)*46); ctx.fillStyle='rgb('+v+','+v+','+v+')'; ctx.fillRect(Math.random()*256,Math.random()*256,1.6,1.6); }
+  for(let i=0;i<60;i++){ const v=128+Math.round((Math.random()-0.5)*18); ctx.fillStyle='rgba('+v+','+v+','+v+',0.5)'; ctx.beginPath(); ctx.arc(Math.random()*256,Math.random()*256,6+Math.random()*14,0,7); ctx.fill(); }
+  const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,3); TEX3.satin=t; return t; }
+function frontMat(hex,k){ const col=k?hexShade(hex,k):hex; if(isWoodgrain(hex)){ return new THREE.MeshStandardMaterial({map:woodTexture(hex),color:new THREE.Color(k?hexShade('#ffffff',k):'#ffffff'),roughness:0.62,metalness:0.02}); } return new THREE.MeshPhysicalMaterial({color:new THREE.Color(col),roughness:0.44,metalness:0.02,clearcoat:0.38,clearcoatRoughness:0.3,bumpMap:satinTexture(),bumpScale:0.0016}); }
 /* studio backdrop: darker sage at the top fading to a soft warm grey at the horizon, so white kitchens read as white */
 function backdropTexture(){ if(TEX3.bg) return TEX3.bg; const cv=document.createElement('canvas'); cv.width=4; cv.height=512; const ctx=cv.getContext('2d'); const g=ctx.createLinearGradient(0,0,0,512); g.addColorStop(0,'#5f6b5e'); g.addColorStop(0.55,'#8d978a'); g.addColorStop(1,'#b9bdb2'); ctx.fillStyle=g; ctx.fillRect(0,0,4,512); const t=new THREE.CanvasTexture(cv); t.encoding=THREE.sRGBEncoding; TEX3.bg=t; return t; }
 /* timber floorboards: 1.2 m x 0.15 m boards, staggered, warm oak */
@@ -2149,7 +2168,7 @@ function floorTexture(){ if(TEX3.floor) return TEX3.floor; const cv=document.cre
       for(let j=0;j<18;j++){ ctx.fillStyle=rgba(base.clone().multiplyScalar(k*(0.88+Math.random()*0.24)),0.35); ctx.fillRect(x,y+Math.random()*BW,BL,1+Math.random()*2); }
       ctx.strokeStyle='rgba(60,40,25,0.55)'; ctx.lineWidth=2; ctx.strokeRect(x+1,y+1,BL-2,BW-2); } }
   const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.encoding=THREE.sRGBEncoding; t.anisotropy=8; TEX3.floor=t; return t; }
-function benchMat(){ const hex=scheme.bench.color; const stone=!/oak|walnut|timber|wood/i.test(scheme.bench.name||''); return stone?new THREE.MeshPhysicalMaterial({map:stoneTexture(hex),color:new THREE.Color('#ffffff'),roughness:0.22,metalness:0.02,clearcoat:0.6,clearcoatRoughness:0.2}):new THREE.MeshStandardMaterial({map:woodTexture(hex),roughness:0.5}); }
+function benchMat(){ const hex=scheme.bench.color; const stone=!/oak|walnut|timber|wood/i.test(scheme.bench.name||''); return stone?new THREE.MeshPhysicalMaterial({map:stoneTexture(hex),color:new THREE.Color('#ffffff'),roughness:0.22,metalness:0.02,clearcoat:0.6,clearcoatRoughness:0.2,bumpMap:satinTexture(),bumpScale:0.0009}):new THREE.MeshStandardMaterial({map:woodTexture(hex),roughness:0.5}); }
 /* an undermount sink bowl cut into the benchtop, with a mixer tap on the wall side */
 function sink3D(c,f,top,px,pz,rot){
   const fw=f.w/1000, fd=f.h/1000, horiz=(rot===0||rot===180);
@@ -2194,7 +2213,7 @@ function rebuild3D(){
   const ceilH=(parseInt(tbv('tbCeiling'))||2400)/1000;
   walls.forEach(w=>{ const len=wallLen(w)/1000; if(len<=0) return; const horiz=Math.abs(w.x2-w.x1)>=Math.abs(w.y2-w.y1);
     const o=wallOut(w); const geo=new THREE.BoxGeometry(horiz?len+0.09:0.09,ceilH,horiz?0.09:len+0.09); const mx=(w.x1+w.x2+2*o.ox)/2000, mz=(w.y1+w.y2+2*o.oy)/2000;
-    addMesh(geo,mat3(0xd6d2c8,0.92),mx,ceilH/2,mz); addEdges(geo,mx,ceilH/2,mz,0.18); });
+    addMesh(geo,mat3(0xc9c6bc,0.94),mx,ceilH/2,mz); addEdges(geo,mx,ceilH/2,mz,0.18); });
   cabs.forEach(c=>{
     const f=footprint(c),t=TYPES[c.type];
     const band=cabBand(c), by=band[0]/1000, top=band[1]/1000, hh=top-by;
