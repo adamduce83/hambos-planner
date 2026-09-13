@@ -464,7 +464,7 @@
       <div class="rphead" id="rpTitle"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>Room Details</span></div>
       <div class="rpbody" id="rpRoom">
         <div id="hdrJob"></div>
-        <div class="roomctl"><select id="roomSel" title="Room"></select><button id="roomAdd" title="Add a room (laundry, linen, wardrobe...)">+</button><button id="roomDel" title="Remove this room">&times;</button></div>
+        <div class="roomctl"><select id="roomSel" title="Room"></select><button id="roomAdd" title="Add a room (laundry, linen, wardrobe...)">+</button><button id="roomCopy" title="Duplicate this room, cabinets and all">&#10697;</button><button id="roomDel" title="Remove this room">&times;</button></div>
         <div id="wallList"></div>
       </div>
       <div class="rpbody" id="rpPiece" hidden></div>
@@ -1406,6 +1406,12 @@ function onDrag(e){
     if(Math.abs(ny+f.h-o.y)<MAGNET) ny=o.y-f.h;
     if(Math.abs(ny-o.y)<MAGNET) ny=o.y;
   });
+  if(snapOn) walls.forEach(w=>{ // wall coordinates are the inside face, so a cabinet back or end lands flush on it
+    if(Math.abs(w.y1-w.y2)<1){ const wy=w.y1, a=Math.min(w.x1,w.x2)-MAGNET, b=Math.max(w.x1,w.x2)+MAGNET;
+      if(nx+f.w>a&&nx<b){ if(Math.abs(ny-wy)<MAGNET) ny=wy; else if(Math.abs(ny+f.h-wy)<MAGNET) ny=wy-f.h; } }
+    else if(Math.abs(w.x1-w.x2)<1){ const wx=w.x1, a=Math.min(w.y1,w.y2)-MAGNET, b=Math.max(w.y1,w.y2)+MAGNET;
+      if(ny+f.h>a&&ny<b){ if(Math.abs(nx-wx)<MAGNET) nx=wx; else if(Math.abs(nx+f.w-wx)<MAGNET) nx=wx-f.w; } }
+  });
   nx=Math.max(BOARD.x0,Math.min(BOARD.x1-f.w,nx)); ny=Math.max(BOARD.y0,Math.min(BOARD.y1-f.h,ny));
   if(drag.group.length){ // keep every member of the group on the board: shrink the move until they all fit
     let ddx=nx-c.x, ddy=ny-c.y;
@@ -1436,7 +1442,7 @@ function marqueeBox(){ return {x0:Math.min(marquee.x1,marquee.x2),y0:Math.min(ma
 function drawMarquee(){ if(!marquee) return; const b=marqueeBox(); const r=document.createElementNS(SVGNS,'rect'); r.setAttribute('x',b.x0); r.setAttribute('y',b.y0); r.setAttribute('width',b.x1-b.x0); r.setAttribute('height',b.y1-b.y0); r.setAttribute('fill','#c9614b'); r.setAttribute('fill-opacity',0.08); r.setAttribute('stroke','#c9614b'); r.setAttribute('stroke-width',3); r.setAttribute('stroke-dasharray','40 30'); r.setAttribute('vector-effect','non-scaling-stroke'); r.style.pointerEvents='none'; svg.appendChild(r); }
 function drawGroupBadge(){ if(selIds.size<2||drag||marquee) return; const m=cabs.filter(c=>selIds.has(c.id)); if(m.length<2) return; const x0=Math.min(...m.map(c=>c.x)), y0=Math.min(...m.map(c=>c.y)), x1=Math.max(...m.map(c=>c.x+footprint(c).w)), y1=Math.max(...m.map(c=>c.y+footprint(c).h));
   const r=document.createElementNS(SVGNS,'rect'); r.setAttribute('x',x0-40); r.setAttribute('y',y0-40); r.setAttribute('width',x1-x0+80); r.setAttribute('height',y1-y0+80); r.setAttribute('fill','none'); r.setAttribute('stroke','#c9614b'); r.setAttribute('stroke-width',2.5); r.setAttribute('stroke-dasharray','30 24'); r.setAttribute('vector-effect','non-scaling-stroke'); r.setAttribute('rx',20); r.style.pointerEvents='none'; svg.appendChild(r);
-  const t=mkText(x0-40,y0-70,m.length+' selected \u2014 drag any one to move them all \u00b7 Delete removes all \u00b7 shift-click adds or removes','#c9614b',52,700,'start'); t.style.pointerEvents='none'; svg.appendChild(t); }
+  const t=mkText(x0-40,y0-70,m.length+' selected \u2014 drag any one to move them all \u00b7 \u2318D duplicates \u00b7 Delete removes all \u00b7 shift-click adds or removes','#c9614b',52,700,'start'); t.style.pointerEvents='none'; svg.appendChild(t); }
 function endMarquee(e){ if(!marquee) return; const b=marqueeBox(); try{ svg.releasePointerCapture(marquee.pid); }catch(err){} marquee=null;
   if(b.x1-b.x0>40&&b.y1-b.y0>40){ selIds.clear(); cabs.forEach(c=>{ const f=footprint(c); const cx=c.x+f.w/2, cy=c.y+f.h/2; const inside=(c.x>=b.x0&&c.y>=b.y0&&c.x+f.w<=b.x1&&c.y+f.h<=b.y1)||(cx>=b.x0&&cx<=b.x1&&cy>=b.y0&&cy<=b.y1); if(inside) selIds.add(c.id); });
     if(selIds.size===1){ selId=[...selIds][0]; selIds.clear(); } else if(selIds.size>1){ selId=[...selIds][0]; }
@@ -1515,7 +1521,7 @@ function buildPanel(){
   document.getElementById('edL').oninput=e=>{pushUndo('edL');c.label=e.target.value;render();};
   document.getElementById('edP').oninput=e=>{pushUndo('edP');c.price=e.target.value===''?null:(parseFloat(e.target.value)||0);updateSubtotal();};
   document.getElementById('bRot').onclick=()=>{pushUndo();c.rot=((c.rot||0)+90)%360;render();};
-  document.getElementById('bDup').onclick=()=>{pushUndo();const n={...c,id:nextId++,x:c.x+150,y:c.y+150};cabs.push(n);selId=n.id;render();buildPanel();};
+  document.getElementById('bDup').onclick=()=>duplicateSel(); // group aware, and a deep copy so a duplicated stack is its own
   renderRightPanel();
   document.getElementById('bDel').onclick=()=>{pushUndo();cabs=cabs.filter(x=>x.id!==c.id);selId=null;render();buildPanel();};
 }
@@ -1532,6 +1538,7 @@ document.addEventListener('keydown',e=>{
   const nud={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
   if(nud){ e.preventDefault(); pushUndo('nudge'); const st=e.shiftKey?100:SNAP; grp.forEach(g=>{ g.x+=nud[0]*st; g.y+=nud[1]*st; keepOnBoard(g); }); render(); }
   if(e.key.toLowerCase()==='r'){pushUndo();grp.forEach(g=>{ g.rot=((g.rot||0)+90)%360; });render();}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'){ e.preventDefault(); duplicateSel(); }
 });
 
 /* ---------- title block live (TB_IDS is declared in the save/restore block; this runs at init) ---------- */
@@ -1602,6 +1609,17 @@ document.getElementById('xeroCsv').onclick=()=>{
 document.getElementById('useSub').onclick=()=>{
   const b=priceBreakdown(); document.getElementById('tbTotal').value=money(Math.round(b.total/10)*10)+(PRICES.gst?' inc GST':' ex GST'); render();
 };
+
+/* duplicate the selected piece, or the whole box-selected group, 100 mm down and across */
+function duplicateSel(){
+  const grp=selIds.size>1?cabs.filter(x=>selIds.has(x.id)):cabs.filter(x=>x.id===selId);
+  if(!grp.length) return;
+  pushUndo(); selIds.clear();
+  const copies=grp.map(c=>{ const n=JSON.parse(JSON.stringify(c)); n.id=nextId++; n.x=c.x+150; n.y=c.y+150; keepOnBoard(n); cabs.push(n); return n; });
+  copies.forEach(n=>selIds.add(n.id)); selId=copies[0].id;
+  if(copies.length<2) selIds.clear();
+  render(); buildPanel(); showPiece();
+}
 
 /* ---------- job check: the mistakes that cost a remake ---------- */
 function plOverlaps(a,b){ const fa=footprint(a), fb=footprint(b); return a.x<b.x+fb.w&&a.x+fa.w>b.x&&a.y<b.y+fb.h&&a.y+fa.h>b.y; }
@@ -1753,6 +1771,11 @@ function switchRoom(i,quiet){
 }
 document.getElementById('roomSel').onchange=e=>switchRoom(+e.target.value);
 document.getElementById('roomAdd').onclick=()=>{ const name=prompt('Room name','Laundry'); if(name===null) return; syncRoom(); rooms.push({name:name.trim()||('Room '+(rooms.length+1)),cabs:[],walls:[],dims:[],nextId:1,dropN:0}); switchRoom(rooms.length-1); setSideTab('walls'); };
+document.getElementById('roomCopy').onclick=()=>{ // repeat rooms (four near-identical wardrobes) are drawn once and copied
+  syncRoom(); const r=rooms[curRoom];
+  const copy=JSON.parse(JSON.stringify(r)); copy.name=(r.name||'Room')+' copy';
+  rooms.splice(curRoom+1,0,copy); loadRoom(curRoom+1); buildRoomUI(); render();
+};
 document.getElementById('roomDel').onclick=()=>{ if(rooms.length<2) return; if(!confirm('Remove the room "'+roomName(curRoom)+'" and everything in it?')) return; rooms.splice(curRoom,1); loadRoom(Math.min(curRoom,rooms.length-1)); };
 
 
