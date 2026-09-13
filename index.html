@@ -2100,7 +2100,7 @@ function start3D(){
   if(!renderer){
     renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
     renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-    renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=0.72; // measured: at 0.92 every colour clipped toward white; 0.72 renders the swatch
+    renderer.outputEncoding=THREE.sRGBEncoding; renderer.toneMapping=THREE.LinearToneMapping; renderer.toneMappingExposure=1.15; // filmic tone mapping rolled the light colours together; linear holds them apart
     renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
     scene=new THREE.Scene(); scene.background=backdropTexture();
     camera=new THREE.PerspectiveCamera(42,w/h,0.1,200);
@@ -2140,6 +2140,47 @@ function wall3DPos(c){
 /* 3D materials: real panels with a little gloss so light and shadow give the fronts shape */
 function mat3(col,rough,extra){ const m=new THREE.MeshStandardMaterial(Object.assign({color:new THREE.Color(col),roughness:rough==null?0.55:rough,metalness:0.03},extra||{})); return m; }
 const TEX3={};
+/* 3D render tuning: a lit front reads lighter than its swatch, so each colour is given the material value that
+   renders as the swatch. Measured per colour, per channel, against the real scene lighting. */
+const MAT_TUNE={
+  '#f7f7f4':'#ffffff', // White,
+  '#fbfbf9':'#ffffff', // Vivid White,
+  '#f2f2ed':'#ffffff', // Lexicon Half,
+  '#f1eee5':'#ffffff', // Natural White,
+  '#ebe6d8':'#fff7e3', // Pearly White 7009,
+  '#e7dcbf':'#f8e0ae', // Canvas Tan 7531,
+  '#e3e4d8':'#eef2e3', // Wombat Forest,
+  '#c3c1ac':'#aca98b', // Intellectual Gray 7045,
+  '#34373b':'#0b0c0f', // Black of Night 6993,
+  '#1c1c1c':'#030303', // Black,
+  '#8ea997':'#577f6a', // Rockwood Blue Green 2811,
+  '#c9ceac':'#b7c38b', // Moorland,
+  '#a2a798':'#747c6b', // Attitude Gray 7060,
+  '#a6b59f':'#7a9376', // Acacia Haze 9132,
+  '#8da089':'#567156', // Dried Thyme 6186,
+  '#c8d0d4':'#b5c7da', // Uncertain Gray 6234,
+  '#9daab7':'#6c819f', // Serious Gray 6256,
+  '#70808e':'#35475d', // Gibraltar 6257,
+  '#3d4c58':'#0f1822', // Mount Etna 7625,
+  '#d8a866':'#eeb972', // Clear Oak,
+  '#383533':'#393635', // Black Oak,
+  '#6a5c50':'#726358', // Bronzed Oak,
+  '#dcc39b':'#f4d8af', // Light Teak,
+  '#d49c62':'#e8ab6d', // Clear Walnut,
+  '#d6ad7a':'#eabd88', // Nordic Oak,
+  '#a67f66':'#b48a71', // Maryland Walnut,
+  '#8c8880':'#99958f', // Letsch Wood,
+  '#574740':'#5d4b45', // Bronzed Walnut,
+  '#d0cbc2':'#e5e0db', // Chalky Milan,
+  '#ddb56c':'#f4c778', // Pure Oak,
+  '#5c544e':'#635a56', // Cafe Oak
+  '#eef0ed':'#e2e6e1', // White Stone benchtop,
+  '#e6e5de':'#d7d7cd', // Calacatta benchtop,
+  '#bfc0bb':'#acada7', // Concrete Grey benchtop,
+  '#3b3c3e':'#0d0d0d', // Charcoal Stone benchtop,
+  '#27282a':'#020202', // Black Stone benchtop,
+  '#b07d4e':'#9d5f1d', // Timber benchtop
+};
 function rgba(c,a){ return 'rgba('+Math.round(c.r*255)+','+Math.round(c.g*255)+','+Math.round(c.b*255)+','+a+')'; }
 /* procedural woodgrain: the swatch colour with fine streaks and a little wobble, tiled vertically */
 function woodTexture(hex){ if(TEX3[hex]) return TEX3[hex]; const cv=document.createElement('canvas'); cv.width=256; cv.height=1024; const ctx=cv.getContext('2d'); const base=new THREE.Color(hex); ctx.fillStyle=hex; ctx.fillRect(0,0,256,1024);
@@ -2158,7 +2199,7 @@ function satinTexture(){ if(TEX3.satin) return TEX3.satin; const cv=document.cre
   for(let i=0;i<9000;i++){ const v=128+Math.round((Math.random()-0.5)*46); ctx.fillStyle='rgb('+v+','+v+','+v+')'; ctx.fillRect(Math.random()*256,Math.random()*256,1.6,1.6); }
   for(let i=0;i<60;i++){ const v=128+Math.round((Math.random()-0.5)*18); ctx.fillStyle='rgba('+v+','+v+','+v+',0.5)'; ctx.beginPath(); ctx.arc(Math.random()*256,Math.random()*256,6+Math.random()*14,0,7); ctx.fill(); }
   const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,3); TEX3.satin=t; return t; }
-function frontMat(hex,k){ const col=k?hexShade(hex,k):hex; if(isWoodgrain(hex)){ return new THREE.MeshStandardMaterial({map:woodTexture(hex),color:new THREE.Color(k?hexShade('#ffffff',k):'#ffffff'),roughness:0.62,metalness:0.02}); } return new THREE.MeshPhysicalMaterial({color:new THREE.Color(col),roughness:0.44,metalness:0.02,clearcoat:0.38,clearcoatRoughness:0.3,bumpMap:satinTexture(),bumpScale:0.0016}); }
+function frontMat(hex,k){ const base=MAT_TUNE[String(hex).toLowerCase()]||hex; const col=k?hexShade(base,k):base; if(isWoodgrain(hex)){ return new THREE.MeshStandardMaterial({map:woodTexture(base),color:new THREE.Color(k?hexShade('#ffffff',k):'#ffffff'),roughness:0.62,metalness:0.02}); } return new THREE.MeshPhysicalMaterial({color:new THREE.Color(col),roughness:0.44,metalness:0.02,clearcoat:0.38,clearcoatRoughness:0.3,bumpMap:satinTexture(),bumpScale:0.0016}); }
 /* studio backdrop: darker sage at the top fading to a soft warm grey at the horizon, so white kitchens read as white */
 function backdropTexture(){ if(TEX3.bg) return TEX3.bg; const cv=document.createElement('canvas'); cv.width=4; cv.height=512; const ctx=cv.getContext('2d'); const g=ctx.createLinearGradient(0,0,0,512); g.addColorStop(0,'#5f6b5e'); g.addColorStop(0.55,'#8d978a'); g.addColorStop(1,'#b9bdb2'); ctx.fillStyle=g; ctx.fillRect(0,0,4,512); const t=new THREE.CanvasTexture(cv); t.encoding=THREE.sRGBEncoding; TEX3.bg=t; return t; }
 /* timber floorboards: 1.2 m x 0.15 m boards, staggered, warm oak */
@@ -2168,7 +2209,7 @@ function floorTexture(){ if(TEX3.floor) return TEX3.floor; const cv=document.cre
       for(let j=0;j<18;j++){ ctx.fillStyle=rgba(base.clone().multiplyScalar(k*(0.88+Math.random()*0.24)),0.35); ctx.fillRect(x,y+Math.random()*BW,BL,1+Math.random()*2); }
       ctx.strokeStyle='rgba(60,40,25,0.55)'; ctx.lineWidth=2; ctx.strokeRect(x+1,y+1,BL-2,BW-2); } }
   const t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.encoding=THREE.sRGBEncoding; t.anisotropy=8; TEX3.floor=t; return t; }
-function benchMat(){ const hex=scheme.bench.color; const stone=!/oak|walnut|timber|wood/i.test(scheme.bench.name||''); return stone?new THREE.MeshPhysicalMaterial({map:stoneTexture(hex),color:new THREE.Color('#ffffff'),roughness:0.22,metalness:0.02,clearcoat:0.6,clearcoatRoughness:0.2,bumpMap:satinTexture(),bumpScale:0.0009}):new THREE.MeshStandardMaterial({map:woodTexture(hex),roughness:0.5}); }
+function benchMat(){ const hex=MAT_TUNE[String(scheme.bench.color).toLowerCase()]||scheme.bench.color; const stone=!/oak|walnut|timber|wood/i.test(scheme.bench.name||''); return stone?new THREE.MeshPhysicalMaterial({map:stoneTexture(hex),color:new THREE.Color('#ffffff'),roughness:0.22,metalness:0.02,clearcoat:0.6,clearcoatRoughness:0.2,bumpMap:satinTexture(),bumpScale:0.0009}):new THREE.MeshStandardMaterial({map:woodTexture(hex),roughness:0.5}); }
 /* an undermount sink bowl cut into the benchtop, with a mixer tap on the wall side */
 function sink3D(c,f,top,px,pz,rot){
   const fw=f.w/1000, fd=f.h/1000, horiz=(rot===0||rot===180);
