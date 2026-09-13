@@ -520,7 +520,7 @@
   <h4>Job check</h4>
   <p>The things that usually cost a remake: sizes that will not fit, clearances, and details the factory needs.</p>
   <div id="checkList" style="max-height:56vh;overflow:auto;"></div>
-  <div class="nav"><button class="skip" id="checkClose">Close</button></div>
+  <div class="nav"><button class="skip" id="checkClose">Close</button><span class="sp" style="flex:1"></span><button class="next" id="checkGo" hidden></button></div>
 </div></div>
 
 <div id="jobsBox" class="modal" hidden><div class="mcard" style="width:640px;">
@@ -1692,7 +1692,7 @@ function preflight(){
   if(pb.unpriced) add('warn','Pricing',pb.unpriced+' piece'+(pb.unpriced>1?'s have':' has')+' no price set, so the ballpark total is under the real figure.');
   return out;
 }
-function showCheck(){
+function showCheck(go,goLabel){
   const list=document.getElementById('checkList'), items=preflight();
   const stop=items.filter(i=>i.sev==='stop'), warn=items.filter(i=>i.sev==='warn');
   const esc=t=>String(t||'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
@@ -1701,7 +1701,16 @@ function showCheck(){
   list.innerHTML=items.length
     ? (stop.length?hd('Fix before ordering ('+stop.length+')','#b3392a')+rows(stop):'')+(warn.length?hd('Worth a look ('+warn.length+')','#8a6d3b')+rows(warn):'')
     : '<div style="padding:18px;background:#eef7f0;border:1px solid #bfe0c8;border-radius:8px;color:#1e4a2f;font-weight:700;">Nothing to fix. Sizes, clearances and the job details all check out.</div>';
+  const gb=document.getElementById('checkGo');
+  gb.hidden=!go; if(go){ gb.textContent=goLabel||'Continue anyway'; gb.onclick=()=>{ document.getElementById('checkBox').hidden=true; go(); }; }
   document.getElementById('checkBox').hidden=false;
+  return items;
+}
+/* the job check stands between a blocking problem and the factory: print and cloud save run it first */
+function guardStops(label,go){
+  const items=preflight();
+  if(items.some(i=>i.sev==='stop')){ showCheck(go,label); return; }
+  go();
 }
 document.getElementById('btnCheck').onclick=()=>{ moreMenu.hidden=true; showCheck(); };
 document.getElementById('checkClose').onclick=()=>{ document.getElementById('checkBox').hidden=true; };
@@ -1785,7 +1794,7 @@ function printSvg(node,title){ const vb=fullViewBox(node).split(/\s+/).map(Numbe
 document.getElementById('btnPrint').onclick=()=>{
   const title=(val('tbJob')||'Hambos kitchen');
   if(currentView==='3d'){ composite3D(cv=>printImage(cv.toDataURL('image/png'),title+' — 3D')); return; }
-  Promise.all(allSheets().map(sh=>svgToCanvas(sh.svg))).then(cvs=>printImages(cvs.map(cv=>cv.toDataURL('image/png')),title+' — plan sheets'));
+  guardStops('Print anyway',()=>Promise.all(allSheets().map(sh=>svgToCanvas(sh.svg))).then(cvs=>printImages(cvs.map(cv=>cv.toDataURL('image/png')),title+' — plan sheets')));
 };
 document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear everything in '+roomName(curRoom)+'? (Undo can bring it back)')){pushUndo();cabs=[];selId=null;dropN=0;render();buildPanel();} };
 
@@ -2696,7 +2705,10 @@ async function cloudUploadSheets(){
     const {error}=await sb.storage.from('plans').upload(path,blob,{upsert:true,contentType:'image/png'}); if(!error) n++; }
   return n;
 }
-document.getElementById('btnUploadSheets').onclick=async()=>{ const w=document.getElementById('warn'); w.textContent='Uploading plan sheets\u2026'; const n=await cloudUploadSheets(); w.textContent=n?(n+' sheet'+(n>1?'s':'')+' saved to the cloud.'):'Upload failed.'; setTimeout(()=>{ if(/saved to the cloud|Upload failed/.test(w.textContent)) w.textContent=''; },4000); };
+document.getElementById('btnUploadSheets').onclick=()=>{ moreMenu.hidden=true; guardStops('Save anyway',async()=>{
+  const w=document.getElementById('warn'); w.textContent='Uploading plan sheets\u2026'; const n=await cloudUploadSheets();
+  w.textContent=n?(n+' sheet'+(n>1?'s':'')+' saved to the cloud.'):'Upload failed.';
+  setTimeout(()=>{ if(/saved to the cloud|Upload failed/.test(w.textContent)) w.textContent=''; },4000); }); };
 async function cloudEnquiry(fields){
   if(!sb) return false; const st=stateObj();
   const {error}=await sb.from('enquiries').insert({...fields,order_ref:st.tb.tbJob||'',customer:st.tb.tbCust||fields.name||'',state:st});
