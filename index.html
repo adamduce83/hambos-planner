@@ -54,6 +54,10 @@
   .stab h3:first-child{margin-top:0;}
   aside h3{margin:14px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--sage-dk);}
   aside h3:first-child{margin-top:0;}
+  .psearch{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;margin:0 0 10px;background:#fbfcf9;}
+  .psearch .ic{width:15px;height:15px;color:#6a7361;flex:0 0 auto;}
+  .psearch input{flex:1;border:none;background:none;font-family:inherit;font-size:13px;color:var(--ink);outline:none;min-width:0;}
+  .psearch button{border:none;background:none;font-size:17px;line-height:1;color:#6a7361;cursor:pointer;padding:0 2px;}
   .typegrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;}
   .typegrid button{cursor:pointer;border:1px solid var(--line);background:#fbfcf9;border-radius:6px;padding:8px 6px;min-height:44px;font-size:13px;font-weight:600;color:var(--ink);}
   .typegrid button:hover{border-color:var(--sage);}
@@ -331,7 +335,9 @@
     </div>
 
     <div class="stab" data-tab="build">
-      <h2>Cabinets <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg></h2><p class="sub">Click an item to place it on the plan</p>
+      <h2>Cabinets</h2><p class="sub">Click an item to place it on the plan</p>
+      <div class="psearch"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><input id="palSearch" type="search" autocomplete="off" placeholder="Search every piece: bin, oven, pantry, D/W…"><button type="button" id="palClear" title="Clear" hidden>&times;</button></div>
+      <div id="palResults" hidden><p class="sub" id="palCount"></p><div class="cards" id="searchGrid"></div></div>
       <div class="cards" id="typeGrid"></div>
       <h3>Common sizes (mm)</h3>
       <div class="sizes" id="quickWidths"></div>
@@ -748,21 +754,41 @@ const CARD_GROUPS={
   applGrid:[['cooktop','Cooktop'],['oven','Oven'],['rangehood','Rangehood'],['dishwasher','Dishwasher'],['fridge','Fridge'],['microwave','Microwave'],['appliance','Other appliance']],
   structGrid:[['window','Window'],['filler','Filler (F)'],['endpanel','End Panel (P)'],['halfpanel','½ Pantry Panel'],['floating','Floating Shelf'],['pole','Pole']],
 };
+function paletteButton(k,name){
+  const typeKey=k==='drawers'?'base':k, t=TYPES[typeKey];
+  const b=document.createElement('button'); b.type='button'; b.className='card'; b.innerHTML=cardArt(k)+'<span>'+name+'</span>'; b.title='Click to place a '+name.toLowerCase()+' on the plan';
+  b.onclick=()=>{ document.getElementById('newDepth').value=t.depth;
+    const chip=document.querySelector('.sizes button.on');
+    if(t.dw) document.getElementById('newWidth').value=(k==='fridge'?APPL.fridgeAllow:t.dw);
+    if(chip&&!t.thin&&!t.window&&!t.appliance) document.getElementById('newWidth').value=chip.dataset.w;
+    setTool('select'); addCab(typeKey); if(k==='drawers'){ const c=cabs[cabs.length-1]; c.front='drawers'; c.drawers=3; render(); buildPanel(); }
+    if(isMobile()){ collapseDrawer(); mobileFit(); } };
+  return b;
+}
 function buildPaletteGrid(gridId){
   const grid=document.getElementById(gridId); grid.innerHTML='';
-  CARD_GROUPS[gridId].forEach(([k,name])=>{
-    const typeKey=k==='drawers'?'base':k, t=TYPES[typeKey];
-    const b=document.createElement('button'); b.type='button'; b.className='card'; b.innerHTML=cardArt(k)+'<span>'+name+'</span>'; b.title='Click to place a '+name.toLowerCase()+' on the plan';
-    b.onclick=()=>{ document.getElementById('newDepth').value=t.depth;
-      const chip=document.querySelector('.sizes button.on');
-      if(t.dw) document.getElementById('newWidth').value=(k==='fridge'?APPL.fridgeAllow:t.dw);
-      if(chip&&!t.thin&&!t.window&&!t.appliance) document.getElementById('newWidth').value=chip.dataset.w;
-      setTool('select'); addCab(typeKey); if(k==='drawers'){ const c=cabs[cabs.length-1]; c.front='drawers'; c.drawers=3; render(); buildPanel(); }
-      if(isMobile()){ collapseDrawer(); mobileFit(); } };
-    grid.appendChild(b);
-  });
+  CARD_GROUPS[gridId].forEach(([k,name])=>{ grid.appendChild(paletteButton(k,name)); });
 }
 buildPaletteGrid('typeGrid'); buildPaletteGrid('applGrid'); buildPaletteGrid('structGrid');
+/* one search across every palette, with the words Jess actually says for each piece */
+const PAL_WORDS={base:'cupboard doors b60 carcass',drawers:'drawer bank pot drawers b60d cutlery top draw',sink:'sink tub butler undermount plumbing',bin:'bin rubbish waste pull out bins',winerack:'wine bottle rack',corner:'corner lazy susan return',blindcorner:'blind corner',tall:'tall pantry broom linen full height cupboard wardrobe robe hanging',blindpantry:'blind corner pantry',onbench:'on-bench pantry appliance garage benchtop cupboard',tower:'oven micro stack tower appliance cupboard',wall:'overhead o/h wall cupboard w60 upper',microwall:'microwave overhead micro wall-hung',microbase:'microwave under bench u/b micro drawer',shelf:'open shelf shelving floating',island:'island bench return',bbar:'breakfast bar overhang bar waterfall',cooktop:'cooktop hotplate gas induction electric',oven:'oven wall oven under bench oven',rangehood:'rangehood hood extractor canopy',dishwasher:'dishwasher d/w dw',fridge:'fridge refrigerator freezer allowance',microwave:'microwave micro',appliance:'appliance other',window:'window sill opening',filler:'filler f scribe 20',endpanel:'end panel p exposed end',halfpanel:'half pantry panel washer dryer',floating:'floating shelf open hanging',pole:'pole post leg support rail hanging rod robe'};
+const PAL_ALL=Object.keys(CARD_GROUPS).flatMap(g=>CARD_GROUPS[g].map(([k,name])=>({k,name,where:g==='typeGrid'?'Cabinets':(g==='applGrid'?'Appliances':'Walls & windows')})));
+function runPalSearch(){
+  const inp=document.getElementById('palSearch'), q=(inp.value||'').trim().toLowerCase();
+  const res=document.getElementById('palResults'), grid=document.getElementById('searchGrid'), cnt=document.getElementById('palCount');
+  document.getElementById('palClear').hidden=!q;
+  const hide=['typeGrid','quickWidths'].map(id=>document.getElementById(id)).concat([...document.querySelectorAll('.stab[data-tab="build"] h3, .stab[data-tab="build"] details.custom, .stab[data-tab="build"] .promo')]);
+  if(!q){ res.hidden=true; hide.forEach(el=>el&&(el.hidden=false)); return; }
+  // match on the start of a word, so "bin" finds the bin drawer and not every ca-bin-et
+  const terms=q.split(/\s+/).filter(Boolean);
+  const hits=PAL_ALL.filter(o=>{ const words=(o.name+' '+o.k+' '+(PAL_WORDS[o.k]||'')).toLowerCase().split(/[^a-z0-9/½]+/).filter(Boolean);
+    return terms.every(t=>words.some(w=>w.startsWith(t))); });
+  grid.innerHTML=''; hits.forEach(o=>{ const b=paletteButton(o.k,o.name); b.title=o.name+' \u2014 '+o.where; grid.appendChild(b); });
+  cnt.textContent=hits.length?(hits.length+' piece'+(hits.length>1?'s':'')+' match "'+inp.value.trim()+'"'):('Nothing matches "'+inp.value.trim()+'". Try bin, oven, pantry, panel or D/W.');
+  res.hidden=false; hide.forEach(el=>el&&(el.hidden=true));
+}
+document.getElementById('palSearch').addEventListener('input',runPalSearch);
+document.getElementById('palClear').onclick=()=>{ const i=document.getElementById('palSearch'); i.value=''; runPalSearch(); i.focus(); };
 const qw=document.getElementById('quickWidths');
 [300,450,600,750,900,1200].forEach(w=>{const b=document.createElement('button');b.type='button';b.textContent=w;b.dataset.w=w; if(w===600) b.classList.add('on');
   b.onclick=()=>{ document.getElementById('newWidth').value=w; qw.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); }; qw.appendChild(b);});
