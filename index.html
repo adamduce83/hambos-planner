@@ -421,7 +421,7 @@
       <div class="field"><label>Mobile</label><input id="tbMobile" type="tel" placeholder="04.."></div>
       <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Ceiling height (mm)</label><input id="tbCeiling" type="number" step="10" placeholder="2400"></div><div style="flex:1;"><label>Cabinet height (mm)</label><input id="tbCabH" type="number" step="10" placeholder="e.g. 2100"></div></div>
       <div class="field"><label>Door finish</label><input id="tbDoorFinish" list="finishList" placeholder="Satin"><datalist id="finishList"><option>Satin</option><option>Matt</option><option>Gloss</option><option>Woodmatt</option></datalist></div>
-      <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Handle</label><input id="tbHandle" placeholder="TBC"></div><div style="flex:1;"><label>Drawers</label><input id="tbDrawers" placeholder="S/C"></div><div style="flex:1;"><label>Hinges</label><input id="tbHinges" placeholder="S/C"></div></div>
+      <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Handle</label><input id="tbHandle" placeholder="TBC" title="Name the finish (matt black, brushed nickel, chrome, brass, timber) and the elevations and 3D draw the handles in it"></div><div style="flex:1;"><label>Drawers</label><input id="tbDrawers" placeholder="S/C"></div><div style="flex:1;"><label>Hinges</label><input id="tbHinges" placeholder="S/C"></div></div>
       <div class="field"><label style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:13px;color:var(--ink);cursor:pointer;"><input type="checkbox" id="tbBlum"> Blum hinge/drawer upgrade (+30%)</label></div>
       <div class="field"><label>Benchtop — material + supplier</label><input id="tbBenchtop" placeholder="e.g. 20mm Stone by Hambos / Polytec Boston Oak Woodmatt"></div>
       <div class="field"><label>Edge finish</label><input id="tbEdge" list="edgeList" placeholder="Pencil Edge"><datalist id="edgeList"><option>Pencil Edge</option><option>Square Edge</option><option>Bullnose</option><option>Waterfall</option></datalist></div>
@@ -694,6 +694,27 @@ function blindSplit(c){ const w=c.width, door=w>900?600:Math.round(w/2); return 
 function lum(hex){const c=hex.replace('#','');return 0.2126*parseInt(c.substr(0,2),16)/255+0.7152*parseInt(c.substr(2,2),16)/255+0.0722*parseInt(c.substr(4,2),16)/255;}
 function textOn(hex){return lum(hex)>0.55?'#23241f':'#f7f7f4';}
 function doorColor(c){return (c.door&&c.door.color)||scheme.door.color;}
+/* the Handle field is free text ("Black - by Hambos", "brushed nickel 128mm"), so the finish is read from it
+   and the handles are drawn in that metal rather than one hardcoded dark grey */
+const HANDLE_FINISHES=[
+  {re:/finger|j.?pull|handleless|push.?open|no handle|none/i, name:'Finger pull', hex:null},
+  {re:/brass|gold|bronze|champagne/i,      name:'Brass',           hex:'#b08d4f', metal:0.85, rough:0.34},
+  {re:/copper|rose/i,                      name:'Copper',          hex:'#b07a5a', metal:0.85, rough:0.36},
+  {re:/gun ?metal|graphite/i,              name:'Gunmetal',        hex:'#4e5258', metal:0.8,  rough:0.4},
+  {re:/brush|satin|nickel/i,               name:'Brushed nickel',  hex:'#aeb2b6', metal:0.78, rough:0.42},
+  {re:/chrome|polish/i,                    name:'Polished chrome', hex:'#ccd2d8', metal:0.95, rough:0.12},
+  {re:/stainless|inox|steel/i,             name:'Stainless',       hex:'#b8bcc0', metal:0.8,  rough:0.35},
+  {re:/timber|oak|walnut|wood|leather/i,   name:'Timber',          hex:'#8a6a4a', metal:0.05, rough:0.65},
+  {re:/white/i,                            name:'White',           hex:'#eceded', metal:0.1,  rough:0.5},
+  {re:/black|matt|matte|charcoal/i,        name:'Matt black',      hex:'#2b2d2e', metal:0.55, rough:0.42},
+];
+function handleFinish(){
+  const t=(typeof tbv==='function'?tbv('tbHandle'):'')||'';
+  const hit=HANDLE_FINISHES.find(f=>f.re.test(t));
+  if(hit) return hit;
+  if(/finger|j pull/i.test(scheme.profile||'')) return HANDLE_FINISHES[0];
+  return HANDLE_FINISHES[HANDLE_FINISHES.length-1]; // matt black is what most of these jobs run
+}
 function hexShade(hex,k){ const n=parseInt(String(hex).slice(1),16); const ch=v=>Math.max(0,Math.min(255,Math.round(v*k))); const r=ch((n>>16)&255),g=ch((n>>8)&255),b=ch(n&255); return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
 function isWoodgrain(hex){ const d=DOORS.find(x=>x.color.toLowerCase()===String(hex).toLowerCase()); return !!(d&&/woodgrain/i.test(d.group||'')); }
 function ensureDefs(svgEl){ let d=svgEl.querySelector('defs'); if(!d){ d=document.createElementNS(SVGNS,'defs'); svgEl.insertBefore(d,svgEl.firstChild); } return d; }
@@ -1364,7 +1385,7 @@ function eSegment(kind,x,y,w,h,c,tc,frame){
   else if(kind==='open'){ const n=Math.max(1,Math.round(h/300)); for(let i=1;i<=n;i++) eL(x+10,y+h*i/(n+1),x+w-10,y+h*i/(n+1),tc,2,0.6); }
   else { if(w>600){ eL(x+w/2,y+20,x+w/2,y+h-20,tc,1.6,0.55); frame(x,y,w/2,h); frame(x+w/2,y,w/2,h); eHandle(x+w/2-100,y+h*0.42,x+w/2-100,y+h*0.58,tc); eHandle(x+w/2+100,y+h*0.42,x+w/2+100,y+h*0.58,tc); } else { frame(x,y,w,h); eHandle(x+w-110,y+h*0.42,x+w-110,y+h*0.58,tc); } }
 }
-function eHandle(x1,y1,x2,y2,tc){ if(/finger|j pull/i.test(scheme.profile)){ eL(x1,y1,x2,y2,tc,1.6,0.35); return; } const vert=Math.abs(y2-y1)>Math.abs(x2-x1); const r=eR(vert?x1-7:Math.min(x1,x2),vert?Math.min(y1,y2):y1-7,vert?14:Math.abs(x2-x1),vert?Math.abs(y2-y1):14,'#3b3e3b',null,0,6); r.setAttribute('fill-opacity',0.88); }
+function eHandle(x1,y1,x2,y2,tc){ const hf=handleFinish(); if(!hf.hex){ eL(x1,y1,x2,y2,tc,1.6,0.35); return; } const vert=Math.abs(y2-y1)>Math.abs(x2-x1); const r=eR(vert?x1-7:Math.min(x1,x2),vert?Math.min(y1,y2):y1-7,vert?14:Math.abs(x2-x1),vert?Math.abs(y2-y1):14,hf.hex,'#2a2f28',0.8,6); r.setAttribute('fill-opacity',0.95); }
 function eFront(x,y,w,h,c,tc){
   const ft=c.front||'doors', t=TYPES[c.type]; const col=doorColor(c);
   const shaker=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
@@ -2305,7 +2326,13 @@ function addFrontDetail3D(c,f,by,hh,px,pz,front,rot){
   const pm=frontMat(front), frameCol=hexShade(front,0.95);
   const framed=FRAMED.test(isDrawerFront(ft)?(scheme.drawerProfile||scheme.profile):scheme.profile);
   const pull=/finger|j pull/i.test(scheme.profile);
-  const handle=(u,v,horiz)=>{ const L=0.14; if(pull) return; const hm=mat3(0x3a3d3a,0.35,{metalness:0.6}); if(horiz) panel(u-L/2/span,u+L/2/span,v-0.006/hh,v+0.006/hh,0.012,hm,T+0.012); else panel(u-0.006/span,u+0.006/span,v-L/2/hh,v+L/2/hh,0.012,hm,T+0.012); };
+  // handles are their own small bars: routed through panel() they came out under its minimum size and were dropped, so none ever drew
+  const handle=(u,v,horiz)=>{ const hf=handleFinish(); if(pull||!hf.hex) return;
+    const L=0.14, TH=0.016, OUT=T+0.012, y=by+v*hh, hm=mat3(hf.hex,hf.rough,{metalness:hf.metal});
+    let geo,x,z;
+    if(rot===0||rot===180){ x=px+(rot===0?(u-0.5):(0.5-u))*fw; z=pz+(rot===0?(fd/2+OUT):-(fd/2+OUT)); geo=new THREE.BoxGeometry(horiz?L:TH,horiz?TH:L,TH); }
+    else { z=pz+(rot===90?(0.5-u):(u-0.5))*fd; x=px+(rot===90?-(fw/2+OUT):(fw/2+OUT)); geo=new THREE.BoxGeometry(TH,horiz?TH:L,horiz?L:TH); }
+    addMesh(geo,hm,x,y,z); addEdges(geo,x,y,z,0.25); };
   const door=(u0,u1,v0,v1,glass)=>{ if(glass){ panel(u0,u1,v0,v1,T,mat3(front,0.5)); const iu=Math.min(0.06/span,(u1-u0)*0.2), iv=Math.min(0.06/hh,(v1-v0)*0.2); panel(u0+iu,u1-iu,v0+iv,v1-iv,0.006,mat3(0xbfd8e2,0.1,{transparent:true,opacity:0.45}),T-0.006); return; }
     if(framed){ panel(u0,u1,v0,v1,T-0.008,frontMat(front,0.94)); const iu=Math.min(0.07/span,(u1-u0)*0.22), iv=Math.min(0.07/hh,(v1-v0)*0.22); panel(u0,u1,v0,v0+iv,0.008,pm,T-0.008); panel(u0,u1,v1-iv,v1,0.008,pm,T-0.008); panel(u0,u0+iu,v0,v1,0.008,pm,T-0.008); panel(u1-iu,u1,v0,v1,0.008,pm,T-0.008); }
     else panel(u0,u1,v0,v1,T,pm); };
