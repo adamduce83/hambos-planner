@@ -440,6 +440,8 @@
       <details style="margin-top:8px;"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--sage-dk);text-transform:uppercase;letter-spacing:.5px;">Price table &amp; settings</summary>
         <div class="sw-name" style="font-weight:500;color:#6a7361;margin:6px 0;">Agreed manufacturer cost per standard size. A non-standard width is priced at the next standard size down plus the surcharge (e.g. 920 = 900 + surcharge). Saved on this device and in each design file.</div>
         <div style="overflow-x:auto;"><table id="priceTable" style="border-collapse:collapse;font-size:11px;"></table></div>
+        <button class="toolbtn alt" id="prPaste" style="width:100%;margin:8px 0 2px;">Paste the supplier price list</button>
+        <div class="hint" style="margin:0 0 8px;">Copy the filled-in rows out of the price request spreadsheet and paste them here; the grid fills itself.</div>
         <div class="field" style="margin-top:8px;"><label>Non-standard size surcharge ($)</label><input id="prSurcharge" type="number" step="1" min="0"></div>
         <div class="field"><label>Cabinetry markup (%)</label><input id="prMargin" type="number" step="1" min="0"></div>
         <div class="field" style="display:flex;gap:6px;"><div style="flex:1;"><label>Stone $/m² builder's range</label><input id="prStone1" type="number" step="1" min="0"></div><div style="flex:1;"><label>Stone $/m² one step up</label><input id="prStone2" type="number" step="1" min="0"></div></div>
@@ -514,6 +516,14 @@
   <div class="nav"><button class="skip" id="lgCancel">Cancel</button><span class="sp"></span><button class="skip" id="lgLink" title="No password needed: we email you a link">Email me a link</button><button class="next" id="lgGo">Sign in</button></div>
   <div class="sw-name" style="font-weight:500;color:#6a7361;margin-top:8px;">Password not working? Use <b>Email me a link</b>, then set a new password on the Admin page (Change password).</div>
   <div id="lgNote" class="sw-name" style="min-height:18px;"></div>
+</div></div>
+
+<div id="priceBox" class="modal" hidden><div class="mcard" style="width:720px;">
+  <h4>Paste the supplier price list</h4>
+  <p>Select the filled-in rows in the price request spreadsheet, copy, and paste below. Any layout works as long as each line has the cabinet code or category, the width, and the price.</p>
+  <textarea id="prPasteText" rows="10" style="width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:8px;border:1px solid var(--line);border-radius:8px;" placeholder="Base door&#9;B60&#9;600mm base cabinet&#9;600&#9;1 door&#9;560&#9;720&#9;145"></textarea>
+  <div id="prPasteNote" class="hint" style="margin-top:8px;"></div>
+  <div class="nav"><button class="skip" id="prPasteClose">Close</button><span class="sp" style="flex:1"></span><button class="next" id="prPasteGo">Read the prices</button></div>
 </div></div>
 
 <div id="checkBox" class="modal" hidden><div class="mcard" style="width:760px;">
@@ -1680,6 +1690,56 @@ function duplicateSel(){
   if(copies.length<2) selIds.clear();
   render(); buildPanel(); showPiece();
 }
+
+/* ---------- reading the supplier's price list ---------- */
+/* the sheet comes back as rows of code, description, width and price, so take each line on its own terms
+   rather than insisting on a column order */
+function parsePriceLine(line){
+  const cells=line.split(/\t|,(?=(?:[^"]*"[^"]*")*[^"]*$)|\s{2,}/).map(c=>c.replace(/^"|"$/g,'').trim()).filter(c=>c!=='');
+  if(cells.length<2) return null;
+  const text=cells.join(' ').toLowerCase();
+  if(/example row/.test(text)) return null;
+  const code=(cells.find(c=>/^[A-Z]{1,4}\d{2,4}[A-Z]*$/i.test(c))||'').toUpperCase();
+  let cat=null;
+  if(/drawer/.test(text)||/^B\d+D/.test(code)) cat='drawers';
+  else if(/sink/.test(text)) cat='sink';
+  else if(/corner|cnr/.test(text)) cat='corner';
+  else if(/island/.test(text)) cat='island';
+  else if(/tall|pantry|broom|linen/.test(text)||/^T\d/.test(code)) cat='tall';
+  else if(/wall|overhead|o\/h/.test(text)||/^W\d/.test(code)) cat='wall';
+  else if(/base|^b\d/.test(text)||/^B\d/.test(code)) cat='base';
+  if(!cat) return null;
+  const nums=cells.map(c=>({raw:c,n:parseFloat(c.replace(/[$,]/g,''))})).filter(o=>isFinite(o.n));
+  let width=null; const codeW=/(\d{3,4})/.exec(code); if(codeW&&+codeW[1]>=250&&+codeW[1]<=1400) width=+codeW[1];
+  if(width==null){ const w=nums.find(o=>Number.isInteger(o.n)&&o.n>=250&&o.n<=1400); if(w) width=w.n; }
+  if(width==null) return null;
+  // only an exact standard width takes a price: a made-to-measure 615 is not a 600, and snapping it would overwrite the real one
+  if(PRICE_WIDTHS.indexOf(width)<0) return {unmatchedWidth:width, line};
+  const near=width;
+  const priceCell=[...nums].reverse().find(o=>o.n>=20&&o.n<=20000&&o.n!==width&&!/^(560|720|2100|2400|16|20)$/.test(o.raw));
+  if(!priceCell) return null;
+  return {cat, width:near, price:Math.round(priceCell.n*100)/100};
+}
+function importPriceList(text){
+  const lines=String(text||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  let set=0, skipped=0; const cats=new Set(), odd=[];
+  lines.forEach(l=>{ const r=parsePriceLine(l);
+    if(!r){ skipped++; return; }
+    if(r.unmatchedWidth){ odd.push(r.unmatchedWidth+' mm'); skipped++; return; }
+    (PRICES.table[r.cat]=PRICES.table[r.cat]||{})[r.width]=r.price; set++; cats.add(r.cat); });
+  if(set){ savePrices(); buildPriceUI(); updateSubtotal(); }
+  return {set, skipped, cats:[...cats], odd:[...new Set(odd)]};
+}
+document.getElementById('prPaste').onclick=()=>{ document.getElementById('prPasteNote').textContent=''; document.getElementById('priceBox').hidden=false; document.getElementById('prPasteText').focus(); };
+document.getElementById('prPasteClose').onclick=()=>{ document.getElementById('priceBox').hidden=true; };
+document.getElementById('prPasteGo').onclick=()=>{
+  const r=importPriceList(document.getElementById('prPasteText').value);
+  const names={base:'base',drawers:'drawer banks',sink:'sink bases',corner:'corners',tall:'tall / pantry',wall:'overheads',island:'islands'};
+  const note=document.getElementById('prPasteNote');
+  note.textContent=r.set
+    ? (r.set+' price'+(r.set===1?'':'s')+' read into the grid across '+r.cats.map(c=>names[c]||c).join(', ')+'.'+(r.skipped?(' '+r.skipped+' line'+(r.skipped===1?'':'s')+' skipped'+(r.odd.length?(', including non-standard widths: '+r.odd.join(', ')):'')+'.'):''))
+    : 'Nothing read. Each line needs a cabinet code or category, a width, and a price.';
+};
 
 /* ---------- job check: the mistakes that cost a remake ---------- */
 function plOverlaps(a,b){ const fa=footprint(a), fb=footprint(b); return a.x<b.x+fb.w&&a.x+fa.w>b.x&&a.y<b.y+fb.h&&a.y+fa.h>b.y; }
