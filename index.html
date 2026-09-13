@@ -308,6 +308,7 @@
     <button id="btnPng"><svg class="ic" aria-hidden="true"><use href="#i-sheet"/></svg>Download plan sheet (PNG)</button>
     <button id="btnPrint"><svg class="ic" aria-hidden="true"><use href="#i-print"/></svg>Print / save as PDF</button>
     <button id="btnPngView"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Download just this view (PNG)</button>
+    <button id="btnCheck"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>Check this job before sending</button>
     <button id="btnChecklist"><svg class="ic" aria-hidden="true"><use href="#i-clipboard"/></svg>Print check-measure checklist</button>
     <label><input type="checkbox" id="bandToggle"><svg class="ic" aria-hidden="true"><use href="#i-band"/></svg>Show title band on screen</label>
     <label><input type="checkbox" id="guideToggle" checked><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>Customer guide page on prints and emails</label>
@@ -507,6 +508,13 @@
   <div class="nav"><button class="skip" id="lgCancel">Cancel</button><span class="sp"></span><button class="skip" id="lgLink" title="No password needed: we email you a link">Email me a link</button><button class="next" id="lgGo">Sign in</button></div>
   <div class="sw-name" style="font-weight:500;color:#6a7361;margin-top:8px;">Password not working? Use <b>Email me a link</b>, then set a new password on the Admin page (Change password).</div>
   <div id="lgNote" class="sw-name" style="min-height:18px;"></div>
+</div></div>
+
+<div id="checkBox" class="modal" hidden><div class="mcard" style="width:760px;">
+  <h4>Job check</h4>
+  <p>The things that usually cost a remake: sizes that will not fit, clearances, and details the factory needs.</p>
+  <div id="checkList" style="max-height:56vh;overflow:auto;"></div>
+  <div class="nav"><button class="skip" id="checkClose">Close</button></div>
 </div></div>
 
 <div id="jobsBox" class="modal" hidden><div class="mcard" style="width:640px;">
@@ -1594,6 +1602,52 @@ document.getElementById('xeroCsv').onclick=()=>{
 document.getElementById('useSub').onclick=()=>{
   const b=priceBreakdown(); document.getElementById('tbTotal').value=money(Math.round(b.total/10)*10)+(PRICES.gst?' inc GST':' ex GST'); render();
 };
+
+/* ---------- job check: the mistakes that cost a remake ---------- */
+function plOverlaps(a,b){ const fa=footprint(a), fb=footprint(b); return a.x<b.x+fb.w&&a.x+fa.w>b.x&&a.y<b.y+fb.h&&a.y+fa.h>b.y; }
+function preflight(){
+  syncRoom(); const out=[]; const add=(sev,room,msg)=>out.push({sev,room,msg});
+  const orig=curRoom, ceil=parseInt(tbv('tbCeiling'))||0, need=overheadClear();
+  for(let i=0;i<rooms.length;i++){
+    switchRoom(i,true); render(); const rn=roomName(i);
+    if(!cabs.length){ add('warn',rn,'No cabinets drawn in this room yet.'); continue; }
+    if(OVERLAP.size) add('stop',rn,OVERLAP.size+' piece'+(OVERLAP.size>1?'s':'')+' overlap on the plan (outlined red).');
+    const over=[...svg.querySelectorAll('text')].filter(t=>/TOO BIG FOR THE OPENING/.test(t.textContent||'')).length;
+    if(over) add('stop',rn,over+' run'+(over>1?'s are':' is')+' wider than the opening between the walls.');
+    cabs.forEach(c=>{
+      const t=TYPES[c.type], b=cabBand(c), nm=c.label||t.code||t.name;
+      if(ceil&&b[1]>ceil) add('stop',rn,nm+' finishes at '+b[1]+' mm, above the '+ceil+' mm ceiling.');
+      if(t.blind&&c.depth<STD.blindMin) add('warn',rn,nm+' is a blind corner only '+c.depth+' mm deep; it needs at least '+STD.blindMin+' mm to work.');
+      if(t.sym==='cooktop'){
+        const above=cabs.filter(o=>o!==c&&TYPES[o.type].mount==='wall'&&plOverlaps(c,o));
+        const hood=above.find(o=>o.type==='rangehood');
+        if(!hood) add('warn',rn,'No rangehood drawn over '+nm+'.');
+        else if(hood.width<c.width) add('warn',rn,'The rangehood over '+nm+' is '+hood.width+' mm, narrower than the '+c.width+' mm cooktop.');
+        above.forEach(o=>{ const gap=cabBand(o)[0]-benchH; if(gap<need) add('stop',rn,(o.label||TYPES[o.type].code)+' sits '+gap+' mm above the bench over '+nm+'; a '+STD.cooktop+' cooktop needs '+need+' mm.'); });
+      }
+    });
+  }
+  switchRoom(orig,true); render();
+  const miss=[['tbJob','Order / Ref number'],['tbCust','Customer'],['tbMobile','Mobile'],['tbCeiling','Ceiling height'],['tbCabH','Cabinet height']].filter(([id])=>!tbv(id)).map(x=>x[1]);
+  if(miss.length) add('warn','Job details','Still blank: '+miss.join(', ')+'.');
+  if(rooms.some(r=>(r.cabs||[]).some(c=>TYPES[c.type].appliance))&&!applianceLines().length) add('warn','Appliances','Appliances are on the plan but the appliance form is empty, so nothing prints for the factory.');
+  const pb=priceBreakdown();
+  if(pb.unpriced) add('warn','Pricing',pb.unpriced+' piece'+(pb.unpriced>1?'s have':' has')+' no price set, so the ballpark total is under the real figure.');
+  return out;
+}
+function showCheck(){
+  const list=document.getElementById('checkList'), items=preflight();
+  const stop=items.filter(i=>i.sev==='stop'), warn=items.filter(i=>i.sev==='warn');
+  const esc=t=>String(t||'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const rows=ls=>ls.map(i=>'<div style="display:flex;gap:12px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:14px;"><b style="min-width:130px;flex:0 0 130px;color:#566b4b;">'+esc(i.room)+'</b><span>'+esc(i.msg)+'</span></div>').join('');
+  const hd=(txt,col)=>'<div style="margin:14px 0 2px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:'+col+';">'+txt+'</div>';
+  list.innerHTML=items.length
+    ? (stop.length?hd('Fix before ordering ('+stop.length+')','#b3392a')+rows(stop):'')+(warn.length?hd('Worth a look ('+warn.length+')','#8a6d3b')+rows(warn):'')
+    : '<div style="padding:18px;background:#eef7f0;border:1px solid #bfe0c8;border-radius:8px;color:#1e4a2f;font-weight:700;">Nothing to fix. Sizes, clearances and the job details all check out.</div>';
+  document.getElementById('checkBox').hidden=false;
+}
+document.getElementById('btnCheck').onclick=()=>{ moreMenu.hidden=true; showCheck(); };
+document.getElementById('checkClose').onclick=()=>{ document.getElementById('checkBox').hidden=true; };
 
 /* ---------- export ---------- */
 function svgToCanvas(node){
