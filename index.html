@@ -366,6 +366,16 @@
       <button class="bigbtn" id="btnDrawWall"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg> Draw a wall on the plan</button>
       <p class="sub" style="margin-top:6px;">Click and drag along the plan. Walls snap straight and the length shows as you draw. Click a wall to change its length or remove it. Esc returns to the select tool.</p>
       <div class="cards" id="structGrid"></div>
+      <h3>Import a sketch</h3>
+      <p class="sub" style="margin-top:-4px;">Drop in a photo of the hand plan or a screenshot of the customer&rsquo;s drawing, set the scale off one known measurement, and draw straight over it. Photos and screenshots only, not PDFs.</p>
+      <label class="bigbtn" style="cursor:pointer;"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg> Import a sketch<input type="file" id="bgFile" accept="image/*" hidden></label>
+      <div id="bgPanel" hidden>
+        <div class="field"><label>How faint (<span id="bgOpVal">55</span>%)</label><input id="bgOp" type="range" min="10" max="100" value="55" style="width:100%;"></div>
+        <div class="rowbtns"><button class="toolbtn alt" id="bgScale">Set the scale</button><button class="toolbtn alt" id="bgMove">Move it</button></div>
+        <button class="toolbtn alt" id="bgAuto" style="width:100%;margin-top:6px;">Auto-trace lines in a box</button>
+        <div class="hint" id="bgNote" style="margin:6px 0;">Set the scale first: click two points a known distance apart on the sketch, then type that distance.</div>
+        <button class="toolbtn alt" id="bgDel" style="width:100%;">Remove the sketch</button>
+      </div>
     </div>
 
     <div class="stab" data-tab="finishes" hidden>
@@ -1000,6 +1010,17 @@ function renderPlan(){
   for(let x=0;x<=12000;x+=500){line(x,TITLE_H+20,x,6580,x%1000?'#eef1ea':'#dfe5d7',x%1000?2:4);}
   for(let y=TITLE_H+20;y<=6580;y+=500){line(0,y,12000,y,(y-TITLE_H-20)%1000?'#eef1ea':'#dfe5d7',(y-TITLE_H-20)%1000?2:4);}
   }
+  if(bg&&bg.src&&!COMPOSING){ const im=document.createElementNS(SVGNS,'image');
+    im.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',bg.src); im.setAttribute('href',bg.src);
+    im.setAttribute('x',bg.x); im.setAttribute('y',bg.y); im.setAttribute('width',bg.w); im.setAttribute('height',bg.h);
+    im.setAttribute('opacity',bg.op==null?0.55:bg.op); im.setAttribute('preserveAspectRatio','none');
+    if(tool!=='bgmove') im.style.pointerEvents='none'; else im.style.cursor='move';
+    svg.appendChild(im);
+    if(draft&&draft.kind==='bgbox'){ const r=document.createElementNS(SVGNS,'rect');
+      r.setAttribute('x',Math.min(draft.x1,draft.x2)); r.setAttribute('y',Math.min(draft.y1,draft.y2));
+      r.setAttribute('width',Math.abs(draft.x2-draft.x1)); r.setAttribute('height',Math.abs(draft.y2-draft.y1));
+      r.setAttribute('fill','#c9614b'); r.setAttribute('fill-opacity',0.10); r.setAttribute('stroke','#c9614b'); r.setAttribute('stroke-width',4); r.setAttribute('stroke-dasharray','60 40'); r.style.pointerEvents='none'; svg.appendChild(r); }
+    bgPts.forEach(p=>{ const c=document.createElementNS(SVGNS,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r',36); c.setAttribute('fill','#c9614b'); c.style.pointerEvents='none'; svg.appendChild(c); }); }
   drawWalls(); drawDims();
   cabs.forEach(keepOnBoard);
   [...selIds].forEach(id=>{ if(!cabs.some(c=>c.id===id)) selIds.delete(id); }); if(selIds.size&&selId!=null&&!selIds.has(selId)) selIds.add(selId);
@@ -1500,6 +1521,25 @@ function endDrag(){
 window.addEventListener('pointerup',endDrag); window.addEventListener('pointercancel',endDrag); window.addEventListener('blur',endDrag);
 window.addEventListener('pointerup',endMarquee); window.addEventListener('pointercancel',endMarquee);
 svg.addEventListener('pointerdown',e=>{
+  if(tool==='bgscale'&&bg){ const p=svgPt(e); bgPts.push({x:p.x,y:p.y});
+    if(bgPts.length===1){ bgNote('Now click the second point.'); render(); e.preventDefault(); return; }
+    const a=bgPts[0], b=bgPts[1]; bgPts=[];
+    const px=Math.hypot(b.x-a.x,b.y-a.y);
+    if(px<40){ bgNote('Those two points were too close together. Try again on a longer measurement.'); render(); e.preventDefault(); return; }
+    const said=prompt('How far apart are those two points on the real job, in mm?','3000');
+    const mm=parseFloat(String(said||'').replace(/[^0-9.]/g,''));
+    if(!isFinite(mm)||mm<100){ bgNote('Scale not changed.'); render(); e.preventDefault(); return; }
+    const f=mm/px; // hold the first point still and grow the sketch around it
+    pushUndo();
+    bg.x=a.x+(bg.x-a.x)*f; bg.y=a.y+(bg.y-a.y)*f; bg.w*=f; bg.h*=f; bg.scaled=true;
+    [bg.x,bg.y,bg.w,bg.h]=[bg.x,bg.y,bg.w,bg.h].map(v=>Math.round(v));
+    setTool('select'); buildBgUI(); render(); fitToCabinets(false);
+    bgNote('Scale set from '+Math.round(mm)+' mm. Draw the walls over the sketch, or try Auto-trace lines in a box.');
+    e.preventDefault(); return; }
+  if(tool==='bgbox'&&bg){ const p=svgPt(e); draft={kind:'bgbox',x1:p.x,y1:p.y,x2:p.x,y2:p.y};
+    try{ svg.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); render(); return; }
+  if(tool==='bgmove'&&bg){ const p=svgPt(e); bgDrag={dx:p.x-bg.x,dy:p.y-bg.y,pid:e.pointerId}; pushUndo();
+    try{ svg.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); return; }
   if(tool==='wall'){ const p=svgPointSnap(e); draft={kind:'wall',x1:p.x,y1:p.y,x2:p.x,y2:p.y}; try{ svg.setPointerCapture(e.pointerId); }catch(err){} e.preventDefault(); render(); return; }
   if(tool==='dim'){ const p=svgPointSnap(e);
     if(!draft){ draft={kind:'dim',x1:p.x,y1:p.y,x2:null,y2:null}; }
@@ -1518,10 +1558,14 @@ function endMarquee(e){ if(!marquee) return; const b=marqueeBox(); try{ svg.rele
     if(selIds.size===1){ selId=[...selIds][0]; selIds.clear(); } else if(selIds.size>1){ selId=[...selIds][0]; }
     buildPanel(); }
   render(); }
-svg.addEventListener('pointermove',e=>{ if(marquee){ const p=svgPt(e); marquee.x2=p.x; marquee.y2=p.y; render(); drawMarquee(); return; } if(!draft) return; const p=svgPointSnap(e);
+svg.addEventListener('pointermove',e=>{ if(draft&&draft.kind==='bgbox'){ const p=svgPt(e); draft.x2=p.x; draft.y2=p.y; render(); return; } if(bgDrag&&bg){ const p=svgPt(e); bg.x=Math.round(p.x-bgDrag.dx); bg.y=Math.round(p.y-bgDrag.dy); render(); return; } if(marquee){ const p=svgPt(e); marquee.x2=p.x; marquee.y2=p.y; render(); drawMarquee(); return; } if(!draft) return; const p=svgPointSnap(e);
   if(draft.kind==='wall'){ const dx=p.x-draft.x1, dy=p.y-draft.y1; if(Math.abs(dx)>=Math.abs(dy)){ draft.x2=p.x; draft.y2=draft.y1; } else { draft.x2=draft.x1; draft.y2=p.y; } render(); }
   else if(draft.kind==='dim'){ draft.x2=p.x; draft.y2=p.y; render(); } });
-svg.addEventListener('pointerup',e=>{ if(marquee){ endMarquee(e); return; } if(draft&&draft.kind==='wall'){ if(Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1)>=100){ pushUndo(); walls.push({id:'w'+Date.now().toString(36),x1:draft.x1,y1:draft.y1,x2:draft.x2,y2:draft.y2}); } draft=null; try{ svg.releasePointerCapture(e.pointerId); }catch(err){} render(); } });
+svg.addEventListener('pointerup',e=>{ if(draft&&draft.kind==='bgbox'){ const b={x0:Math.min(draft.x1,draft.x2),y0:Math.min(draft.y1,draft.y2),x1:Math.max(draft.x1,draft.x2),y1:Math.max(draft.y1,draft.y2)};
+    draft=null; try{ svg.releasePointerCapture(e.pointerId); }catch(err){} setTool('select');
+    if(b.x1-b.x0<200||b.y1-b.y0<200) bgNote('That box was too small. Drag one around the whole drawn plan.'); else bgAutoWalls(b);
+    return; }
+  if(bgDrag){ try{ svg.releasePointerCapture(bgDrag.pid); }catch(err){} bgDrag=null; return; } if(marquee){ endMarquee(e); return; } if(draft&&draft.kind==='wall'){ if(Math.hypot(draft.x2-draft.x1,draft.y2-draft.y1)>=100){ pushUndo(); walls.push({id:'w'+Date.now().toString(36),x1:draft.x1,y1:draft.y1,x2:draft.x2,y2:draft.y2}); } draft=null; try{ svg.releasePointerCapture(e.pointerId); }catch(err){} render(); } });
 
 /* ---------- selected panel ---------- */
 function buildPanel(){
@@ -1690,6 +1734,98 @@ function duplicateSel(){
   if(copies.length<2) selIds.clear();
   render(); buildPanel(); showPiece();
 }
+
+/* ---------- import a hand sketch and draw the job over it ---------- */
+const BG_MAX=1500;           // longest side in pixels: enough to trace from, small enough to keep in a saved job
+let bgDrag=null, bgPts=[];
+function bgNote(msg){ const el=document.getElementById('bgNote'); if(el) el.textContent=msg; }
+function buildBgUI(){
+  const panel=document.getElementById('bgPanel'); if(!panel) return;
+  panel.hidden=!bg;
+  if(bg){ const o=document.getElementById('bgOp'); o.value=Math.round((bg.op==null?0.55:bg.op)*100); document.getElementById('bgOpVal').textContent=o.value;
+    bgNote(bg.scaled?'Scale set. Draw walls and drop cabinets straight over the sketch.':'Set the scale first: click two points a known distance apart on the sketch, then type that distance.'); }
+}
+/* shrink whatever was imported so a saved job stays a sensible size */
+function bgFromImage(img){
+  const k=Math.min(1,BG_MAX/Math.max(img.naturalWidth||img.width,img.naturalHeight||img.height));
+  const w=Math.round((img.naturalWidth||img.width)*k), h=Math.round((img.naturalHeight||img.height)*k);
+  const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+  const ctx=cv.getContext('2d'); ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+  const src=cv.toDataURL('image/jpeg',0.72);
+  const boardW=9000, boardH=5200; const ar=w/h;
+  let bw=boardW, bh=bw/ar; if(bh>boardH){ bh=boardH; bw=bh*ar; }
+  return {src,x:Math.round((12000-bw)/2),y:Math.round(TITLE_H+250),w:Math.round(bw),h:Math.round(bh),op:0.55,scaled:false};
+}
+document.getElementById('bgFile').onchange=async e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
+  if(/pdf$/i.test(f.type)||/\.pdf$/i.test(f.name)){ bgNote('A PDF cannot be read here. Open it, export or screenshot the page as a PNG or JPG, and import that.'); return; }
+  try{
+    const img=new Image(); await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=URL.createObjectURL(f); });
+    pushUndo(); bg=bgFromImage(img); buildBgUI(); render(); fitToCabinets(false);
+    bgNote('Sketch imported. Now set the scale: click two points a known distance apart, then type that distance.');
+    setTool('bgscale');
+  }catch(err){ bgNote('Could not read that file. A photo or a PNG/JPG of the page works best.'); }
+};
+document.getElementById('bgOp').oninput=e=>{ if(!bg) return; bg.op=(+e.target.value)/100; document.getElementById('bgOpVal').textContent=e.target.value; render(); };
+document.getElementById('bgScale').onclick=()=>{ if(!bg) return; setTool('bgscale'); };
+document.getElementById('bgMove').onclick=()=>{ if(!bg) return; setTool('bgmove'); bgNote('Drag the sketch into place, then pick Select.'); };
+document.getElementById('bgDel').onclick=()=>{ if(!bg) return; pushUndo(); bg=null; buildBgUI(); setTool('select'); render(); };
+/* auto-trace: find the long straight dark lines on the sketch and offer them as walls */
+function bgAutoWalls(box){
+  if(!bg){ return; }
+  if(!bg.scaled){ bgNote('Set the scale first, otherwise the walls come out the wrong size.'); return; }
+  if(!box){ setTool('bgbox'); bgNote('Drag a box around just the plan on the sketch. Anything outside it, like the title block, is ignored.'); return; }
+  const img=new Image();
+  img.onload=()=>{
+    const FW=Math.min(1200,img.naturalWidth), FH=Math.round(img.naturalHeight*(FW/img.naturalWidth));
+    // only the part of the sketch inside the box, in that image's pixels
+    const px0=Math.max(0,Math.round((box.x0-bg.x)/bg.w*FW)), px1=Math.min(FW,Math.round((box.x1-bg.x)/bg.w*FW));
+    const py0=Math.max(0,Math.round((box.y0-bg.y)/bg.h*FH)), py1=Math.min(FH,Math.round((box.y1-bg.y)/bg.h*FH));
+    const W=px1-px0, H=py1-py0;
+    if(W<40||H<40){ bgNote('That box missed the sketch. Drag it around the drawn plan.'); return; }
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+    const ctx=cv.getContext('2d'); ctx.drawImage(img,0,0,FW,FH,-px0,-py0,FW,FH);
+    const d=ctx.getImageData(0,0,W,H).data;
+    const lum=new Float32Array(W*H); let sum=0;
+    for(let i=0,p=0;i<d.length;i+=4,p++){ const v=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]; lum[p]=v; sum+=v; }
+    const mean=sum/(W*H); const cut=Math.max(60,Math.min(200,mean*0.72));  // paper is bright, the pencil is not
+    const dark=(x,y)=>lum[y*W+x]<cut;
+    const minRunX=Math.max(40,Math.round(W*0.10)), minRunY=Math.max(40,Math.round(H*0.10));
+    const rowRuns=[], colRuns=[];
+    for(let y=0;y<H;y++){ let x=0; while(x<W){ if(!dark(x,y)){x++;continue;} let x2=x; let gap=0;
+      while(x2+1<W&&(dark(x2+1,y)||gap<3)){ if(dark(x2+1,y)) gap=0; else gap++; x2++; }
+      x2-=gap; if(x2-x>=minRunX) rowRuns.push({a:y,s:x,e:x2}); x=x2+1; } }
+    for(let x=0;x<W;x++){ let y=0; while(y<H){ if(!dark(x,y)){y++;continue;} let y2=y; let gap=0;
+      while(y2+1<H&&(dark(x,y2+1)||gap<3)){ if(dark(x,y2+1)) gap=0; else gap++; y2++; }
+      y2-=gap; if(y2-y>=minRunY) colRuns.push({a:x,s:y,e:y2}); y=y2+1; } }
+    const merge=(runs)=>{ const out=[]; runs.sort((p,q)=>p.a-q.a||p.s-q.s);
+      runs.forEach(r=>{ const hit=out.find(o=>Math.abs(o.a-r.a)<=6&&Math.min(o.e,r.e)-Math.max(o.s,r.s)>0.5*Math.min(o.e-o.s,r.e-r.s));
+        if(hit){ hit.s=Math.min(hit.s,r.s); hit.e=Math.max(hit.e,r.e); hit.a=(hit.a*hit.n+r.a)/(hit.n+1); hit.n++; }
+        else out.push({a:r.a,s:r.s,e:r.e,n:1}); });
+      return out; };
+    const toMMx=px=>bg.x+(px+px0)/FW*bg.w, toMMy=py=>bg.y+(py+py0)/FH*bg.h;
+    const cand=[];
+    merge(rowRuns).forEach(r=>cand.push({x1:toMMx(r.s),y1:toMMy(r.a),x2:toMMx(r.e),y2:toMMy(r.a)}));
+    merge(colRuns).forEach(r=>cand.push({x1:toMMx(r.a),y1:toMMy(r.s),x2:toMMx(r.a),y2:toMMy(r.e)}));
+    const keep=[];
+    cand.forEach(c=>{ const len=Math.hypot(c.x2-c.x1,c.y2-c.y1); if(len<600) return;
+      const horiz=Math.abs(c.y2-c.y1)<Math.abs(c.x2-c.x1);
+      const dup=keep.some(k=>{ const kh=Math.abs(k.y2-k.y1)<Math.abs(k.x2-k.x1); if(kh!==horiz) return false;
+        return horiz ? (Math.abs(k.y1-c.y1)<150&&Math.min(k.x2,c.x2)-Math.max(k.x1,c.x1)>0)
+                     : (Math.abs(k.x1-c.x1)<150&&Math.min(k.y2,c.y2)-Math.max(k.y1,c.y1)>0); });
+      if(!dup) keep.push(c); });
+    keep.sort((a,b)=>Math.hypot(b.x2-b.x1,b.y2-b.y1)-Math.hypot(a.x2-a.x1,a.y2-a.y1));
+    const use=keep.slice(0,16);
+    if(!use.length){ bgNote('No straight lines long enough to read. Trace the walls by hand with Draw a wall.'); return; }
+    pushUndo();
+    use.forEach((c,i)=>walls.push({id:'w'+Date.now().toString(36)+i,x1:Math.round(c.x1),y1:Math.round(c.y1),x2:Math.round(c.x2),y2:Math.round(c.y2)}));
+    render(); renderRightPanel();
+    bgNote(use.length+' wall'+(use.length===1?'':'s')+' traced. Check each length in Room Details, and Undo puts them back if it read the sketch wrong.');
+  };
+  img.onerror=()=>bgNote('Could not read the sketch image.');
+  img.src=bg.src;
+}
+document.getElementById('bgAuto').onclick=()=>bgAutoWalls();
 
 /* ---------- reading the supplier's price list ---------- */
 /* the sheet comes back as rows of code, description, width and price, so take each line on its own terms
@@ -1880,7 +2016,7 @@ document.getElementById('btnPrint').onclick=()=>{
 document.getElementById('btnClear').onclick=()=>{ if(confirm('Clear everything in '+roomName(curRoom)+'? (Undo can bring it back)')){pushUndo();cabs=[];selId=null;dropN=0;render();buildPanel();} };
 
 /* ---------- rooms ---------- */
-function syncRoom(){ const r=rooms[curRoom]; r.cabs=cabs; r.walls=walls; r.dims=dims; r.nextId=nextId; r.dropN=dropN; }
+function syncRoom(){ const r=rooms[curRoom]; r.cabs=cabs; r.walls=walls; r.dims=dims; r.nextId=nextId; r.dropN=dropN; r.bg=bg; }
 function roomName(i){ return rooms[i].name||('Room '+(i+1)); }
 function buildRoomUI(){
   const sel=document.getElementById('roomSel'); sel.innerHTML='';
@@ -1890,7 +2026,8 @@ function buildRoomUI(){
   const tp=document.getElementById('tbPage'); if(tp&&document.activeElement!==tp) tp.value=(curRoom+1)+'/'+rooms.length;
 }
 function loadRoom(i,quiet){
-  curRoom=i; const r=rooms[i]; cabs=r.cabs||[]; walls=r.walls||(r.walls=[]); dims=r.dims||(r.dims=[]); nextId=r.nextId||1; dropN=r.dropN||0; selId=null; selWall=null; selDim=null; draft=null;
+  curRoom=i; const r=rooms[i]; cabs=r.cabs||[]; walls=r.walls||(r.walls=[]); dims=r.dims||(r.dims=[]); nextId=r.nextId||1; dropN=r.dropN||0; bg=r.bg||null; selId=null; selWall=null; selDim=null; draft=null;
+  if(typeof buildBgUI==='function') buildBgUI();
   UNDO.length=0; REDO.length=0; undoButtons(); buildRoomUI();
   if(!quiet){ render(); buildPanel(); if(currentView==='elev') renderElev(); if(currentView==='3d') rebuild3D(); fitToCabinets(true); mobileFit(); }
 }
@@ -1910,6 +2047,7 @@ document.getElementById('roomDel').onclick=()=>{ if(rooms.length<2) return; if(!
 
 /* ---------- walls, manual dimensions, canvas tools ---------- */
 let walls=[], dims=[], selWall=null, selDim=null, tool='select', draft=null, snapOn=true, showGrid=true;
+let bg=null; // the imported sketch sitting under the plan: {src,x,y,w,h,op}
 const WALL_T=90;
 /* wall coordinates are the INSIDE face: the figure on a wall is the clear wall-to-wall size, and the thickness is drawn on the outside.
    The outside is the side away from the room (cabinets first, otherwise the other walls). Returns the offset to the stroke centreline. */
@@ -1921,7 +2059,8 @@ function wallOut(w){
   const inside=(cx==null||Math.abs(cx-w.x1)<1)?1:Math.sign(cx-w.x1); return {ox:-inside*h,oy:0};
 }
 function svgPointSnap(e){ const p=svgPt(e); return {x:Math.max(BOARD.x0,Math.min(BOARD.x1,snap(p.x))),y:Math.max(BOARD.y0,Math.min(BOARD.y1,snap(p.y)))}; }
-function setTool(t){ if(tool===t&&!draft) { document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); return; } tool=t; draft=null; document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); svg.style.cursor=t==='select'?'':'crosshair'; if(t!=='select'){ selId=null; buildPanel(); } render(); }
+function setTool(t){ if(t!=='bgscale') bgPts=[];
+  if(tool===t&&!draft) { document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); return; } tool=t; draft=null; document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===t)); svg.style.cursor=t==='select'?'':'crosshair'; if(t!=='select'){ selId=null; buildPanel(); } render(); }
 document.querySelectorAll('#floatTools [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 document.getElementById('btnDrawWall').onclick=()=>{ setTab('plan'); setTool('wall'); if(isMobile()) asideEl.classList.add('collapsed'); };
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(draft){ draft=null; render(); } else if(tool!=='select') setTool('select'); } });
@@ -2730,14 +2869,14 @@ const TB_IDS=['tbJob','tbRoom','tbPage','tbCust','tbAddr','tbMobile','tbCeiling'
 function stateObj(){
   const tb={}; TB_IDS.forEach(id=>{ const el=document.getElementById(id); tb[id]=el.type==='checkbox'?el.checked:el.value; });
   syncRoom(); if(!jobId) jobId='j'+Date.now().toString(36);
-  return {v:5,jobId,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,prices:PRICES,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,walls:r.walls||[],dims:r.dims||[],nextId:r.nextId,dropN:r.dropN})),curRoom};
+  return {v:5,jobId,savedAt:new Date().toISOString(),cabs,scheme,benchH,nextId,dropN,tb,contact,std:STD,appl:APPL,prices:PRICES,rooms:rooms.map(r=>({name:r.name,cabs:r.cabs,walls:r.walls||[],dims:r.dims||[],nextId:r.nextId,dropN:r.dropN,bg:r.bg||null})),curRoom};
 }
 function applyState(s){
   if(!s||!Array.isArray(s.cabs)) return false;
   jobId=(typeof s.jobId==='string'&&s.jobId)||('j'+Date.now().toString(36));
-  if(Array.isArray(s.rooms)&&s.rooms.length){ rooms=s.rooms.map(r=>({name:r.name||'Kitchen',cabs:(r.cabs||[]).filter(c=>c&&TYPES[c.type]),walls:Array.isArray(r.walls)?r.walls:[],dims:Array.isArray(r.dims)?r.dims:[],nextId:parseInt(r.nextId)||1,dropN:parseInt(r.dropN)||0})); curRoom=Math.min(Math.max(0,parseInt(s.curRoom)||0),rooms.length-1); }
+  if(Array.isArray(s.rooms)&&s.rooms.length){ rooms=s.rooms.map(r=>({name:r.name||'Kitchen',cabs:(r.cabs||[]).filter(c=>c&&TYPES[c.type]),walls:Array.isArray(r.walls)?r.walls:[],dims:Array.isArray(r.dims)?r.dims:[],bg:(r.bg&&typeof r.bg.src==='string')?r.bg:null,nextId:parseInt(r.nextId)||1,dropN:parseInt(r.dropN)||0})); curRoom=Math.min(Math.max(0,parseInt(s.curRoom)||0),rooms.length-1); }
   else rooms=[{name:(s.tb&&s.tb.tbRoom)||'Kitchen',cabs:s.cabs.filter(c=>c&&TYPES[c.type]),walls:[],dims:[],nextId:parseInt(s.nextId)||1,dropN:parseInt(s.dropN)||0}], curRoom=0;
-  cabs=rooms[curRoom].cabs; walls=rooms[curRoom].walls; dims=rooms[curRoom].dims; selWall=null; selDim=null; draft=null;
+  cabs=rooms[curRoom].cabs; walls=rooms[curRoom].walls; dims=rooms[curRoom].dims; bg=rooms[curRoom].bg||null; selWall=null; selDim=null; draft=null;
   if(s.scheme&&s.scheme.door&&s.scheme.bench) scheme={drawerProfile:s.scheme.profile,...s.scheme};
   benchH=parseInt(s.benchH)||870;
   if(s.std&&typeof s.std==='object') STD={...STD,...s.std};
