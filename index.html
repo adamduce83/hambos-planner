@@ -1885,7 +1885,7 @@ function readApplyPlan(plan){
   setIf('tbBenchtop',plan.benchtop); setIf('tbDoorFinish',plan.door_finish);
   if(plan.kickboard_mm&&+plan.kickboard_mm>0){ STD.kick=+plan.kickboard_mm; const k=document.getElementById('stdKick'); if(k) k.value=STD.kick; }
   if(plan.door_colour){ const d=DOORS.find(x=>x.name.toLowerCase()===String(plan.door_colour).toLowerCase()); if(d){ scheme.door={...d}; buildFinishUI(); } }
-  if(plan.door_profile&&PROFILES.indexOf(plan.door_profile)>=0){ scheme.profile=plan.door_profile; scheme.drawerProfile=plan.door_profile; buildFinishUI(); }
+  if(plan.door_profile&&PROFILES.indexOf(plan.door_profile)>=0){ scheme.profile=plan.door_profile; scheme.drawerProfile=(PROFILES.indexOf(plan.drawer_profile)>=0?plan.drawer_profile:plan.door_profile); buildFinishUI(); }
   if(plan.room&&rooms[curRoom]) { rooms[curRoom].name=plan.room; buildRoomUI(); }
   render(); buildPanel(); renderRightPanel();
   return {added,warn};

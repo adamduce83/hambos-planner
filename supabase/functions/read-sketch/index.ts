@@ -33,7 +33,8 @@ Return ONLY valid JSON in exactly this shape:
   "cabinet_height_mm": 2230,
   "kickboard_mm": 150,
   "door_colour": "White",
-  "door_profile": "Shaker",
+  "door_profile": "Tamworth",
+  "drawer_profile": "Shaker",
   "benchtop": "20mm Stone by Hambos",
   "runs": [
     {
@@ -62,6 +63,8 @@ Rules for the JSON:
 - Give every width you can actually read. If a box has no width written on it, leave width_mm out rather than inventing one.
 - Put the overall figure written across the run in overall_mm. If none is written, leave it out.
 - Set confidence to high, medium or low for how well the drawing could be read.
+- door_profile and drawer_profile are separate fields. Plans often say "Doors - Tamworth, Drawers - Shaker"; put one name in each, not a sentence.
+- Keep "notes" to two sentences.
 - Return nothing except the JSON object.`;
 
 Deno.serve(async (req: Request) => {
@@ -104,7 +107,7 @@ Deno.serve(async (req: Request) => {
       headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 8192,
+        max_tokens: 16000,  // a five room sheet needs ~12k; 8192 truncated six of the twelve test drawings
         messages: [{ role: "user", content: [block, { type: "text", text: lead + PROMPT }] }],
       }),
     });
@@ -113,6 +116,8 @@ Deno.serve(async (req: Request) => {
       return json({ error: "The reader could not run.", detail: detail.slice(0, 400) }, 502);
     }
     const out = await res.json();
+    if (out.stop_reason === "max_tokens")
+      return json({ error: "That drawing is too big to read in one go. Try one room or one page at a time." }, 502);
     let text = (out.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n").trim();
     if (text.startsWith("```")) text = text.replace(/^```json?\s*\n?/, "").replace(/\n?```\s*$/, "");
     let parsed: any;
