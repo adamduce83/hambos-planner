@@ -367,12 +367,13 @@
       <p class="sub" style="margin-top:6px;">Click and drag along the plan. Walls snap straight and the length shows as you draw. Click a wall to change its length or remove it. Esc returns to the select tool.</p>
       <div class="cards" id="structGrid"></div>
       <h3>Import a sketch</h3>
-      <p class="sub" style="margin-top:-4px;">Drop in a photo of the hand plan or a screenshot of the customer&rsquo;s drawing, set the scale off one known measurement, and draw straight over it. Photos and screenshots only, not PDFs.</p>
-      <label class="bigbtn" style="cursor:pointer;"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg> Import a sketch<input type="file" id="bgFile" accept="image/*" hidden></label>
+      <p class="sub" style="margin-top:-4px;">Drop in a photo of the hand plan or a screenshot of the customer&rsquo;s drawing, set the scale off one known measurement, and draw straight over it. A PDF can be read by the sketch reader, but only a photo or screenshot can be shown underneath the plan.</p>
+      <label class="bigbtn" style="cursor:pointer;"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg> Import a sketch<input type="file" id="bgFile" accept="image/*,.pdf,application/pdf" hidden></label>
       <div id="bgPanel" hidden>
         <div class="field"><label>How faint (<span id="bgOpVal">55</span>%)</label><input id="bgOp" type="range" min="10" max="100" value="55" style="width:100%;"></div>
         <div class="rowbtns"><button class="toolbtn alt" id="bgScale">Set the scale</button><button class="toolbtn alt" id="bgMove">Move it</button></div>
         <button class="toolbtn alt" id="bgAuto" style="width:100%;margin-top:6px;">Auto-trace lines in a box</button>
+        <button class="bigbtn" id="bgRead" hidden style="margin-top:6px;">Read this sketch and draw it</button>
         <div class="hint" id="bgNote" style="margin:6px 0;">Set the scale first: click two points a known distance apart on the sketch, then type that distance.</div>
         <button class="toolbtn alt" id="bgDel" style="width:100%;">Remove the sketch</button>
       </div>
@@ -1737,11 +1738,12 @@ function duplicateSel(){
 
 /* ---------- import a hand sketch and draw the job over it ---------- */
 const BG_MAX=1500;           // longest side in pixels: enough to trace from, small enough to keep in a saved job
-let bgDrag=null, bgPts=[];
+let bgDrag=null, bgPts=[], bgRaw=null; // bgRaw is the file as imported, kept for the sketch reader only
 function bgNote(msg){ const el=document.getElementById('bgNote'); if(el) el.textContent=msg; }
 function buildBgUI(){
   const panel=document.getElementById('bgPanel'); if(!panel) return;
-  panel.hidden=!bg;
+  panel.hidden=!bg&&!bgRaw;
+  const rd=document.getElementById('bgRead'); if(rd) rd.hidden=!(bgRaw&&typeof isStaff!=='undefined'&&isStaff);
   if(bg){ const o=document.getElementById('bgOp'); o.value=Math.round((bg.op==null?0.55:bg.op)*100); document.getElementById('bgOpVal').textContent=o.value;
     bgNote(bg.scaled?'Scale set. Draw walls and drop cabinets straight over the sketch.':'Set the scale first: click two points a known distance apart on the sketch, then type that distance.'); }
 }
@@ -1756,9 +1758,16 @@ function bgFromImage(img){
   let bw=boardW, bh=bw/ar; if(bh>boardH){ bh=boardH; bw=bh*ar; }
   return {src,x:Math.round((12000-bw)/2),y:Math.round(TITLE_H+250),w:Math.round(bw),h:Math.round(bh),op:0.55,scaled:false};
 }
+async function fileToB64(f){ const buf=await f.arrayBuffer(); let bin=''; const b=new Uint8Array(buf);
+  for(let i=0;i<b.length;i+=0x8000) bin+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));
+  return btoa(bin); }
 document.getElementById('bgFile').onchange=async e=>{
   const f=e.target.files&&e.target.files[0]; e.target.value=''; if(!f) return;
-  if(/pdf$/i.test(f.type)||/\.pdf$/i.test(f.name)){ bgNote('A PDF cannot be read here. Open it, export or screenshot the page as a PNG or JPG, and import that.'); return; }
+  const isPdf=/pdf$/i.test(f.type)||/\.pdf$/i.test(f.name);
+  try{ bgRaw={b64:await fileToB64(f),mime:isPdf?'application/pdf':(f.type||'image/jpeg'),pdf:isPdf,name:f.name}; }catch(err){ bgRaw=null; }
+  buildBgUI();
+  if(isPdf){ document.getElementById('bgPanel').hidden=false;
+    bgNote('PDF loaded for the sketch reader. To trace over it as well, import a photo or screenshot of the page.'); return; }
   try{
     const img=new Image(); await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=URL.createObjectURL(f); });
     pushUndo(); bg=bgFromImage(img); buildBgUI(); render(); fitToCabinets(false);
@@ -1826,6 +1835,81 @@ function bgAutoWalls(box){
   img.src=bg.src;
 }
 document.getElementById('bgAuto').onclick=()=>bgAutoWalls();
+
+/* ---------- the sketch reader: the drawing is read, the planner lays it out ---------- */
+/* it is asked for the runs of widths the designer wrote, not for pixel positions, because that is
+   what a cabinetry plan actually says and it can be checked against the overall figure */
+function readMakeCab(pc,x,y,rot){
+  const type=TYPES[pc.type]?pc.type:'base', t=TYPES[type];
+  const width=Math.max(t.thin?10:50,Math.min(4000,+pc.width_mm||t.dw||600));
+  const depth=Math.max(50,Math.min(1500,+pc.depth_mm||t.depth));
+  const noDoor=t.appliance||t.thin||t.window||t.sym||t.benchOnly;
+  const bottom=(pc.bottom_mm!=null)?+pc.bottom_mm
+    :(t.mount==='bench'?benchH:((t.mount==='wall'&&(type==='wall'||type==='rangehood'||type==='microwave'||type==='microwall'))?benchH+overheadClear():(t.bottom||0)));
+  const fronts=['doors','drawers','none','open','glass','pocket','stack','winerack','bin'];
+  const front=fronts.indexOf(pc.front)>=0?pc.front:(t.stack?'stack':(t.defFront||(noDoor?'none':'doors')));
+  const c={id:nextId++,type,width,depth,height:+pc.height_mm||t.eh,bottom,x,y,rot,front,
+    stack:t.stack?t.stack.slice():undefined,hinge:(width>600?'D':'L'),drawers:3,
+    label:String(pc.label||'').slice(0,40),door:null,price:null};
+  if(pc.drawers){ c.drawerLayout=String(pc.drawers); c.drawers=String(pc.drawers).split('+').reduce((a,b)=>a+(+b||0),0)||3; if(c.front==='doors') c.front='drawers'; }
+  return c;
+}
+function readApplyPlan(plan){
+  const warn=[]; const runs=Array.isArray(plan&&plan.runs)?plan.runs:[];
+  if(!runs.length) return {added:0,warn:['The reader did not find a run of cabinets on that drawing.']};
+  pushUndo();
+  const X0=1500, Y0=1500; let added=0;
+  const floorRuns=runs.filter(r=>(r.level||'floor')!=='wall');
+  const rearLen=(r=>r?(r.pieces||[]).reduce((a,p)=>a+(+p.width_mm||0),0):0)(floorRuns.find(r=>(r.wall||'rear')==='rear'));
+  runs.forEach(rn=>{
+    const pieces=Array.isArray(rn.pieces)?rn.pieces:[]; if(!pieces.length) return;
+    const wall=String(rn.wall||'rear').toLowerCase();
+    const sum=pieces.reduce((a,p)=>a+(+p.width_mm||0),0);
+    if(rn.overall_mm&&Math.abs(sum-rn.overall_mm)>20)
+      warn.push('The '+wall+' run adds up to '+Math.round(sum)+' mm but the drawing says '+Math.round(rn.overall_mm)+' mm. Check the widths.');
+    const rot=wall==='left'?270:wall==='right'?90:wall==='front'?180:0;
+    let x=X0, y=Y0;
+    if(wall==='right') x=X0+(rearLen||3600);
+    if(wall==='front') y=Y0+2700;
+    pieces.forEach(pc=>{
+      const c=readMakeCab(pc,x,y,rot);
+      const f=footprint(c);
+      if(rot===0||rot===180){ c.x=x; c.y=(rot===180)?y-c.depth:y; x+=f.w; }
+      else { c.y=y; c.x=(rot===90)?x-c.depth:x; y+=f.h; }
+      keepOnBoard(c); cabs.push(c); added++;
+    });
+  });
+  // the fields the drawing states, only where the job has none yet
+  const setIf=(id,v)=>{ const el=document.getElementById(id); if(el&&v&&!el.value) el.value=String(v); };
+  setIf('tbRoom',plan.room); setIf('tbCeiling',plan.ceiling_mm); setIf('tbCabH',plan.cabinet_height_mm);
+  setIf('tbBenchtop',plan.benchtop); setIf('tbDoorFinish',plan.door_finish);
+  if(plan.kickboard_mm&&+plan.kickboard_mm>0){ STD.kick=+plan.kickboard_mm; const k=document.getElementById('stdKick'); if(k) k.value=STD.kick; }
+  if(plan.door_colour){ const d=DOORS.find(x=>x.name.toLowerCase()===String(plan.door_colour).toLowerCase()); if(d){ scheme.door={...d}; buildFinishUI(); } }
+  if(plan.door_profile&&PROFILES.indexOf(plan.door_profile)>=0){ scheme.profile=plan.door_profile; scheme.drawerProfile=plan.door_profile; buildFinishUI(); }
+  if(plan.room&&rooms[curRoom]) { rooms[curRoom].name=plan.room; buildRoomUI(); }
+  render(); buildPanel(); renderRightPanel();
+  return {added,warn};
+}
+async function readSketch(){
+  if(!bgRaw){ bgNote('Import a sketch first.'); return; }
+  if(!sb||!isStaff){ bgNote('Sign in as staff to use the sketch reader.'); return; }
+  const btn=document.getElementById('bgRead'); btn.disabled=true; const label=btn.textContent; btn.textContent='Reading the sketch…';
+  bgNote('Reading the sketch. This takes a few seconds.');
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch((CLOUD.url||'')+'/functions/v1/read-sketch',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session&&session.access_token||CLOUD.anon),'apikey':CLOUD.anon},
+      body:JSON.stringify({data:bgRaw.b64,mime:bgRaw.mime,pdf:bgRaw.pdf,room:tbv('tbRoom')||''})});
+    const out=await res.json();
+    if(!res.ok||out.error){ bgNote(out.error||('The reader failed ('+res.status+').')); return; }
+    const r=readApplyPlan(out.plan||{});
+    const conf=(out.plan&&out.plan.confidence)||'';
+    bgNote(r.added+' piece'+(r.added===1?'':'s')+' drawn from the sketch'+(conf?(', read with '+conf+' confidence'):'')+'. Check every size against the drawing. Undo removes the lot.'
+      +(r.warn.length?('  '+r.warn.join('  ')):''));
+  }catch(e){ bgNote('The reader could not be reached: '+(e&&e.message||e)); }
+  finally{ btn.disabled=false; btn.textContent=label; }
+}
+document.getElementById('bgRead').onclick=readSketch;
 
 /* ---------- reading the supplier's price list ---------- */
 /* the sheet comes back as rows of code, description, width and price, so take each line on its own terms
